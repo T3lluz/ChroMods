@@ -1,7 +1,7 @@
-/* yt-Immersive search — Centered search with page blur (sameerasw / my-internet) */
+/* yt-Immersive search — Zen Internet / my-internet (flattened for Chromium) */
 #page-manager,
 yt-searchbox {
-  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
 }
 
 #masthead yt-searchbox button[aria-label="Search"] {
@@ -10,7 +10,8 @@ yt-searchbox {
 
 #voice-search-button,
 yt-searchbox button[aria-label="Search with your voice"],
-yt-searchbox .ytSearchboxComponentVoiceSearchButton {
+yt-searchbox .ytSearchboxComponentVoiceSearchButton,
+yt-searchbox .ytSearchboxComponentVoiceSearchButtonHost {
   display: none !important;
 }
 
@@ -18,42 +19,36 @@ yt-searchbox .ytSearchboxComponentVoiceSearchButton {
   border-radius: 2em !important;
 }
 
-.ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) {
-  display: flex !important;
-  height: 100vh !important;
-  width: 100vw !important;
-  left: 0 !important;
-  top: 0 !important;
-  position: fixed !important;
-  justify-content: center !important;
-  align-items: flex-start !important;
-  padding-top: 20vh !important;
-  z-index: 2000 !important;
-  background: transparent !important;
-  pointer-events: none !important;
-}
-
-.ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox {
-  pointer-events: auto !important;
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
   position: relative !important;
   left: 0 !important;
-  top: 0 !important;
-  height: 40px !important;
+  top: -30vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  height: auto !important;
+  min-height: 40px !important;
   max-width: 600px !important;
   width: min(600px, 92vw) !important;
+  overflow: visible !important;
   transform: scale(1) !important;
   scale: 1 !important;
-  flex-shrink: 0 !important;
+  z-index: 2002 !important;
 }
 
 @media only screen and (min-width: 1400px) {
-  .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox {
-    height: 60px !important;
+  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
+    min-height: 60px !important;
     max-width: 700px !important;
     width: min(700px, 92vw) !important;
     transform: scale(1.1) !important;
     scale: 1.1 !important;
   }
+}
+
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputWrapper {
+  width: 100% !important;
+  flex-shrink: 0 !important;
 }
 
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputBox,
@@ -67,31 +62,71 @@ html[dark] yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
   background-color: #000b !important;
 }
 
-yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
-  margin-top: 0 !important;
-  position: static !important;
-  width: 100% !important;
-  left: auto !important;
-  top: auto !important;
-}
-
-yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer,
-yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainerPadding {
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0,
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer {
   position: relative !important;
   left: 0 !important;
-  top: 0 !important;
+  top: auto !important;
   width: 100% !important;
   max-width: 100% !important;
-  transform: none !important;
-  margin-top: 8px !important;
+  margin-top: 10px !important;
+}
+
+@media only screen and (min-width: 1400px) {
+  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0,
+  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer {
+    margin-top: 30px !important;
+  }
+}
+
+.ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) {
+  display: flex !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  left: 0 !important;
+  top: 0 !important;
+  position: fixed !important;
+  justify-content: center !important;
+  z-index: 2001 !important;
 }
 
 #content:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
   filter: blur(20px) !important;
   transform: scale(1.05) !important;
   scale: 1.05 !important;
+  pointer-events: none !important;
+}
+
+#content:has(.ytSearchboxComponentInputBoxHasFocus) {
+  pointer-events: none !important;
 }
 
 #masthead-container:has(.ytSearchboxComponentInputBoxHasFocus) {
   z-index: 2001 !important;
+  pointer-events: auto !important;
+}
+
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) ytd-mini-guide-renderer,
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) tp-yt-app-drawer,
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #guide-wrapper {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) ytd-video-preview,
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #video-preview-container,
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #inline-preview-player {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus)::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1999 !important;
+  pointer-events: auto !important;
+  background: transparent !important;
 }

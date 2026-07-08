@@ -179,7 +179,8 @@ async function run() {
     const searchInput = ytPage.locator("yt-searchbox input.ytSearchboxComponentInput, input[name='search_query']").first();
     if (await searchInput.count()) {
       await searchInput.focus();
-      await ytPage.waitForTimeout(600);
+      await searchInput.fill("jack");
+      await ytPage.waitForTimeout(800);
 
       const voiceHidden = await ytPage.evaluate(() => {
         const voiceBtn =
@@ -190,6 +191,27 @@ async function run() {
         return getComputedStyle(voiceBtn).display === "none";
       });
       assert.ok(voiceHidden, "Voice search button should be hidden with immersive search");
+
+      const suggestionsLayout = await ytPage.evaluate(() => {
+        const sb = document.querySelector("yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus)");
+        const inputWrap = sb?.querySelector(".ytSearchboxComponentInputWrapper");
+        const suggestions = sb?.querySelector("#i0, .ytSearchboxComponentSuggestionsContainer");
+        if (!sb || !inputWrap || !suggestions) return { ok: false, reason: "missing nodes" };
+        const sbStyle = getComputedStyle(sb);
+        const inputRect = inputWrap.getBoundingClientRect();
+        const suggRect = suggestions.getBoundingClientRect();
+        return {
+          ok:
+            sbStyle.flexDirection === "column" &&
+            suggRect.top >= inputRect.bottom - 4 &&
+            Math.abs(suggRect.left - inputRect.left) < 24,
+          flexDirection: sbStyle.flexDirection,
+          inputBottom: inputRect.bottom,
+          suggTop: suggRect.top,
+          leftDelta: Math.abs(suggRect.left - inputRect.left),
+        };
+      });
+      assert.ok(suggestionsLayout.ok, `Suggestions should sit below search bar: ${JSON.stringify(suggestionsLayout)}`);
 
       await ytPage.screenshot({
         path: path.join(screenshotDir, "youtube-immersive-search-focused.png"),

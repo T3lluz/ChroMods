@@ -74,9 +74,14 @@ test("theater hover comments uses solid opaque background", () => {
 test("immersive search hides voice search and blurs page content on focus", () => {
   const css = read("styles/immersive-search.css");
   assert.match(css, /#voice-search-button/);
+  assert.match(css, /ytSearchboxComponentVoiceSearchButton/);
   assert.match(css, /#content:has\(\.ytSearchboxComponentInputBoxHasFocus\) #page-manager/);
   assert.match(css, /filter:\s*blur\(20px\)/);
   assert.match(css, /justify-content:\s*center/);
+  assert.match(css, /flex-direction:\s*column/);
+  assert.match(css, /top:\s*-30vh/);
+  assert.match(css, /pointer-events:\s*none/);
+  assert.match(css, /ytd-video-preview/);
   assert.match(css, /transform:\s*scale\(1\.05\)/);
   assert.match(css, /transform:\s*scale\(1\.1\)/);
   assert.doesNotMatch(css, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
