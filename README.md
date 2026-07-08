@@ -11,7 +11,7 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 
 | Mod | What it does |
 |-----|--------------|
-| **Immersive search** | Blur + zoom on search focus; hides voice search button |
+| **Immersive search** | Full-viewport blur on focus; search + suggestions on top |
 | **Theater mode** | Full-window theater view; subsettings below |
 | **Feed layout fix** | Denser grid, compact cards, hover menu; configurable columns |
 | **Compact sidebar** | Icon-only guide; hides Studio/Sports/Settings/footer |
@@ -20,7 +20,7 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 
 | Setting | Default | Effect |
 |---------|---------|--------|
-| Auto-hide header | on | Hide masthead in theater; reveal on hover |
+| Auto-hide header | on | Hide masthead in theater; reveal when hovering top ~140px |
 | Hover comments | on | Slide-in comments panel with solid background |
 | Comments side | left | `left` or `right` edge for comments panel |
 
@@ -34,8 +34,8 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 
 ```bash
 npm install          # playwright for e2e
-npm test             # manifest, CSS compat, wiring (10 tests)
-npm run test:e2e     # popup UI + YouTube injection (6 tests)
+npm test             # manifest, CSS compat, wiring (12 tests)
+npm run test:e2e     # popup UI + YouTube injection (7 tests)
 ```
 
 Screenshots: `tests/screenshots/`

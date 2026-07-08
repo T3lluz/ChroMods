@@ -201,6 +201,121 @@
     if (el) el.textContent = "";
   }
 
+  const ACCENT_COLOR = "#ff8f6b";
+  const ANIMATION_STYLE_ID = "youtube-theming-animations";
+
+  function injectAnimationCSS() {
+    if (document.getElementById(ANIMATION_STYLE_ID)) return;
+
+    const style = document.createElement("style");
+    style.id = ANIMATION_STYLE_ID;
+    style.textContent = `
+      @keyframes ytm-glow-out {
+        0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.6; }
+        100% { transform: translate(-50%, -50%) scale(15); opacity: 0; }
+      }
+      @keyframes ytm-glow-in {
+        0% { transform: translate(-50%, -50%) scale(15); opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.6; }
+      }
+      @keyframes ytm-toast-in {
+        0% { transform: translateX(120%) scale(0.9); opacity: 0; }
+        70% { transform: translateX(-10px) scale(1.02); opacity: 1; }
+        100% { transform: translateX(0) scale(1); opacity: 1; }
+      }
+      @keyframes ytm-toast-out {
+        0% { transform: translateX(0) scale(1); opacity: 1; }
+        100% { transform: translateX(120%) scale(0.9); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function createGlowRing(isEnabled) {
+    injectAnimationCSS();
+
+    const ring = document.createElement("div");
+    Object.assign(ring.style, {
+      position: "fixed",
+      top: "40px",
+      right: "40px",
+      width: "150px",
+      height: "150px",
+      borderRadius: "50%",
+      border: `4px solid ${ACCENT_COLOR}`,
+      boxShadow: `0 0 60px ${ACCENT_COLOR}, inset 0 0 60px ${ACCENT_COLOR}`,
+      filter: "blur(20px)",
+      pointerEvents: "none",
+      zIndex: "2147483646",
+      opacity: "0",
+      transform: "translate(-50%, -50%)",
+    });
+
+    ring.style.animation = isEnabled
+      ? "ytm-glow-out 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+      : "ytm-glow-in 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+
+    document.documentElement.appendChild(ring);
+    setTimeout(() => ring.remove(), 1600);
+  }
+
+  function showToast(text, isEnabled) {
+    createGlowRing(isEnabled);
+
+    const existing = document.getElementById("youtube-theming-toast");
+    if (existing) existing.remove();
+
+    const isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches;
+    const toastBg = isLightMode ? "rgba(245, 247, 250, 0.9)" : "rgba(25, 25, 25, 0.85)";
+    const toastColor = isLightMode ? "#343a40" : "#ffffff";
+    const shadowColor = isLightMode ? "rgba(0, 0, 0, 0.15)" : "rgba(0, 0, 0, 0.4)";
+    const borderColor = isLightMode ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.1)";
+    const switchBgOff = isLightMode ? "#ced4da" : "#4c4c63";
+
+    const toast = document.createElement("div");
+    toast.id = "youtube-theming-toast";
+    Object.assign(toast.style, {
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      padding: "10px 16px",
+      background: toastBg,
+      backdropFilter: "blur(12px)",
+      webkitBackdropFilter: "blur(12px)",
+      color: toastColor,
+      borderRadius: "14px",
+      fontSize: "14px",
+      fontFamily:
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      fontWeight: "500",
+      boxShadow: `0 8px 32px ${shadowColor}, 0 0 0 1px ${borderColor}`,
+      zIndex: "2147483647",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      pointerEvents: "none",
+      transform: "translateX(120%) scale(0.9)",
+      opacity: "0",
+      animation: "ytm-toast-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+    });
+
+    const iconUrl = chrome.runtime.getURL("icons/icon48.png");
+    toast.innerHTML = `
+      <img src="${iconUrl}" alt="" width="20" height="20" style="border-radius:4px;flex-shrink:0" />
+      <span>${text}</span>
+      <span style="margin-left:4px;width:34px;height:18px;border-radius:999px;background:${isEnabled ? ACCENT_COLOR : switchBgOff};position:relative;flex-shrink:0">
+        <span style="position:absolute;top:2px;${isEnabled ? "right:2px" : "left:2px"};width:14px;height:14px;border-radius:50%;background:#fff"></span>
+      </span>
+    `;
+
+    document.documentElement.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.animation = "ytm-toast-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+      setTimeout(() => toast.remove(), 500);
+    }, 3000);
+  }
+
   async function bootstrap(settings) {
     const run = () => applySettings(settings);
     if (document.head) {
@@ -227,6 +342,11 @@
     }
     if (message.action === "removeStyles") {
       removeStyles();
+      sendResponse({ success: true });
+      return true;
+    }
+    if (message.action === "showToast") {
+      showToast(message.text, message.isEnabled);
       sendResponse({ success: true });
       return true;
     }

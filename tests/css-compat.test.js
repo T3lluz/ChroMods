@@ -74,10 +74,18 @@ test("theater hover comments uses solid opaque background", () => {
 test("immersive search hides voice search and uses full-viewport backdrop blur", () => {
   const css = read("styles/immersive-search.css");
   assert.match(css, /#voice-search-button/);
-  assert.match(css, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
+  assert.match(css, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
   assert.match(css, /-webkit-backdrop-filter\s*:\s*blur\(20px\)/);
   assert.match(css, /backdrop-filter\s*:\s*blur\(20px\)/);
+  assert.match(css, /z-index:\s*2003/);
+  assert.doesNotMatch(css, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
   assert.doesNotMatch(css, /#page-manager\s*\{[^}]*filter:\s*blur/);
+});
+
+test("theater hide header extends hover reveal zone", () => {
+  const css = read("styles/theater-hide-header.css");
+  assert.match(css, /padding-bottom:\s*140px/);
+  assert.match(css, /focus-within/);
 });
 
 test("immersive search includes transform fallbacks for scale", () => {
@@ -105,7 +113,15 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /"feed-layout"/);
   assert.match(js, /"compact-sidebar"/);
   assert.match(js, /feed-layout-compact\.css/);
+  assert.match(js, /showToast/);
+  assert.match(js, /ytm-glow-out/);
   assert.doesNotMatch(js, /theater-glass-comments|theater-translucent-comments|commentsBackground/);
+});
+
+test("popup triggers page toast on toggle", () => {
+  const js = read("popup/popup.js");
+  assert.match(js, /showPageToast/);
+  assert.match(js, /action:\s*"showToast"/);
 });
 
 test("popup defines theater and feed subsettings", () => {

@@ -151,14 +151,44 @@ async function saveSettings() {
   await notifyActiveTab();
 }
 
+async function getYouTubeTab() {
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+    url: ["*://*.youtube.com/*", "*://youtube.com/*"],
+  });
+  if (activeTab?.id) return activeTab;
+
+  const [anyTab] = await chrome.tabs.query({
+    currentWindow: true,
+    url: ["*://*.youtube.com/*", "*://youtube.com/*"],
+  });
+  return anyTab ?? null;
+}
+
 async function notifyActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.includes("youtube.com")) return;
+  const tab = await getYouTubeTab();
+  if (!tab?.id) return;
 
   try {
     await chrome.tabs.sendMessage(tab.id, {
       action: "applySettings",
       settings,
+    });
+  } catch {
+    // Content script may not be ready yet.
+  }
+}
+
+async function showPageToast(text, isEnabled) {
+  const tab = await getYouTubeTab();
+  if (!tab?.id) return;
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, {
+      action: "showToast",
+      text,
+      isEnabled,
     });
   } catch {
     // Content script may not be ready yet.
@@ -249,6 +279,19 @@ function bindSubsettings(card, feature) {
       settings.subsettings[feature.subsettingsKey] = featureSettings;
       renderFeatures();
       await saveSettings();
+
+      const sub = feature.subsettings.find((item) => item.id === id);
+      if (sub) {
+        const value =
+          event.target.type === "checkbox"
+            ? event.target.checked
+              ? "On"
+              : "Off"
+            : event.target.value;
+        const isEnabled =
+          event.target.type === "checkbox" ? event.target.checked : true;
+        await showPageToast(`${feature.title} · ${sub.title}: ${value}`, isEnabled);
+      }
     });
   });
 }
@@ -285,10 +328,16 @@ function renderFeatures() {
   featuresList.querySelectorAll("input[data-feature]").forEach((input) => {
     input.addEventListener("change", async (event) => {
       const id = event.target.dataset.feature;
-      settings.features[id] = event.target.checked;
+      const checked = event.target.checked;
+      settings.features[id] = checked;
       updateFeatureCount();
       renderFeatures();
       await saveSettings();
+
+      const meta = FEATURE_META.find((feature) => feature.id === id);
+      if (meta) {
+        await showPageToast(`${meta.title}: ${checked ? "On" : "Off"}`, checked);
+      }
     });
   });
 }
@@ -299,6 +348,10 @@ function bindControls() {
     settings.enabled = masterToggle.checked;
     renderFeatures();
     await saveSettings();
+    await showPageToast(
+      `YouTube Theming: ${masterToggle.checked ? "On" : "Off"}`,
+      masterToggle.checked
+    );
   });
 
   reloadBtn.addEventListener("click", async () => {

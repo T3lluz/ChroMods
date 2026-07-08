@@ -136,13 +136,23 @@ async function run() {
     assert.ok(cssContent.length > 500, "Content script should inject combined CSS on YouTube");
     assert.match(cssContent, /Immersive search|Compact feed|mini guide/i);
     assert.match(cssContent, /#voice-search-button/);
-    assert.match(cssContent, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
+    assert.match(cssContent, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
     assert.doesNotMatch(cssContent, /Theater hover comments/i);
 
     results.push({ name: "YouTube CSS injection includes immersive search fixes", status: "pass" });
 
     const popupPage2 = await context.newPage();
     await popupPage2.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+
+    await popupPage2
+      .locator('.feature-card[data-feature="compact-sidebar"] label.switch')
+      .click();
+    await ytPage.waitForFunction(() => {
+      return Boolean(document.getElementById("youtube-theming-toast"));
+    }, { timeout: 10000 });
+
+    results.push({ name: "Toggle shows glow toast on YouTube", status: "pass" });
+
     await popupPage2.locator('.feature-card[data-feature="theater-mode"] label[aria-label="Hover comments"]').click();
 
     await ytPage.waitForFunction(() => {
