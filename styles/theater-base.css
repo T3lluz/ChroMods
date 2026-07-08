@@ -1,0 +1,23 @@
+/* Theater base — Full-window theater view */
+#content:has(ytd-masthead[theater=""]) #full-bleed-container {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  top: 0 !important;
+}
+
+#masthead-container,
+#columns #secondary {
+  transition: all 0.3s ease-in-out 0.5s !important;
+}
+
+ytd-app:has([fullscreen=""], [theater=""]):not(:has(ytd-watch-flexy[hidden=""])) {
+  --ytd-toolbar-height: 0px !important;
+}
+
+ytd-app:has([fullscreen=""], [theater=""]):not(:has(ytd-watch-flexy[hidden=""])) #page-manager {
+  margin: 0 !important;
+}
+
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) #panels-full-bleed-container {
+  width: 0 !important;
+}

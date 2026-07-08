@@ -1,0 +1,5 @@
+/* Theater glass comments — Blurred glass background for hover comments */
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
+}
