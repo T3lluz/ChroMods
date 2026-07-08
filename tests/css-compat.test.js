@@ -22,9 +22,6 @@ const THEATER_FILES = [
   "theater-base.css",
   "theater-hide-header.css",
   "theater-hover-comments.css",
-  "theater-glass-comments.css",
-  "theater-translucent-comments.css",
-  "theater-solid-comments.css",
   "theater-comments-right.css",
 ];
 
@@ -52,6 +49,10 @@ test("all stylesheet modules exist", () => {
   }
   assert.ok(fs.existsSync(path.join(stylesDir, "immersive-search.css")));
   assert.ok(fs.existsSync(path.join(stylesDir, "compact-sidebar.css")));
+  assert.doesNotMatch(
+    fs.readdirSync(stylesDir).join("\n"),
+    /theater-glass|theater-translucent|theater-solid/
+  );
 });
 
 test("CSS files avoid Firefox-only syntax", () => {
@@ -63,25 +64,20 @@ test("CSS files avoid Firefox-only syntax", () => {
   }
 });
 
-test("theater glass comments uses pseudo-element backdrop filter", () => {
-  const css = read("styles/theater-glass-comments.css");
-  assert.match(css, /ytd-comments::before/);
-  assert.match(css, /-webkit-backdrop-filter\s*:\s*blur\(20px\)/);
-  assert.match(css, /backdrop-filter\s*:\s*blur\(20px\)/);
-  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.42\)/);
-});
-
-test("theater translucent comments has no backdrop filter on pseudo-element", () => {
-  const css = read("styles/theater-translucent-comments.css");
-  assert.match(css, /ytd-comments::before/);
-  assert.match(css, /backdrop-filter:\s*none/);
-  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.58\)/);
-});
-
-test("theater solid comments uses explicit opaque colors", () => {
-  const css = read("styles/theater-solid-comments.css");
+test("theater hover comments uses solid opaque background", () => {
+  const css = read("styles/theater-hover-comments.css");
   assert.match(css, /background:\s*#0f0f0f/);
   assert.match(css, /background:\s*#ffffff/);
+  assert.doesNotMatch(css, /backdrop-filter/);
+});
+
+test("immersive search hides voice search and uses full-viewport backdrop blur", () => {
+  const css = read("styles/immersive-search.css");
+  assert.match(css, /#voice-search-button/);
+  assert.match(css, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
+  assert.match(css, /-webkit-backdrop-filter\s*:\s*blur\(20px\)/);
+  assert.match(css, /backdrop-filter\s*:\s*blur\(20px\)/);
+  assert.doesNotMatch(css, /#page-manager\s*\{[^}]*filter:\s*blur/);
 });
 
 test("immersive search includes transform fallbacks for scale", () => {
@@ -104,23 +100,22 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /"theater-mode"/);
   assert.match(js, /theater-base\.css/);
   assert.match(js, /theater-hover-comments\.css/);
-  assert.match(js, /theater-translucent-comments\.css/);
   assert.match(js, /subsettings/);
   assert.match(js, /"immersive-search"/);
   assert.match(js, /"feed-layout"/);
   assert.match(js, /"compact-sidebar"/);
-  assert.match(js, /commentsBackground/);
   assert.match(js, /feed-layout-compact\.css/);
+  assert.doesNotMatch(js, /theater-glass-comments|theater-translucent-comments|commentsBackground/);
 });
 
 test("popup defines theater and feed subsettings", () => {
   const js = read("popup/popup.js");
   assert.match(js, /hoverComments/);
-  assert.match(js, /commentsBackground/);
   assert.match(js, /hideHeader/);
   assert.match(js, /commentsSide/);
   assert.match(js, /FEED_SUBSETTINGS/);
   assert.match(js, /columns/);
+  assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
 });
 
 test("popup CSS uses forced dark theme", () => {

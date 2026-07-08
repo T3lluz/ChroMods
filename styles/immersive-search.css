@@ -1,10 +1,16 @@
-/* yt-Immersive search — Smooth blur and zoom effect for searchbar */
+/* yt-Immersive search — Centered search with uniform backdrop blur */
 #page-manager,
 yt-searchbox {
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
 }
 
 #masthead yt-searchbox button[aria-label="Search"] {
+  display: none !important;
+}
+
+#voice-search-button,
+yt-searchbox button[aria-label="Search with your voice"],
+yt-searchbox .ytSearchboxComponentVoiceSearchButton {
   display: none !important;
 }
 
@@ -14,10 +20,12 @@ yt-searchbox {
 
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
   position: relative !important;
-  left: 0vw !important;
+  z-index: 2 !important;
+  left: 0 !important;
   top: -30vh !important;
   height: 40px !important;
   max-width: 600px !important;
+  width: 100% !important;
   transform: scale(1) !important;
   scale: 1 !important;
 }
@@ -37,11 +45,9 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
   box-shadow: black 0 0 30px !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputBox,
-  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
-    background-color: #000b !important;
-  }
+html[dark] yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputBox,
+html[dark] yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
+  background-color: #000b !important;
 }
 
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
@@ -60,11 +66,34 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
   left: 0 !important;
   top: 0 !important;
   position: fixed !important;
+  display: flex !important;
   justify-content: center !important;
+  align-items: center !important;
+  z-index: 2000 !important;
+  isolation: isolate !important;
+  pointer-events: none !important;
 }
 
-#content:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
-  filter: blur(20px) !important;
+.ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox {
+  pointer-events: auto !important;
+}
+
+.ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus)::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
+  background-color: rgb(0 0 0 / 0.3) !important;
+}
+
+html:not([dark]) .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus)::before {
+  background-color: rgb(255 255 255 / 0.35) !important;
+}
+
+ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
   transform: scale(1.05) !important;
   scale: 1.05 !important;
 }

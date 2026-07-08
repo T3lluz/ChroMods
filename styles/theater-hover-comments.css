@@ -1,4 +1,4 @@
-/* Theater hover comments — Slide-in comments panel on hover */
+/* Theater hover comments — Slide-in comments panel with solid background */
 ytd-watch-flexy[theater]:not([fullscreen]) #columns #secondary,
 ytd-watch-flexy[theater=""]:not([fullscreen=""]) #columns #secondary,
 #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) #columns #secondary,
@@ -27,9 +27,16 @@ ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments,
   width: 40em !important;
   height: 90vh !important;
   opacity: 0 !important;
-  isolation: isolate !important;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: #0f0f0f !important;
+  background-color: #0f0f0f !important;
+}
+
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
@@ -57,4 +64,60 @@ ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #header,
 #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #header {
   position: relative !important;
   z-index: 1 !important;
+}
+
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #header,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #contents,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #sections,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-item-section-renderer,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-comment-thread-renderer,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-commentbox,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #header,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #contents,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #sections,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-item-section-renderer,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-comment-thread-renderer,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-commentbox,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #header,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #contents,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #sections,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-item-section-renderer,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-comment-thread-renderer,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-commentbox,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #header,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #contents,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #sections,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-item-section-renderer,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-comment-thread-renderer,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-commentbox {
+  background: #0f0f0f !important;
+  background-color: #0f0f0f !important;
+}
+
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #header,
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #contents,
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #sections,
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-item-section-renderer,
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-comment-thread-renderer,
+html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments ytd-commentbox,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #header,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #contents,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments #sections,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-item-section-renderer,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-comment-thread-renderer,
+html:not([dark]) ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments ytd-commentbox,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #header,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #contents,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments #sections,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-item-section-renderer,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-comment-thread-renderer,
+html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments ytd-commentbox,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #header,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #contents,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments #sections,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-item-section-renderer,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-comment-thread-renderer,
+html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments ytd-commentbox {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }

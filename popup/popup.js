@@ -1,7 +1,6 @@
 const DEFAULT_THEATER = {
   hideHeader: true,
   hoverComments: true,
-  commentsBackground: "glass",
   commentsSide: "left",
 };
 
@@ -21,18 +20,6 @@ const THEATER_SUBSETTINGS = [
     title: "Hover comments",
     description: "Show comments in a slide-in panel when hovering the edge.",
     type: "toggle",
-  },
-  {
-    id: "commentsBackground",
-    title: "Comments background",
-    description: "Panel background style for hover comments.",
-    type: "select",
-    dependsOn: "hoverComments",
-    options: [
-      { value: "glass", label: "Glass + blur" },
-      { value: "translucent", label: "Translucent (no blur)" },
-      { value: "solid", label: "Solid (opaque)" },
-    ],
   },
   {
     id: "commentsSide",
@@ -108,14 +95,10 @@ const versionPill = document.getElementById("version-pill");
 let settings = structuredClone(DEFAULT_SETTINGS);
 
 function migrateTheater(theater = {}) {
-  const migrated = { ...DEFAULT_THEATER, ...theater };
-
-  if ("glassComments" in theater && !("commentsBackground" in theater)) {
-    migrated.commentsBackground =
-      theater.glassComments === false ? "solid" : "glass";
+  const migrated = { ...DEFAULT_THEATER };
+  for (const key of Object.keys(DEFAULT_THEATER)) {
+    if (key in theater) migrated[key] = theater[key];
   }
-
-  delete migrated.glassComments;
   return migrated;
 }
 

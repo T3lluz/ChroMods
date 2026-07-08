@@ -15,22 +15,12 @@
     base: "styles/theater-base.css",
     hideHeader: "styles/theater-hide-header.css",
     hoverComments: "styles/theater-hover-comments.css",
-    glassComments: "styles/theater-glass-comments.css",
-    translucentComments: "styles/theater-translucent-comments.css",
-    solidComments: "styles/theater-solid-comments.css",
     commentsRight: "styles/theater-comments-right.css",
-  };
-
-  const COMMENTS_BACKGROUNDS = {
-    glass: THEATER_PARTS.glassComments,
-    translucent: THEATER_PARTS.translucentComments,
-    solid: THEATER_PARTS.solidComments,
   };
 
   const DEFAULT_THEATER = {
     hideHeader: true,
     hoverComments: true,
-    commentsBackground: "glass",
     commentsSide: "left",
   };
 
@@ -57,17 +47,10 @@
   const cssCache = new Map();
 
   function migrateTheater(theater = {}) {
-    const migrated = { ...DEFAULT_THEATER, ...theater };
-
-    if (
-      "glassComments" in theater &&
-      !("commentsBackground" in theater)
-    ) {
-      migrated.commentsBackground =
-        theater.glassComments === false ? "solid" : "glass";
+    const migrated = { ...DEFAULT_THEATER };
+    for (const key of Object.keys(DEFAULT_THEATER)) {
+      if (key in theater) migrated[key] = theater[key];
     }
-
-    delete migrated.glassComments;
     return migrated;
   }
 
@@ -170,11 +153,6 @@
 
     if (theater.hoverComments !== false) {
       paths.push(THEATER_PARTS.hoverComments);
-
-      const background = theater.commentsBackground || "glass";
-      const backgroundPath =
-        COMMENTS_BACKGROUNDS[background] || COMMENTS_BACKGROUNDS.glass;
-      paths.push(backgroundPath);
 
       if (theater.commentsSide === "right") {
         paths.push(THEATER_PARTS.commentsRight);

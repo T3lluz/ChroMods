@@ -14,7 +14,6 @@ chrome.runtime.onInstalled.addListener(() => {
           theater: {
             hideHeader: true,
             hoverComments: true,
-            commentsBackground: "glass",
             commentsSide: "left",
           },
           feed: {

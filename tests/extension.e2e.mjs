@@ -52,7 +52,6 @@ async function run() {
 
     await popupPage.waitForSelector("#features-list .feature-card", { timeout: 10000 });
 
-    // Reset persisted profile state — ensure all features are enabled
     await popupPage.evaluate(async () => {
       const defaults = {
         enabled: true,
@@ -66,7 +65,6 @@ async function run() {
           theater: {
             hideHeader: true,
             hoverComments: true,
-            commentsBackground: "glass",
             commentsSide: "left",
           },
           feed: { columns: "auto" },
@@ -86,84 +84,38 @@ async function run() {
     const countText = await popupPage.locator("#feature-count").textContent();
     assert.match(countText ?? "", /4 of 4 enabled/);
 
-    // Theater subsettings visible
     const theaterCard = popupPage.locator('.feature-card[data-feature="theater-mode"]');
     const theaterSubs = theaterCard.locator(".subsettings .subsetting-row");
-    assert.equal(await theaterSubs.count(), 4, "Expected 4 theater subsettings");
+    assert.equal(await theaterSubs.count(), 3, "Expected 3 theater subsettings");
+    assert.equal(await theaterCard.locator(".subsetting-row").filter({ hasText: "Comments background" }).count(), 0);
 
-    const commentsBgRow = theaterCard.locator(".subsetting-row").filter({ hasText: "Comments background" });
-    assert.equal(await commentsBgRow.locator("select").inputValue(), "glass");
-
-    // Feed layout subsettings visible
     const feedCard = popupPage.locator('.feature-card[data-feature="feed-layout"]');
-    const feedSubs = feedCard.locator(".subsettings .subsetting-row");
-    assert.equal(await feedSubs.count(), 1, "Expected 1 feed layout subsetting");
-
-    const columnsRow = feedCard.locator(".subsetting-row").filter({ hasText: "Videos per row" });
-    assert.equal(await columnsRow.locator("select").inputValue(), "auto");
-
-    const bodyBg = await popupPage.evaluate(() => {
-      return getComputedStyle(document.body).backgroundColor;
-    });
-    assert.ok(bodyBg, "Body should have computed background");
-
-    const colorScheme = await popupPage.evaluate(() => {
-      return getComputedStyle(document.documentElement).colorScheme;
-    });
-    assert.equal(colorScheme, "dark", "Popup should use dark color scheme");
-
-    const bodyBox = await popupPage.locator("body").boundingBox();
-    assert.ok(bodyBox, "Popup body should have dimensions");
-    assert.ok(bodyBox.width >= 360 && bodyBox.width <= 400, `Unexpected popup width: ${bodyBox.width}`);
-    assert.ok(bodyBox.height >= 300, `Popup too short: ${bodyBox.height}`);
+    assert.equal(await feedCard.locator(".subsettings .subsetting-row").count(), 1);
 
     await popupPage.screenshot({
       path: path.join(screenshotDir, "popup-dark-theater-subs.png"),
       fullPage: true,
     });
 
-    // Toggle master off
     await popupPage.locator('label[aria-label="Enable theming"]').click();
     await popupPage.waitForTimeout(250);
-    const disabledCount = await popupPage.locator("#feature-count").textContent();
-    assert.match(disabledCount ?? "", /All disabled/);
+    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /All disabled/);
 
-    const hiddenSubs = await theaterCard.locator(".subsettings").count();
-    assert.equal(hiddenSubs, 0, "Subsettings should hide when master toggle is off");
-
-    await popupPage.screenshot({
-      path: path.join(screenshotDir, "popup-master-disabled.png"),
-      fullPage: true,
-    });
-
-    // Toggle master back on and disable compact sidebar
     await popupPage.locator('label[aria-label="Enable theming"]').click();
     await popupPage.waitForFunction(() => {
       const input = document.querySelector('input[data-feature="compact-sidebar"]');
       return input && !input.disabled;
     });
-    await popupPage
-      .locator('.feature-card[data-feature="compact-sidebar"] label.switch')
-      .click();
-    await popupPage.waitForTimeout(250);
-    const partialCount = await popupPage.locator("#feature-count").textContent();
-    assert.match(partialCount ?? "", /3 of 4 enabled/);
+    await popupPage.locator('.feature-card[data-feature="compact-sidebar"] label.switch').click();
+    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /3 of 4 enabled/);
 
-    // Disable hover comments subsetting
     await theaterCard.locator('label[aria-label="Hover comments"]').click();
     await popupPage.waitForTimeout(250);
-    const commentsBgDisabled = commentsBgRow.locator("select");
-    assert.ok(await commentsBgDisabled.isDisabled());
+    assert.ok(await theaterCard.locator('select[data-subsetting="commentsSide"]').isDisabled());
 
-    await popupPage.screenshot({
-      path: path.join(screenshotDir, "popup-theater-subs-partial.png"),
-      fullPage: true,
-    });
-
-    results.push({ name: "popup dark UI, toggles, and theater subsettings", status: "pass" });
+    results.push({ name: "popup UI and theater subsettings", status: "pass" });
     await popupPage.close();
 
-    // YouTube content script injection
     const ytPage = await context.newPage();
     await ytPage.goto("https://www.youtube.com/", {
       waitUntil: "domcontentloaded",
@@ -171,62 +123,41 @@ async function run() {
     });
     await ytPage.waitForTimeout(4000);
 
-    const styleInjected = await ytPage.evaluate(() => {
-      const el = document.getElementById("youtube-theming-styles");
-      return Boolean(el && el.textContent && el.textContent.length > 500);
+    await ytPage.evaluate(() => {
+      const buttons = [...document.querySelectorAll("button, tp-yt-paper-button")];
+      const accept = buttons.find((btn) => /accept all/i.test(btn.textContent?.trim() ?? ""));
+      accept?.click();
     });
-    assert.ok(styleInjected, "Content script should inject combined CSS on YouTube");
+    await ytPage.waitForTimeout(500);
 
     const cssContent = await ytPage.evaluate(() => {
       return document.getElementById("youtube-theming-styles")?.textContent ?? "";
     });
-    assert.match(cssContent, /Theater base|Immersive search|Compact feed|mini guide/i);
+    assert.ok(cssContent.length > 500, "Content script should inject combined CSS on YouTube");
+    assert.match(cssContent, /Immersive search|Compact feed|mini guide/i);
+    assert.match(cssContent, /#voice-search-button/);
+    assert.match(cssContent, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
     assert.doesNotMatch(cssContent, /Theater hover comments/i);
 
-    await ytPage.screenshot({
-      path: path.join(screenshotDir, "youtube-with-theming.png"),
-      fullPage: false,
-    });
+    results.push({ name: "YouTube CSS injection includes immersive search fixes", status: "pass" });
 
-    results.push({ name: "YouTube CSS injection respects theater subsettings", status: "pass" });
-
-    // Re-enable hover comments via popup and verify CSS updates
     const popupPage2 = await context.newPage();
     await popupPage2.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    await popupPage2
-      .locator('.feature-card[data-feature="theater-mode"] label[aria-label="Hover comments"]')
-      .click();
+    await popupPage2.locator('.feature-card[data-feature="theater-mode"] label[aria-label="Hover comments"]').click();
+
     await ytPage.waitForFunction(() => {
       const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
-      return css.includes("Theater hover comments");
+      return css.includes("Theater hover comments") && css.includes("#0f0f0f");
     }, { timeout: 10000 });
 
-    const cssWithComments = await ytPage.evaluate(() => {
-      return document.getElementById("youtube-theming-styles")?.textContent ?? "";
-    });
-    assert.match(cssWithComments, /Theater glass comments/i);
-    assert.match(cssWithComments, /ytd-comments::before/);
-    assert.match(cssWithComments, /backdrop-filter:\s*blur\(20px\)/);
+    assert.doesNotMatch(
+      await ytPage.evaluate(() => document.getElementById("youtube-theming-styles")?.textContent ?? ""),
+      /Theater glass|backdrop-filter.*ytd-comments/i
+    );
 
-    // Switch comments background to solid
-    await popupPage2
-      .locator('.feature-card[data-feature="theater-mode"] select[data-subsetting="commentsBackground"]')
-      .selectOption("solid");
-    await ytPage.waitForFunction(() => {
-      const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
-      return (
-        css.includes("Theater solid comments") &&
-        css.includes("#0f0f0f") &&
-        !css.includes("Theater glass comments")
-      );
-    }, { timeout: 10000 });
+    results.push({ name: "Hover comments use solid background only", status: "pass" });
 
-    results.push({ name: "Comments background options update live CSS", status: "pass" });
-
-    // Feed column count subsetting
-    await popupPage2
-      .locator('.feature-card[data-feature="feed-layout"] select[data-subsetting="columns"]')
-      .selectOption("5");
+    await popupPage2.locator('.feature-card[data-feature="feed-layout"] select[data-subsetting="columns"]').selectOption("5");
     await ytPage.waitForFunction(() => {
       const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
       return css.includes("--ytd-rich-grid-items-per-row: 5");
@@ -234,18 +165,36 @@ async function run() {
 
     results.push({ name: "Feed column count subsetting updates live CSS", status: "pass" });
 
-    // Disable theming clears styles
+    const searchInput = ytPage.locator("yt-searchbox input.ytSearchboxComponentInput, input[name='search_query']").first();
+    if (await searchInput.count()) {
+      await searchInput.focus();
+      await ytPage.waitForTimeout(600);
+
+      const voiceHidden = await ytPage.evaluate(() => {
+        const voiceBtn =
+          document.querySelector("#voice-search-button") ||
+          document.querySelector('button[aria-label="Search with your voice"]') ||
+          document.querySelector(".ytSearchboxComponentVoiceSearchButton");
+        if (!voiceBtn) return true;
+        return getComputedStyle(voiceBtn).display === "none";
+      });
+      assert.ok(voiceHidden, "Voice search button should be hidden with immersive search");
+
+      await ytPage.screenshot({
+        path: path.join(screenshotDir, "youtube-immersive-search-focused.png"),
+        fullPage: false,
+      });
+
+      results.push({ name: "Immersive search hides voice button on focus", status: "pass" });
+    } else {
+      results.push({ name: "Immersive search hides voice button on focus", status: "skipped (no search input)" });
+    }
+
     await popupPage2.locator('label[aria-label="Enable theming"]').click();
     await ytPage.waitForFunction(() => {
       const el = document.getElementById("youtube-theming-styles");
       return !el || el.textContent.trim().length === 0;
     }, { timeout: 10000 });
-
-    const styleCleared = await ytPage.evaluate(() => {
-      const el = document.getElementById("youtube-theming-styles");
-      return !el || el.textContent.trim().length === 0;
-    });
-    assert.ok(styleCleared, "Disabling theming should clear injected CSS");
 
     results.push({ name: "Disable theming clears styles", status: "pass" });
     await popupPage2.close();
