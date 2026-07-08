@@ -11,7 +11,7 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 
 | Mod | What it does |
 |-----|--------------|
-| **Immersive search** | Full-viewport blur on focus; search + suggestions on top |
+| **Immersive search** | Centered search with instant page blur on focus; suggestions aligned below |
 | **Theater mode** | Full-window theater view; subsettings below |
 | **Feed layout fix** | Denser grid, compact cards, hover menu; configurable columns |
 | **Compact sidebar** | Icon-only guide; hides Studio/Sports/Settings/footer |

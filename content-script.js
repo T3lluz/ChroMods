@@ -211,12 +211,19 @@
     style.id = ANIMATION_STYLE_ID;
     style.textContent = `
       @keyframes ytm-glow-out {
-        0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.6; }
-        100% { transform: translate(-50%, -50%) scale(15); opacity: 0; }
+        0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.95; }
+        40% { opacity: 0.7; }
+        100% { transform: translate(-50%, -50%) scale(22); opacity: 0; }
       }
       @keyframes ytm-glow-in {
-        0% { transform: translate(-50%, -50%) scale(15); opacity: 0; }
-        100% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.6; }
+        0% { transform: translate(-50%, -50%) scale(22); opacity: 0; }
+        30% { opacity: 0.65; }
+        100% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.95; }
+      }
+      @keyframes ytm-vignette {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        100% { opacity: 0; }
       }
       @keyframes ytm-toast-in {
         0% { transform: translateX(120%) scale(0.9); opacity: 0; }
@@ -234,17 +241,32 @@
   function createGlowRing(isEnabled) {
     injectAnimationCSS();
 
+    const vignette = document.createElement("div");
+    Object.assign(vignette.style, {
+      position: "fixed",
+      inset: "0",
+      pointerEvents: "none",
+      zIndex: "2147483645",
+      background: isEnabled
+        ? `radial-gradient(ellipse 70% 60% at 50% 45%, ${ACCENT_COLOR}55 0%, transparent 70%)`
+        : `radial-gradient(ellipse 70% 60% at 50% 45%, rgba(120, 120, 140, 0.35) 0%, transparent 70%)`,
+      opacity: "0",
+      animation: "ytm-vignette 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+    });
+    document.documentElement.appendChild(vignette);
+    setTimeout(() => vignette.remove(), 1800);
+
     const ring = document.createElement("div");
     Object.assign(ring.style, {
       position: "fixed",
-      top: "40px",
-      right: "40px",
-      width: "150px",
-      height: "150px",
+      top: "50%",
+      left: "50%",
+      width: "280px",
+      height: "280px",
       borderRadius: "50%",
-      border: `4px solid ${ACCENT_COLOR}`,
-      boxShadow: `0 0 60px ${ACCENT_COLOR}, inset 0 0 60px ${ACCENT_COLOR}`,
-      filter: "blur(20px)",
+      border: `6px solid ${ACCENT_COLOR}`,
+      boxShadow: `0 0 120px ${ACCENT_COLOR}, 0 0 240px ${ACCENT_COLOR}88, inset 0 0 80px ${ACCENT_COLOR}66`,
+      filter: "blur(8px)",
       pointerEvents: "none",
       zIndex: "2147483646",
       opacity: "0",
@@ -252,11 +274,11 @@
     });
 
     ring.style.animation = isEnabled
-      ? "ytm-glow-out 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-      : "ytm-glow-in 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+      ? "ytm-glow-out 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+      : "ytm-glow-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards";
 
     document.documentElement.appendChild(ring);
-    setTimeout(() => ring.remove(), 1600);
+    setTimeout(() => ring.remove(), 1800);
   }
 
   function showToast(text, isEnabled) {
@@ -332,7 +354,7 @@
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync" || !changes.youtubeThemingSettings) return;
-    bootstrap(mergeSettings(changes.youtubeThemingSettings.newValue));
+    applySettings(mergeSettings(changes.youtubeThemingSettings.newValue));
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

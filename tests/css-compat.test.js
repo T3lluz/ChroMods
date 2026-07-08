@@ -71,15 +71,15 @@ test("theater hover comments uses solid opaque background", () => {
   assert.doesNotMatch(css, /backdrop-filter/);
 });
 
-test("immersive search hides voice search and uses full-viewport backdrop blur", () => {
+test("immersive search hides voice search and blurs page content on focus", () => {
   const css = read("styles/immersive-search.css");
   assert.match(css, /#voice-search-button/);
-  assert.match(css, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
-  assert.match(css, /-webkit-backdrop-filter\s*:\s*blur\(20px\)/);
-  assert.match(css, /backdrop-filter\s*:\s*blur\(20px\)/);
-  assert.match(css, /z-index:\s*2003/);
-  assert.doesNotMatch(css, /#center:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
-  assert.doesNotMatch(css, /#page-manager\s*\{[^}]*filter:\s*blur/);
+  assert.match(css, /#content:has\(\.ytSearchboxComponentInputBoxHasFocus\) #page-manager/);
+  assert.match(css, /filter:\s*blur\(20px\)/);
+  assert.match(css, /justify-content:\s*center/);
+  assert.match(css, /transform:\s*scale\(1\.05\)/);
+  assert.match(css, /transform:\s*scale\(1\.1\)/);
+  assert.doesNotMatch(css, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
 });
 
 test("theater hide header extends hover reveal zone", () => {
@@ -90,8 +90,8 @@ test("theater hide header extends hover reveal zone", () => {
 
 test("immersive search includes transform fallbacks for scale", () => {
   const css = read("styles/immersive-search.css");
-  assert.match(css, /transform:\s*scale\(1\.05\)/);
-  assert.match(css, /transform:\s*scale\(1\.1\)/);
+  assert.match(css, /scale:\s*1\.05/);
+  assert.match(css, /scale:\s*1\.1/);
 });
 
 test("popup assets exist and reference each other", () => {
@@ -115,13 +115,22 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /feed-layout-compact\.css/);
   assert.match(js, /showToast/);
   assert.match(js, /ytm-glow-out/);
+  assert.match(js, /ytm-vignette/);
   assert.doesNotMatch(js, /theater-glass-comments|theater-translucent-comments|commentsBackground/);
+});
+
+test("background broadcasts settings changes to YouTube tabs", () => {
+  const js = read("background.js");
+  assert.match(js, /chrome\.storage\.onChanged/);
+  assert.match(js, /broadcastSettings/);
+  assert.match(js, /applySettings/);
 });
 
 test("popup triggers page toast on toggle", () => {
   const js = read("popup/popup.js");
   assert.match(js, /showPageToast/);
   assert.match(js, /action:\s*"showToast"/);
+  assert.match(js, /notifyAllYouTubeTabs/);
 });
 
 test("popup defines theater and feed subsettings", () => {

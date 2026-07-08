@@ -136,7 +136,8 @@ async function run() {
     assert.ok(cssContent.length > 500, "Content script should inject combined CSS on YouTube");
     assert.match(cssContent, /Immersive search|Compact feed|mini guide/i);
     assert.match(cssContent, /#voice-search-button/);
-    assert.match(cssContent, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
+    assert.match(cssContent, /#content:has\(\.ytSearchboxComponentInputBoxHasFocus\) #page-manager/);
+    assert.match(cssContent, /filter:\s*blur\(20px\)/);
     assert.doesNotMatch(cssContent, /Theater hover comments/i);
 
     results.push({ name: "YouTube CSS injection includes immersive search fixes", status: "pass" });

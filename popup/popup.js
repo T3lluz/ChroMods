@@ -151,33 +151,38 @@ async function saveSettings() {
   await notifyActiveTab();
 }
 
+const YOUTUBE_URLS = ["*://*.youtube.com/*", "*://youtube.com/*"];
+
+async function getYouTubeTabs() {
+  return chrome.tabs.query({ url: YOUTUBE_URLS });
+}
+
 async function getYouTubeTab() {
   const [activeTab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
-    url: ["*://*.youtube.com/*", "*://youtube.com/*"],
+    url: YOUTUBE_URLS,
   });
   if (activeTab?.id) return activeTab;
 
-  const [anyTab] = await chrome.tabs.query({
-    currentWindow: true,
-    url: ["*://*.youtube.com/*", "*://youtube.com/*"],
-  });
-  return anyTab ?? null;
+  const tabs = await getYouTubeTabs();
+  return tabs[0] ?? null;
+}
+
+async function notifyAllYouTubeTabs() {
+  const tabs = await getYouTubeTabs();
+  await Promise.allSettled(
+    tabs.map((tab) =>
+      chrome.tabs.sendMessage(tab.id, {
+        action: "applySettings",
+        settings,
+      })
+    )
+  );
 }
 
 async function notifyActiveTab() {
-  const tab = await getYouTubeTab();
-  if (!tab?.id) return;
-
-  try {
-    await chrome.tabs.sendMessage(tab.id, {
-      action: "applySettings",
-      settings,
-    });
-  } catch {
-    // Content script may not be ready yet.
-  }
+  await notifyAllYouTubeTabs();
 }
 
 async function showPageToast(text, isEnabled) {
@@ -191,7 +196,16 @@ async function showPageToast(text, isEnabled) {
       isEnabled,
     });
   } catch {
-    // Content script may not be ready yet.
+    const tabs = await getYouTubeTabs();
+    await Promise.allSettled(
+      tabs.map((t) =>
+        chrome.tabs.sendMessage(t.id, {
+          action: "showToast",
+          text,
+          isEnabled,
+        })
+      )
+    );
   }
 }
 

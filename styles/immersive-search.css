@@ -1,7 +1,7 @@
-/* yt-Immersive search — Centered search with full-viewport backdrop blur */
+/* yt-Immersive search — Centered search with page blur (sameerasw / my-internet) */
 #page-manager,
 yt-searchbox {
-  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
 }
 
 #masthead yt-searchbox button[aria-label="Search"] {
@@ -18,57 +18,39 @@ yt-searchbox .ytSearchboxComponentVoiceSearchButton {
   border-radius: 2em !important;
 }
 
-/* Full-viewport blur layer — sits above page content, below search UI */
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus)::before {
-  content: "" !important;
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 1998 !important;
-  pointer-events: none !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  backdrop-filter: blur(20px) !important;
-  background-color: rgb(0 0 0 / 0.5) !important;
-}
-
-html:not([dark]) ytd-app:has(.ytSearchboxComponentInputBoxHasFocus)::before {
-  background-color: rgb(255 255 255 / 0.45) !important;
-}
-
-#masthead-container:has(.ytSearchboxComponentInputBoxHasFocus) {
-  z-index: 2000 !important;
-}
-
 .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) {
+  display: flex !important;
   height: 100vh !important;
   width: 100vw !important;
   left: 0 !important;
   top: 0 !important;
   position: fixed !important;
-  display: flex !important;
   justify-content: center !important;
-  align-items: center !important;
-  z-index: 2001 !important;
-  pointer-events: none !important;
+  align-items: flex-start !important;
+  padding-top: 20vh !important;
+  z-index: 2000 !important;
   background: transparent !important;
+  pointer-events: none !important;
 }
 
 .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox {
   pointer-events: auto !important;
   position: relative !important;
-  z-index: 2002 !important;
   left: 0 !important;
-  top: -30vh !important;
+  top: 0 !important;
   height: 40px !important;
   max-width: 600px !important;
-  width: 100% !important;
+  width: min(600px, 92vw) !important;
   transform: scale(1) !important;
   scale: 1 !important;
+  flex-shrink: 0 !important;
 }
 
 @media only screen and (min-width: 1400px) {
   .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox {
     height: 60px !important;
     max-width: 700px !important;
+    width: min(700px, 92vw) !important;
     transform: scale(1.1) !important;
     scale: 1.1 !important;
   }
@@ -86,28 +68,30 @@ html[dark] yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
 }
 
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
-  margin-top: 10px !important;
+  margin-top: 0 !important;
+  position: static !important;
+  width: 100% !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer,
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainerPadding {
   position: relative !important;
-  z-index: 2003 !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  margin-top: 8px !important;
 }
 
-@media only screen and (min-width: 1400px) {
-  yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
-    margin-top: 30px !important;
-  }
-}
-
-/* Autocomplete / suggestion dropdown above blur layer */
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) yt-searchbox,
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #i0,
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer,
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) ytd-searchbox-renderer,
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainerPadding {
-  position: relative !important;
-  z-index: 2003 !important;
-}
-
-ytd-app:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
+#content:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
+  filter: blur(20px) !important;
   transform: scale(1.05) !important;
   scale: 1.05 !important;
+}
+
+#masthead-container:has(.ytSearchboxComponentInputBoxHasFocus) {
+  z-index: 2001 !important;
 }
