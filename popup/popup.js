@@ -29,9 +29,9 @@ const THEATER_SUBSETTINGS = [
     type: "select",
     dependsOn: "hoverComments",
     options: [
-      { value: "glass", label: "Glass (blur)" },
-      { value: "translucent", label: "Translucent" },
-      { value: "solid", label: "Solid" },
+      { value: "glass", label: "Glass + blur" },
+      { value: "translucent", label: "Translucent (no blur)" },
+      { value: "solid", label: "Solid (opaque)" },
     ],
   },
   {

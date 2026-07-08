@@ -51,6 +51,32 @@ async function run() {
     });
 
     await popupPage.waitForSelector("#features-list .feature-card", { timeout: 10000 });
+
+    // Reset persisted profile state — ensure all features are enabled
+    await popupPage.evaluate(async () => {
+      const defaults = {
+        enabled: true,
+        features: {
+          "immersive-search": true,
+          "theater-mode": true,
+          "feed-layout": true,
+          "compact-sidebar": true,
+        },
+        subsettings: {
+          theater: {
+            hideHeader: true,
+            hoverComments: true,
+            commentsBackground: "glass",
+            commentsSide: "left",
+          },
+          feed: { columns: "auto" },
+        },
+      };
+      await chrome.storage.sync.set({ youtubeThemingSettings: defaults });
+    });
+    await popupPage.reload({ waitUntil: "networkidle" });
+    await popupPage.waitForSelector("#features-list .feature-card", { timeout: 10000 });
+
     const featureCards = await popupPage.locator(".feature-card").count();
     assert.equal(featureCards, 4, "Expected 4 feature cards");
 
@@ -179,6 +205,7 @@ async function run() {
       return document.getElementById("youtube-theming-styles")?.textContent ?? "";
     });
     assert.match(cssWithComments, /Theater glass comments/i);
+    assert.match(cssWithComments, /ytd-comments::before/);
     assert.match(cssWithComments, /backdrop-filter:\s*blur\(20px\)/);
 
     // Switch comments background to solid
@@ -187,7 +214,11 @@ async function run() {
       .selectOption("solid");
     await ytPage.waitForFunction(() => {
       const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
-      return css.includes("Theater solid comments") && !css.includes("Theater glass comments");
+      return (
+        css.includes("Theater solid comments") &&
+        css.includes("#0f0f0f") &&
+        !css.includes("Theater glass comments")
+      );
     }, { timeout: 10000 });
 
     results.push({ name: "Comments background options update live CSS", status: "pass" });

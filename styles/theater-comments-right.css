@@ -1,13 +1,17 @@
 /* Theater comments right — Position hover comments on the right edge */
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
-#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments {
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
   border-radius: 2em 0 0 2em !important;
   left: auto !important;
   right: -42em !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
-#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments:hover {
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments:hover,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments:hover,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments:hover {
   left: auto !important;
   right: 0 !important;
 }

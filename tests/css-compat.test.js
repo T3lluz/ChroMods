@@ -63,17 +63,25 @@ test("CSS files avoid Firefox-only syntax", () => {
   }
 });
 
-test("theater glass comments includes webkit backdrop filter and translucent background", () => {
+test("theater glass comments uses pseudo-element backdrop filter", () => {
   const css = read("styles/theater-glass-comments.css");
+  assert.match(css, /ytd-comments::before/);
   assert.match(css, /-webkit-backdrop-filter\s*:\s*blur\(20px\)/);
   assert.match(css, /backdrop-filter\s*:\s*blur\(20px\)/);
-  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.53\)/);
+  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.42\)/);
 });
 
-test("theater translucent comments has no backdrop filter", () => {
+test("theater translucent comments has no backdrop filter on pseudo-element", () => {
   const css = read("styles/theater-translucent-comments.css");
+  assert.match(css, /ytd-comments::before/);
   assert.match(css, /backdrop-filter:\s*none/);
-  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.75\)/);
+  assert.match(css, /background-color:\s*rgb\(0 0 0 \/ 0\.58\)/);
+});
+
+test("theater solid comments uses explicit opaque colors", () => {
+  const css = read("styles/theater-solid-comments.css");
+  assert.match(css, /background:\s*#0f0f0f/);
+  assert.match(css, /background:\s*#ffffff/);
 });
 
 test("immersive search includes transform fallbacks for scale", () => {

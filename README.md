@@ -22,7 +22,7 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 |---------|---------|--------|
 | Auto-hide header | on | Hide masthead in theater; reveal on hover |
 | Hover comments | on | Slide-in comments panel on screen edge |
-| Comments background | glass | `glass` (blur), `translucent`, or `solid` panel |
+| Comments background | glass | `glass + blur`, `translucent`, or `solid (opaque)` panel |
 | Comments side | left | `left` or `right` edge for comments panel |
 
 ### Feed layout subsettings
