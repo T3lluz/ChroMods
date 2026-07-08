@@ -14,8 +14,11 @@ chrome.runtime.onInstalled.addListener(() => {
           theater: {
             hideHeader: true,
             hoverComments: true,
-            glassComments: true,
+            commentsBackground: "glass",
             commentsSide: "left",
+          },
+          feed: {
+            columns: "auto",
           },
         },
       },

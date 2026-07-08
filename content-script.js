@@ -3,8 +3,12 @@
 
   const FEATURES = {
     "immersive-search": ["styles/immersive-search.css"],
-    "feed-layout": ["styles/feed-layout.css"],
     "compact-sidebar": ["styles/compact-sidebar.css"],
+  };
+
+  const FEED_PARTS = {
+    compact: "styles/feed-layout-compact.css",
+    columnsAuto: "styles/feed-layout-columns-auto.css",
   };
 
   const THEATER_PARTS = {
@@ -12,15 +16,26 @@
     hideHeader: "styles/theater-hide-header.css",
     hoverComments: "styles/theater-hover-comments.css",
     glassComments: "styles/theater-glass-comments.css",
+    translucentComments: "styles/theater-translucent-comments.css",
     solidComments: "styles/theater-solid-comments.css",
     commentsRight: "styles/theater-comments-right.css",
+  };
+
+  const COMMENTS_BACKGROUNDS = {
+    glass: THEATER_PARTS.glassComments,
+    translucent: THEATER_PARTS.translucentComments,
+    solid: THEATER_PARTS.solidComments,
   };
 
   const DEFAULT_THEATER = {
     hideHeader: true,
     hoverComments: true,
-    glassComments: true,
+    commentsBackground: "glass",
     commentsSide: "left",
+  };
+
+  const DEFAULT_FEED = {
+    columns: "auto",
   };
 
   const DEFAULT_SETTINGS = {
@@ -33,6 +48,7 @@
     },
     subsettings: {
       theater: { ...DEFAULT_THEATER },
+      feed: { ...DEFAULT_FEED },
     },
   };
 
@@ -40,15 +56,31 @@
   let observer = null;
   const cssCache = new Map();
 
+  function migrateTheater(theater = {}) {
+    const migrated = { ...DEFAULT_THEATER, ...theater };
+
+    if (
+      "glassComments" in theater &&
+      !("commentsBackground" in theater)
+    ) {
+      migrated.commentsBackground =
+        theater.glassComments === false ? "solid" : "glass";
+    }
+
+    delete migrated.glassComments;
+    return migrated;
+  }
+
   function mergeSettings(stored = {}) {
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
       features: { ...DEFAULT_SETTINGS.features, ...(stored.features || {}) },
       subsettings: {
-        theater: {
-          ...DEFAULT_THEATER,
-          ...(stored.subsettings?.theater || {}),
+        theater: migrateTheater(stored.subsettings?.theater),
+        feed: {
+          ...DEFAULT_FEED,
+          ...(stored.subsettings?.feed || {}),
         },
       },
     };
@@ -100,6 +132,35 @@
     return css;
   }
 
+  function getFeedColumnsCss(columns = "auto") {
+    if (columns === "auto") {
+      return "";
+    }
+
+    const count = Number(columns);
+    if (!Number.isFinite(count) || count < 1) {
+      return "";
+    }
+
+    return `ytd-rich-item-renderer[rendered-from-rich-grid] {
+  --ytd-rich-grid-items-per-row: ${count} !important;
+}`;
+  }
+
+  async function loadFeedLayoutCss(feed = DEFAULT_FEED) {
+    const paths = [FEED_PARTS.compact];
+    const columns = feed.columns ?? "auto";
+
+    if (columns === "auto") {
+      paths.push(FEED_PARTS.columnsAuto);
+    }
+
+    const chunks = await Promise.all(paths.map(loadCssFile));
+    const columnOverride = getFeedColumnsCss(columns);
+
+    return [chunks.join("\n\n"), columnOverride].filter(Boolean).join("\n\n");
+  }
+
   function getTheaterPaths(theater = DEFAULT_THEATER) {
     const paths = [THEATER_PARTS.base];
 
@@ -110,11 +171,10 @@
     if (theater.hoverComments !== false) {
       paths.push(THEATER_PARTS.hoverComments);
 
-      if (theater.glassComments === false) {
-        paths.push(THEATER_PARTS.solidComments);
-      } else {
-        paths.push(THEATER_PARTS.glassComments);
-      }
+      const background = theater.commentsBackground || "glass";
+      const backgroundPath =
+        COMMENTS_BACKGROUNDS[background] || COMMENTS_BACKGROUNDS.glass;
+      paths.push(backgroundPath);
 
       if (theater.commentsSide === "right") {
         paths.push(THEATER_PARTS.commentsRight);
@@ -131,6 +191,10 @@
       return chunks.join("\n\n");
     }
 
+    if (featureId === "feed-layout") {
+      return loadFeedLayoutCss(settings.subsettings?.feed);
+    }
+
     const paths = FEATURES[featureId] || [];
     const chunks = await Promise.all(paths.map(loadCssFile));
     return chunks.join("\n\n");
@@ -139,7 +203,7 @@
   async function applySettings(settings) {
     const merged = mergeSettings(settings);
     const enabledIds = merged.enabled
-      ? Object.keys({ ...FEATURES, "theater-mode": true }).filter(
+      ? Object.keys({ ...FEATURES, "theater-mode": true, "feed-layout": true }).filter(
           (id) => merged.features?.[id] !== false
         )
       : [];

@@ -1,8 +1,12 @@
 const DEFAULT_THEATER = {
   hideHeader: true,
   hoverComments: true,
-  glassComments: true,
+  commentsBackground: "glass",
   commentsSide: "left",
+};
+
+const DEFAULT_FEED = {
+  columns: "auto",
 };
 
 const THEATER_SUBSETTINGS = [
@@ -19,11 +23,16 @@ const THEATER_SUBSETTINGS = [
     type: "toggle",
   },
   {
-    id: "glassComments",
-    title: "Glass background",
-    description: "Use a blurred glass effect for the comments panel.",
-    type: "toggle",
+    id: "commentsBackground",
+    title: "Comments background",
+    description: "Panel background style for hover comments.",
+    type: "select",
     dependsOn: "hoverComments",
+    options: [
+      { value: "glass", label: "Glass (blur)" },
+      { value: "translucent", label: "Translucent" },
+      { value: "solid", label: "Solid" },
+    ],
   },
   {
     id: "commentsSide",
@@ -34,6 +43,22 @@ const THEATER_SUBSETTINGS = [
     options: [
       { value: "left", label: "Left" },
       { value: "right", label: "Right" },
+    ],
+  },
+];
+
+const FEED_SUBSETTINGS = [
+  {
+    id: "columns",
+    title: "Videos per row",
+    description: "How many videos appear horizontally in the home feed grid.",
+    type: "select",
+    options: [
+      { value: "auto", label: "Auto (responsive)" },
+      { value: "3", label: "3" },
+      { value: "4", label: "4" },
+      { value: "5", label: "5" },
+      { value: "6", label: "6" },
     ],
   },
 ];
@@ -49,11 +74,14 @@ const FEATURE_META = [
     title: "Theater mode",
     description: "Full-window theater view with configurable comments panel.",
     subsettings: THEATER_SUBSETTINGS,
+    subsettingsKey: "theater",
   },
   {
     id: "feed-layout",
     title: "Feed layout fix",
     description: "Restore a denser home feed grid and compact video cards.",
+    subsettings: FEED_SUBSETTINGS,
+    subsettingsKey: "feed",
   },
   {
     id: "compact-sidebar",
@@ -67,6 +95,7 @@ const DEFAULT_SETTINGS = {
   features: Object.fromEntries(FEATURE_META.map((f) => [f.id, true])),
   subsettings: {
     theater: { ...DEFAULT_THEATER },
+    feed: { ...DEFAULT_FEED },
   },
 };
 
@@ -78,10 +107,40 @@ const versionPill = document.getElementById("version-pill");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 
-function getTheaterSettings() {
+function migrateTheater(theater = {}) {
+  const migrated = { ...DEFAULT_THEATER, ...theater };
+
+  if ("glassComments" in theater && !("commentsBackground" in theater)) {
+    migrated.commentsBackground =
+      theater.glassComments === false ? "solid" : "glass";
+  }
+
+  delete migrated.glassComments;
+  return migrated;
+}
+
+function getFeatureSubsettings(feature) {
+  const key = feature.subsettingsKey;
+  if (!key) return {};
+
+  if (key === "theater") {
+    return migrateTheater(settings.subsettings?.theater);
+  }
+
   return {
-    ...DEFAULT_THEATER,
-    ...(settings.subsettings?.theater || {}),
+    ...DEFAULT_FEED,
+    ...(settings.subsettings?.[key] || {}),
+  };
+}
+
+function getTheaterSettings() {
+  return migrateTheater(settings.subsettings?.theater);
+}
+
+function getFeedSettings() {
+  return {
+    ...DEFAULT_FEED,
+    ...(settings.subsettings?.feed || {}),
   };
 }
 
@@ -95,9 +154,10 @@ async function loadSettings() {
       ...(stored.youtubeThemingSettings?.features || {}),
     },
     subsettings: {
-      theater: {
-        ...DEFAULT_THEATER,
-        ...(stored.youtubeThemingSettings?.subsettings?.theater || {}),
+      theater: migrateTheater(stored.youtubeThemingSettings?.subsettings?.theater),
+      feed: {
+        ...DEFAULT_FEED,
+        ...(stored.youtubeThemingSettings?.subsettings?.feed || {}),
       },
     },
   };
@@ -133,12 +193,12 @@ function updateFeatureCount() {
     : "All disabled";
 }
 
-function isSubsettingActive(sub, theater) {
+function isSubsettingActive(sub, featureSettings) {
   if (!sub.dependsOn) return true;
-  return theater[sub.dependsOn] !== false;
+  return featureSettings[sub.dependsOn] !== false;
 }
 
-function renderSubsettings(feature, theater) {
+function renderSubsettings(feature, featureSettings) {
   if (!feature.subsettings?.length) return "";
 
   const featureEnabled =
@@ -146,14 +206,14 @@ function renderSubsettings(feature, theater) {
 
   const rows = feature.subsettings
     .map((sub) => {
-      const active = isSubsettingActive(sub, theater);
+      const active = isSubsettingActive(sub, featureSettings);
       const disabled = !featureEnabled || !active;
 
       if (sub.type === "select") {
         const options = sub.options
           .map(
             (opt) =>
-              `<option value="${opt.value}" ${theater[sub.id] === opt.value ? "selected" : ""}>${opt.label}</option>`
+              `<option value="${opt.value}" ${featureSettings[sub.id] === opt.value ? "selected" : ""}>${opt.label}</option>`
           )
           .join("");
 
@@ -170,7 +230,7 @@ function renderSubsettings(feature, theater) {
         `;
       }
 
-      const checked = theater[sub.id] !== false;
+      const checked = featureSettings[sub.id] !== false;
       return `
         <div class="subsetting-row${disabled ? " disabled" : ""}">
           <div class="subsetting-info">
@@ -190,24 +250,20 @@ function renderSubsettings(feature, theater) {
 }
 
 function bindSubsettings(card, feature) {
-  if (feature.id !== "theater-mode") return;
+  if (!feature.subsettingsKey) return;
 
   card.querySelectorAll("[data-subsetting]").forEach((control) => {
     control.addEventListener("change", async (event) => {
       const id = event.target.dataset.subsetting;
-      const theater = getTheaterSettings();
+      const featureSettings = getFeatureSubsettings(feature);
 
       if (event.target.type === "checkbox") {
-        theater[id] = event.target.checked;
-
-        if (id === "hoverComments" && !event.target.checked) {
-          theater.glassComments = false;
-        }
+        featureSettings[id] = event.target.checked;
       } else {
-        theater[id] = event.target.value;
+        featureSettings[id] = event.target.value;
       }
 
-      settings.subsettings.theater = theater;
+      settings.subsettings[feature.subsettingsKey] = featureSettings;
       renderFeatures();
       await saveSettings();
     });
@@ -218,10 +274,9 @@ function renderFeatures() {
   featuresList.innerHTML = "";
   updateFeatureCount();
 
-  const theater = getTheaterSettings();
-
   for (const feature of FEATURE_META) {
     const enabled = settings.features[feature.id] !== false;
+    const featureSettings = getFeatureSubsettings(feature);
     const card = document.createElement("article");
     card.className = `feature-card${settings.enabled ? "" : " disabled"}`;
     card.dataset.feature = feature.id;
@@ -237,7 +292,7 @@ function renderFeatures() {
           <span class="slider"></span>
         </label>
       </div>
-      ${enabled && settings.enabled ? renderSubsettings(feature, theater) : ""}
+      ${enabled && settings.enabled ? renderSubsettings(feature, featureSettings) : ""}
     `;
 
     featuresList.appendChild(card);

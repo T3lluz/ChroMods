@@ -1,14 +1,14 @@
-/* Theater glass comments — Frosted glass background for hover comments */
+/* Theater translucent comments — Semi-transparent background without blur */
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
 #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments {
-  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-  backdrop-filter: blur(20px) saturate(1.2) !important;
-  background-color: rgb(0 0 0 / 0.53) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: rgb(0 0 0 / 0.75) !important;
 }
 
 html:not([dark]) ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
 html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments {
-  background-color: rgb(255 255 255 / 0.53) !important;
+  background-color: rgb(255 255 255 / 0.85) !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments #header,

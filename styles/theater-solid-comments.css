@@ -1,5 +1,6 @@
 /* Theater solid comments — Opaque background instead of glass blur */
-#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   background-color: var(--yt-spec-text-primary-inverse) !important;

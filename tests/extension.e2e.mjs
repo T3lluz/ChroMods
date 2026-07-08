@@ -62,8 +62,19 @@ async function run() {
 
     // Theater subsettings visible
     const theaterCard = popupPage.locator('.feature-card[data-feature="theater-mode"]');
-    const subsettings = theaterCard.locator(".subsettings .subsetting-row");
-    assert.equal(await subsettings.count(), 4, "Expected 4 theater subsettings");
+    const theaterSubs = theaterCard.locator(".subsettings .subsetting-row");
+    assert.equal(await theaterSubs.count(), 4, "Expected 4 theater subsettings");
+
+    const commentsBgRow = theaterCard.locator(".subsetting-row").filter({ hasText: "Comments background" });
+    assert.equal(await commentsBgRow.locator("select").inputValue(), "glass");
+
+    // Feed layout subsettings visible
+    const feedCard = popupPage.locator('.feature-card[data-feature="feed-layout"]');
+    const feedSubs = feedCard.locator(".subsettings .subsetting-row");
+    assert.equal(await feedSubs.count(), 1, "Expected 1 feed layout subsetting");
+
+    const columnsRow = feedCard.locator(".subsetting-row").filter({ hasText: "Videos per row" });
+    assert.equal(await columnsRow.locator("select").inputValue(), "auto");
 
     const bodyBg = await popupPage.evaluate(() => {
       return getComputedStyle(document.body).backgroundColor;
@@ -115,8 +126,8 @@ async function run() {
     // Disable hover comments subsetting
     await theaterCard.locator('label[aria-label="Hover comments"]').click();
     await popupPage.waitForTimeout(250);
-    const glassRow = theaterCard.locator(".subsetting-row").filter({ hasText: "Glass background" });
-    assert.ok(await glassRow.evaluate((el) => el.classList.contains("disabled")));
+    const commentsBgDisabled = commentsBgRow.locator("select");
+    assert.ok(await commentsBgDisabled.isDisabled());
 
     await popupPage.screenshot({
       path: path.join(screenshotDir, "popup-theater-subs-partial.png"),
@@ -143,7 +154,7 @@ async function run() {
     const cssContent = await ytPage.evaluate(() => {
       return document.getElementById("youtube-theming-styles")?.textContent ?? "";
     });
-    assert.match(cssContent, /Theater base|Immersive search|feed layout|mini guide/i);
+    assert.match(cssContent, /Theater base|Immersive search|Compact feed|mini guide/i);
     assert.doesNotMatch(cssContent, /Theater hover comments/i);
 
     await ytPage.screenshot({
@@ -153,7 +164,7 @@ async function run() {
 
     results.push({ name: "YouTube CSS injection respects theater subsettings", status: "pass" });
 
-    // Re-enable hover comments via storage and verify CSS updates
+    // Re-enable hover comments via popup and verify CSS updates
     const popupPage2 = await context.newPage();
     await popupPage2.goto(`chrome-extension://${extensionId}/popup/popup.html`);
     await popupPage2
@@ -164,7 +175,33 @@ async function run() {
       return css.includes("Theater hover comments");
     }, { timeout: 10000 });
 
-    results.push({ name: "Theater subsettings update live CSS", status: "pass" });
+    const cssWithComments = await ytPage.evaluate(() => {
+      return document.getElementById("youtube-theming-styles")?.textContent ?? "";
+    });
+    assert.match(cssWithComments, /Theater glass comments/i);
+    assert.match(cssWithComments, /backdrop-filter:\s*blur\(20px\)/);
+
+    // Switch comments background to solid
+    await popupPage2
+      .locator('.feature-card[data-feature="theater-mode"] select[data-subsetting="commentsBackground"]')
+      .selectOption("solid");
+    await ytPage.waitForFunction(() => {
+      const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
+      return css.includes("Theater solid comments") && !css.includes("Theater glass comments");
+    }, { timeout: 10000 });
+
+    results.push({ name: "Comments background options update live CSS", status: "pass" });
+
+    // Feed column count subsetting
+    await popupPage2
+      .locator('.feature-card[data-feature="feed-layout"] select[data-subsetting="columns"]')
+      .selectOption("5");
+    await ytPage.waitForFunction(() => {
+      const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
+      return css.includes("--ytd-rich-grid-items-per-row: 5");
+    }, { timeout: 10000 });
+
+    results.push({ name: "Feed column count subsetting updates live CSS", status: "pass" });
 
     // Disable theming clears styles
     await popupPage2.locator('label[aria-label="Enable theming"]').click();

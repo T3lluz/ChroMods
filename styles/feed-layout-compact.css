@@ -1,22 +1,4 @@
-/* yt-fix new feed layout — Revert the new feed layout that barely fits 3 columns */
-@media only screen and (min-width: 1400px) {
-  ytd-rich-item-renderer[rendered-from-rich-grid] {
-    --ytd-rich-grid-items-per-row: 4 !important;
-  }
-}
-
-@media only screen and (min-width: 1700px) {
-  ytd-rich-item-renderer[rendered-from-rich-grid] {
-    --ytd-rich-grid-items-per-row: 5 !important;
-  }
-}
-
-@media only screen and (min-width: 2180px) {
-  ytd-rich-item-renderer[rendered-from-rich-grid] {
-    --ytd-rich-grid-items-per-row: 6 !important;
-  }
-}
-
+/* yt-Compact feed — Reduce spacing, show menu on hover, inline details */
 ytd-rich-item-renderer[is-in-first-column=""] {
   margin-left: calc(var(--ytd-rich-grid-item-margin) / 2) !important;
 }
@@ -25,7 +7,6 @@ ytd-rich-item-renderer[is-in-first-column=""] {
   padding-left: calc(var(--ytd-rich-grid-item-margin) / 2 + var(--ytd-rich-grid-gutter-margin)) !important;
 }
 
-/* yt-Compact feed — Reduce spacing, show menu on hover, inline details */
 ytd-rich-item-renderer {
   margin-bottom: 15px !important;
 }

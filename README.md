@@ -13,7 +13,7 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 |-----|--------------|
 | **Immersive search** | Blur + zoom on search focus; centered floating bar |
 | **Theater mode** | Full-window theater view; subsettings below |
-| **Feed layout fix** | Denser grid (4–6 cols), compact cards, hover menu |
+| **Feed layout fix** | Denser grid, compact cards, hover menu; configurable columns |
 | **Compact sidebar** | Icon-only guide; hides Studio/Sports/Settings/footer |
 
 ### Theater subsettings
@@ -22,8 +22,14 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 |---------|---------|--------|
 | Auto-hide header | on | Hide masthead in theater; reveal on hover |
 | Hover comments | on | Slide-in comments panel on screen edge |
-| Glass background | on | Blur glass vs solid panel |
+| Comments background | glass | `glass` (blur), `translucent`, or `solid` panel |
 | Comments side | left | `left` or `right` edge for comments panel |
+
+### Feed layout subsettings
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| Videos per row | auto | `auto` (responsive 4–6) or fixed `3`–`6` columns |
 
 ## Dev
 

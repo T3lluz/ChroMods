@@ -1,0 +1,18 @@
+/* yt-fix new feed layout — Responsive column count by viewport width */
+@media only screen and (min-width: 1400px) {
+  ytd-rich-item-renderer[rendered-from-rich-grid] {
+    --ytd-rich-grid-items-per-row: 4 !important;
+  }
+}
+
+@media only screen and (min-width: 1700px) {
+  ytd-rich-item-renderer[rendered-from-rich-grid] {
+    --ytd-rich-grid-items-per-row: 5 !important;
+  }
+}
+
+@media only screen and (min-width: 2180px) {
+  ytd-rich-item-renderer[rendered-from-rich-grid] {
+    --ytd-rich-grid-items-per-row: 6 !important;
+  }
+}
