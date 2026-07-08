@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "YouTube Theming",
   "version": "1.0.0",
-  "description": "Custom YouTube theming — immersive search, theater mode, compact sidebar, and feed layout tweaks.",
+  "description": "Custom YouTube theming — immersive search, theater mode, player blur, compact sidebar, and feed layout tweaks.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

@@ -15,6 +15,12 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 | **Theater mode** | Full-window theater view; subsettings below |
 | **Feed layout fix** | Denser grid, compact cards, hover menu; configurable columns |
 | **Compact sidebar** | Icon-only guide; hides Studio/Sports/Settings/footer |
+| **Hide filter chips** | Removes the home feed category chip bar and header row |
+| **Player blur** | Frosted-glass blur on video player controls and menus |
+
+### Popup categories
+
+Settings are grouped in the panel as **Search**, **Home feed**, **Navigation**, and **Player**.
 
 ### Theater subsettings
 
@@ -46,7 +52,8 @@ Screenshots: `tests/screenshots/`
 manifest.json          MV3 config
 background.js          default settings on install
 content-script.js      injects CSS from toggles + subsettings
-popup/                 dark settings panel
+popup/                 dark settings panel (categorized + icons)
+icons/                 extension icon (SVG source + PNG sizes)
 styles/                per-feature CSS modules
 tests/                 node:test + playwright e2e
 ```

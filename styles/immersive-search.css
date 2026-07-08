@@ -1,4 +1,4 @@
-/* yt-Immersive search — Zen Internet / my-internet (flattened for Chromium) */
+/* yt-Immersive search — Zen Internet / my-internet (Chromium flatten) */
 #page-manager,
 yt-searchbox {
   transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
@@ -23,11 +23,7 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
   position: relative !important;
   left: 0 !important;
   top: -30vh !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  height: auto !important;
-  min-height: 40px !important;
+  height: 40px !important;
   max-width: 600px !important;
   width: min(600px, 92vw) !important;
   overflow: visible !important;
@@ -38,7 +34,7 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
 
 @media only screen and (min-width: 1400px) {
   yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
-    min-height: 60px !important;
+    height: 60px !important;
     max-width: 700px !important;
     width: min(700px, 92vw) !important;
     transform: scale(1.1) !important;
@@ -46,9 +42,16 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
   }
 }
 
-yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputWrapper {
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputWrapper,
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputContainer {
   width: 100% !important;
-  flex-shrink: 0 !important;
+  height: 100% !important;
+}
+
+yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputBox {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
 }
 
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentInputBox,
@@ -62,25 +65,27 @@ html[dark] yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0 {
   background-color: #000b !important;
 }
 
+/* Chromium: keep searchbox height fixed; drop suggestions below via absolute pos */
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0,
 yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer {
-  position: relative !important;
+  position: absolute !important;
   left: 0 !important;
-  top: auto !important;
+  right: 0 !important;
+  top: calc(100% + 10px) !important;
   width: 100% !important;
-  max-width: 100% !important;
-  margin-top: 10px !important;
+  margin-top: 0 !important;
 }
 
 @media only screen and (min-width: 1400px) {
   yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) #i0,
   yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSuggestionsContainer {
-    margin-top: 30px !important;
+    top: calc(100% + 30px) !important;
   }
 }
 
 .ytd-masthead #center:has(.ytSearchboxComponentInputBoxHasFocus) {
   display: flex !important;
+  align-items: center !important;
   height: 100vh !important;
   width: 100vw !important;
   left: 0 !important;

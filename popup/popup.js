@@ -50,32 +50,57 @@ const FEED_SUBSETTINGS = [
   },
 ];
 
+const CATEGORY_META = [
+  { id: "search", title: "Search", icon: "category-search" },
+  { id: "feed", title: "Home feed", icon: "category-feed" },
+  { id: "navigation", title: "Navigation", icon: "category-nav" },
+  { id: "player", title: "Player", icon: "category-player" },
+];
+
 const FEATURE_META = [
   {
     id: "immersive-search",
+    category: "search",
     title: "Immersive search",
     description: "Smooth blur and zoom effect when focusing the search bar.",
   },
   {
-    id: "theater-mode",
-    title: "Theater mode",
-    description: "Full-window theater view with configurable comments panel.",
-    subsettings: THEATER_SUBSETTINGS,
-    subsettingsKey: "theater",
-  },
-  {
     id: "feed-layout",
+    category: "feed",
     title: "Feed layout fix",
     description: "Restore a denser home feed grid and compact video cards.",
     subsettings: FEED_SUBSETTINGS,
     subsettingsKey: "feed",
   },
   {
+    id: "hide-filter-chips",
+    category: "feed",
+    title: "Hide filter chips",
+    description: "Remove the category chip bar and header row on the home feed.",
+  },
+  {
     id: "compact-sidebar",
+    category: "navigation",
     title: "Compact sidebar",
     description: "Icon-only guide sidebar with a cleaner, minimal layout.",
   },
+  {
+    id: "theater-mode",
+    category: "player",
+    title: "Theater mode",
+    description: "Full-window theater view with configurable comments panel.",
+    subsettings: THEATER_SUBSETTINGS,
+    subsettingsKey: "theater",
+  },
+  {
+    id: "player-blur",
+    category: "player",
+    title: "Player blur",
+    description: "Frosted-glass blur on video player controls and menus.",
+  },
 ];
+
+const FEATURE_BY_ID = Object.fromEntries(FEATURE_META.map((feature) => [feature.id, feature]));
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -113,17 +138,6 @@ function getFeatureSubsettings(feature) {
   return {
     ...DEFAULT_FEED,
     ...(settings.subsettings?.[key] || {}),
-  };
-}
-
-function getTheaterSettings() {
-  return migrateTheater(settings.subsettings?.theater);
-}
-
-function getFeedSettings() {
-  return {
-    ...DEFAULT_FEED,
-    ...(settings.subsettings?.feed || {}),
   };
 }
 
@@ -310,33 +324,57 @@ function bindSubsettings(card, feature) {
   });
 }
 
+function renderFeatureCard(feature) {
+  const enabled = settings.features[feature.id] !== false;
+  const featureSettings = getFeatureSubsettings(feature);
+  const card = document.createElement("article");
+  card.className = `feature-card${settings.enabled ? "" : " disabled"}`;
+  card.dataset.feature = feature.id;
+
+  card.innerHTML = `
+    <div class="feature-header">
+      <div class="feature-info">
+        <h4>${feature.title}</h4>
+        <p>${feature.description}</p>
+      </div>
+      <label class="switch" aria-label="${feature.title}">
+        <input type="checkbox" data-feature="${feature.id}" ${enabled ? "checked" : ""} ${settings.enabled ? "" : "disabled"} />
+        <span class="slider"></span>
+      </label>
+    </div>
+    ${enabled && settings.enabled ? renderSubsettings(feature, featureSettings) : ""}
+  `;
+
+  bindSubsettings(card, feature);
+  return card;
+}
+
 function renderFeatures() {
   featuresList.innerHTML = "";
   updateFeatureCount();
 
-  for (const feature of FEATURE_META) {
-    const enabled = settings.features[feature.id] !== false;
-    const featureSettings = getFeatureSubsettings(feature);
-    const card = document.createElement("article");
-    card.className = `feature-card${settings.enabled ? "" : " disabled"}`;
-    card.dataset.feature = feature.id;
+  for (const category of CATEGORY_META) {
+    const features = FEATURE_META.filter((feature) => feature.category === category.id);
+    if (!features.length) continue;
 
-    card.innerHTML = `
-      <div class="feature-header">
-        <div class="feature-info">
-          <h4>${feature.title}</h4>
-          <p>${feature.description}</p>
-        </div>
-        <label class="switch" aria-label="${feature.title}">
-          <input type="checkbox" data-feature="${feature.id}" ${enabled ? "checked" : ""} ${settings.enabled ? "" : "disabled"} />
-          <span class="slider"></span>
-        </label>
+    const section = document.createElement("section");
+    section.className = "category-section";
+    section.dataset.category = category.id;
+
+    section.innerHTML = `
+      <div class="category-header">
+        <span class="category-icon" aria-hidden="true">${iconMarkup(category.icon)}</span>
+        <h3 class="category-title">${category.title}</h3>
       </div>
-      ${enabled && settings.enabled ? renderSubsettings(feature, featureSettings) : ""}
+      <div class="category-features"></div>
     `;
 
-    featuresList.appendChild(card);
-    bindSubsettings(card, feature);
+    const container = section.querySelector(".category-features");
+    for (const feature of features) {
+      container.appendChild(renderFeatureCard(feature));
+    }
+
+    featuresList.appendChild(section);
   }
 
   featuresList.querySelectorAll("input[data-feature]").forEach((input) => {
@@ -348,7 +386,7 @@ function renderFeatures() {
       renderFeatures();
       await saveSettings();
 
-      const meta = FEATURE_META.find((feature) => feature.id === id);
+      const meta = FEATURE_BY_ID[id];
       if (meta) {
         await showPageToast(`${meta.title}: ${checked ? "On" : "Off"}`, checked);
       }

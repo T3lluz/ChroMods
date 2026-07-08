@@ -78,8 +78,10 @@ test("immersive search hides voice search and blurs page content on focus", () =
   assert.match(css, /#content:has\(\.ytSearchboxComponentInputBoxHasFocus\) #page-manager/);
   assert.match(css, /filter:\s*blur\(20px\)/);
   assert.match(css, /justify-content:\s*center/);
-  assert.match(css, /flex-direction:\s*column/);
   assert.match(css, /top:\s*-30vh/);
+  assert.match(css, /height:\s*40px/);
+  assert.match(css, /position:\s*absolute/);
+  assert.match(css, /calc\(100% \+ 10px\)/);
   assert.match(css, /pointer-events:\s*none/);
   assert.match(css, /ytd-video-preview/);
   assert.match(css, /transform:\s*scale\(1\.05\)/);

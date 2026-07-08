@@ -1,0 +1,57 @@
+/* yt-Hide filter chips — home feed chip bar + reserved spacing */
+[page-subtype="home"] ytd-feed-filter-chip-bar-renderer,
+ytd-browse[page-subtype="home"] ytd-feed-filter-chip-bar-renderer,
+[page-subtype="home"] #scroll-container > ytd-feed-filter-chip-bar-renderer {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+[page-subtype="home"] #chips-wrapper,
+[page-subtype="home"] #chips {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+[page-subtype="home"] .ytd-two-column-browse-results-renderer #header,
+[page-subtype="home"] ytd-rich-grid-renderer #header {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+[page-subtype="home"] #page-header,
+[page-subtype="home"] #page-header-container {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+ytd-browse[page-subtype="home"],
+[page-subtype="home"] ytd-rich-grid-renderer {
+  --ytd-rich-grid-chips-bar-height: 0px !important;
+  --ytd-rich-grid-chip-bar-height: 0px !important;
+}
+
+#frosted-glass.with-chipbar.ytd-app,
+ytd-app #frosted-glass.with-chipbar {
+  height: var(--ytd-toolbar-height) !important;
+  min-height: 0 !important;
+}
+
+ytd-masthead[frosted-glass-mode="with-chipbar"] #background.ytd-masthead,
+ytd-feed-filter-chip-bar-renderer[frosted-glass-mode="with-chipbar"] #chips-wrapper.ytd-feed-filter-chip-bar-renderer {
+  background: var(--yt-spec-base-background) !important;
+}

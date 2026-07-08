@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS = {
     "theater-mode": true,
     "feed-layout": true,
     "compact-sidebar": true,
+    "hide-filter-chips": true,
+    "player-blur": true,
   },
   subsettings: {
     theater: {

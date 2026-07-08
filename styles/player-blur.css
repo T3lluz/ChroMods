@@ -1,0 +1,24 @@
+/* yt-New player blur — frosted glass controls (Zen Internet / my-internet) */
+.ytp-left-controls .ytp-play-button,
+.ytp-left-controls .ytp-volume-area,
+.ytp-left-controls .ytp-time-display.notranslate > span,
+.ytp-left-controls .ytp-chapter-container > button,
+.ytp-left-controls .ytp-prev-button,
+.ytp-left-controls .ytp-next-button {
+  -webkit-backdrop-filter: blur(5px) !important;
+  backdrop-filter: blur(5px) !important;
+  background-color: #0001 !important;
+}
+
+.ytp-right-controls,
+.ytp-time-wrapper {
+  -webkit-backdrop-filter: blur(5px) !important;
+  backdrop-filter: blur(5px) !important;
+  background-color: #0001 !important;
+}
+
+.ytp-popup {
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+  background-color: #0007 !important;
+}

@@ -198,17 +198,24 @@ async function run() {
         const suggestions = sb?.querySelector("#i0, .ytSearchboxComponentSuggestionsContainer");
         if (!sb || !inputWrap || !suggestions) return { ok: false, reason: "missing nodes" };
         const sbStyle = getComputedStyle(sb);
+        const suggStyle = getComputedStyle(suggestions);
         const inputRect = inputWrap.getBoundingClientRect();
         const suggRect = suggestions.getBoundingClientRect();
+        const sbRect = sb.getBoundingClientRect();
         return {
           ok:
-            sbStyle.flexDirection === "column" &&
-            suggRect.top >= inputRect.bottom - 4 &&
-            Math.abs(suggRect.left - inputRect.left) < 24,
-          flexDirection: sbStyle.flexDirection,
+            sbStyle.height === "40px" &&
+            suggStyle.position === "absolute" &&
+            suggRect.top >= inputRect.bottom - 2 &&
+            Math.abs(suggRect.left - sbRect.left) < 24 &&
+            sbRect.top > 0 &&
+            sbRect.top < window.innerHeight * 0.45,
+          sbHeight: sbStyle.height,
+          sbTop: sbRect.top,
+          suggPosition: suggStyle.position,
           inputBottom: inputRect.bottom,
           suggTop: suggRect.top,
-          leftDelta: Math.abs(suggRect.left - inputRect.left),
+          leftDelta: Math.abs(suggRect.left - sbRect.left),
         };
       });
       assert.ok(suggestionsLayout.ok, `Suggestions should sit below search bar: ${JSON.stringify(suggestionsLayout)}`);

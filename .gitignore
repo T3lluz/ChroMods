@@ -1,3 +1,32 @@
-tests/.pw-profile/
-tests/screenshots/
+# Dependencies
 node_modules/
+
+# Playwright / e2e artifacts
+tests/.pw-profile/
+tests/.pw-profile-*/
+tests/screenshots/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Logs & env
+*.log
+npm-debug.log*
+.env
+.env.*
+
+# OS & editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Build / temp
+dist/
+*.tmp
+.cache/

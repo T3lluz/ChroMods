@@ -4,6 +4,8 @@
   const FEATURES = {
     "immersive-search": ["styles/immersive-search.css"],
     "compact-sidebar": ["styles/compact-sidebar.css"],
+    "hide-filter-chips": ["styles/hide-filter-chips.css"],
+    "player-blur": ["styles/player-blur.css"],
   };
 
   const FEED_PARTS = {
@@ -35,6 +37,8 @@
       "theater-mode": true,
       "feed-layout": true,
       "compact-sidebar": true,
+      "hide-filter-chips": true,
+      "player-blur": true,
     },
     subsettings: {
       theater: { ...DEFAULT_THEATER },
