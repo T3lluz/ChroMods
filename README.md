@@ -27,6 +27,7 @@ Settings are grouped in the panel as **Search**, **Home feed**, **Navigation**, 
 | Setting | Default | Effect |
 |---------|---------|--------|
 | Auto-hide header | on | Hide masthead in theater; reveal when hovering top ~140px |
+| Blur header | off | Frosted-glass blur on the masthead, matching player controls |
 | Hover comments | on | Slide-in comments panel with solid background |
 | Comments side | left | `left` or `right` edge for comments panel |
 

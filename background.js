@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   subsettings: {
     theater: {
       hideHeader: true,
+      headerBlur: false,
       hoverComments: true,
       commentsSide: "left",
     },

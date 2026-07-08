@@ -1,5 +1,6 @@
 const DEFAULT_THEATER = {
   hideHeader: true,
+  headerBlur: false,
   hoverComments: true,
   commentsSide: "left",
 };
@@ -13,6 +14,12 @@ const THEATER_SUBSETTINGS = [
     id: "hideHeader",
     title: "Auto-hide header",
     description: "Hide the top bar in theater mode, reveal on hover.",
+    type: "toggle",
+  },
+  {
+    id: "headerBlur",
+    title: "Blur header",
+    description: "Frosted-glass blur on the masthead, matching player controls.",
     type: "toggle",
   },
   {

@@ -21,6 +21,7 @@ const STYLE_FILES = fs
 const THEATER_FILES = [
   "theater-base.css",
   "theater-hide-header.css",
+  "theater-header-blur.css",
   "theater-hover-comments.css",
   "theater-comments-right.css",
 ];
@@ -95,6 +96,13 @@ test("theater hide header extends hover reveal zone", () => {
   assert.match(css, /focus-within/);
 });
 
+test("theater header blur matches player blur frosted glass", () => {
+  const css = read("styles/theater-header-blur.css");
+  assert.match(css, /backdrop-filter:\s*blur\(5px\)/);
+  assert.match(css, /background-color:\s*#0001/);
+  assert.match(css, /#background\.ytd-masthead/);
+});
+
 test("immersive search includes transform fallbacks for scale", () => {
   const css = read("styles/immersive-search.css");
   assert.match(css, /scale:\s*1\.05/);
@@ -114,6 +122,7 @@ test("content script maps features and theater subsettings", () => {
   const js = read("content-script.js");
   assert.match(js, /"theater-mode"/);
   assert.match(js, /theater-base\.css/);
+  assert.match(js, /theater-header-blur\.css/);
   assert.match(js, /theater-hover-comments\.css/);
   assert.match(js, /subsettings/);
   assert.match(js, /"immersive-search"/);
@@ -144,6 +153,7 @@ test("popup defines theater and feed subsettings", () => {
   const js = read("popup/popup.js");
   assert.match(js, /hoverComments/);
   assert.match(js, /hideHeader/);
+  assert.match(js, /headerBlur/);
   assert.match(js, /commentsSide/);
   assert.match(js, /FEED_SUBSETTINGS/);
   assert.match(js, /columns/);

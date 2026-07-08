@@ -16,12 +16,14 @@
   const THEATER_PARTS = {
     base: "styles/theater-base.css",
     hideHeader: "styles/theater-hide-header.css",
+    headerBlur: "styles/theater-header-blur.css",
     hoverComments: "styles/theater-hover-comments.css",
     commentsRight: "styles/theater-comments-right.css",
   };
 
   const DEFAULT_THEATER = {
     hideHeader: true,
+    headerBlur: false,
     hoverComments: true,
     commentsSide: "left",
   };
@@ -153,6 +155,10 @@
 
     if (theater.hideHeader !== false) {
       paths.push(THEATER_PARTS.hideHeader);
+    }
+
+    if (theater.headerBlur !== false) {
+      paths.push(THEATER_PARTS.headerBlur);
     }
 
     if (theater.hoverComments !== false) {
