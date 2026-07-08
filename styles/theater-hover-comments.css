@@ -9,7 +9,7 @@ ytd-watch-flexy[theater=""]:not([fullscreen=""]) #columns #secondary,
 }
 
 ytd-comments {
-  transition: left 0.5s ease-in-out, right 0.5s ease-in-out, opacity 0.5s ease-in-out !important;
+  transition: left 0.3s ease-in-out, right 0.3s ease-in-out, opacity 0.3s ease-in-out !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
@@ -23,7 +23,7 @@ ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments,
   position: fixed !important;
   z-index: 1000 !important;
   top: 3vh !important;
-  left: -40em !important;
+  left: -36em !important;
   width: 40em !important;
   height: 90vh !important;
   opacity: 0 !important;
@@ -37,6 +37,19 @@ html:not([dark]) #content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd
 html:not([dark]) #content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
   background: #ffffff !important;
   background-color: #ffffff !important;
+}
+
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments::before,
+ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments::before,
+#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments::before,
+#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 4em !important;
+  z-index: 2 !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
