@@ -36,7 +36,7 @@ body:not(:has([mini-guide-visible=""])) tp-yt-paper-tabs {
   margin: auto 0 !important;
 }
 
-body:not(:has([mini-guide-visible=""])) #page-manager {
+body:not(:has([mini-guide-visible=""])):not(:has(ytd-watch-flexy[theater]:not([hidden]))) #page-manager {
   margin-left: 80px !important;
 }
 

@@ -1,42 +1,30 @@
-/* Theater base — full-window theater view, scoped to the canonical state owner */
-ytd-watch-flexy[theater]:not([fullscreen]) #player-full-bleed-container {
-  left: 50% !important;
-  width: 100vw !important;
-  min-width: 100vw !important;
-  max-width: none !important;
-  margin: 0 0 0 -50vw !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
+/* Theater base — Zen Internet / my-internet theatre view (Chromium selectors) */
 
+/* yt-theater: zen view — full-window height only; YouTube owns width/scaling */
 ytd-watch-flexy[theater]:not([fullscreen]) #full-bleed-container {
-  left: 0 !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: none !important;
   height: 100vh !important;
   max-height: 100vh !important;
   top: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
 }
 
-ytd-watch-flexy[theater]:not([fullscreen]) #movie_player,
-ytd-watch-flexy[theater]:not([fullscreen]) .html5-video-player {
-  width: 100% !important;
-  max-width: none !important;
-  height: 100% !important;
-  max-height: 100vh !important;
+ytd-watch-flexy[theater]:not([fullscreen]) #masthead-container,
+ytd-watch-flexy[theater]:not([fullscreen]) #columns #secondary {
+  transition: all 0.3s ease-in-out 0.5s !important;
 }
 
-ytd-app:has(ytd-watch-flexy[theater]:not([hidden])) {
+ytd-app:has(ytd-watch-flexy[theater]:not([hidden])),
+body:has(ytd-watch-flexy[theater]:not([hidden])) {
   --ytd-toolbar-height: 0px !important;
 }
 
-ytd-app:has(ytd-watch-flexy[theater]:not([hidden])) #page-manager {
+ytd-app:has(ytd-watch-flexy[theater]:not([hidden])) #page-manager,
+body:has(ytd-watch-flexy[theater]:not([hidden])) #page-manager {
   margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  transform: none !important;
+  filter: none !important;
+  scale: none !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) #panels-full-bleed-container {

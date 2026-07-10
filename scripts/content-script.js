@@ -227,20 +227,25 @@
     setTimeout(() => window.dispatchEvent(new Event("resize")), 220);
   }
 
-  function checkTheaterLayoutState() {
+  function syncTheaterLayout({ forceResize = false } = {}) {
     theaterLayoutCheckQueued = false;
     const target = document.querySelector("ytd-watch-flexy");
     const isTheater = Boolean(target?.hasAttribute("theater"));
-    if (target === theaterLayoutTarget && isTheater === theaterLayoutState) return;
+    const stateChanged =
+      target !== theaterLayoutTarget || isTheater !== theaterLayoutState;
+
     theaterLayoutTarget = target;
     theaterLayoutState = isTheater;
-    signalPlayerResize();
+
+    if (stateChanged || (forceResize && isTheater)) {
+      signalPlayerResize();
+    }
   }
 
-  function queueTheaterLayoutCheck() {
+  function queueTheaterLayoutCheck(options) {
     if (theaterLayoutCheckQueued) return;
     theaterLayoutCheckQueued = true;
-    requestAnimationFrame(checkTheaterLayoutState);
+    requestAnimationFrame(() => syncTheaterLayout(options));
   }
 
   function handleTheaterLayoutMutations(mutations) {
@@ -261,9 +266,14 @@
     }
   }
 
+  function onTheaterNavigateFinish() {
+    if (!theaterLayoutSyncEnabled) return;
+    queueTheaterLayoutCheck({ forceResize: true });
+  }
+
   function setTheaterLayoutSyncEnabled(enabled) {
     if (enabled === theaterLayoutSyncEnabled) {
-      if (enabled) queueTheaterLayoutCheck();
+      if (enabled) queueTheaterLayoutCheck({ forceResize: true });
       return;
     }
     theaterLayoutSyncEnabled = enabled;
@@ -271,6 +281,7 @@
     if (!enabled) {
       theaterLayoutObserver?.disconnect();
       theaterLayoutObserver = null;
+      window.removeEventListener("yt-navigate-finish", onTheaterNavigateFinish);
       theaterLayoutTarget = null;
       theaterLayoutState = null;
       signalPlayerResize();
@@ -286,7 +297,8 @@
         attributeFilter: ["theater"],
       });
     }
-    queueTheaterLayoutCheck();
+    window.addEventListener("yt-navigate-finish", onTheaterNavigateFinish);
+    queueTheaterLayoutCheck({ forceResize: true });
   }
 
   class MovableLiveChat {
@@ -600,6 +612,290 @@
 
   const movableLiveChat = new MovableLiveChat();
 
+  const THEATER_COMMENTS_WIDTH_KEY = "youtubeThemingTheaterCommentsWidth";
+  const THEATER_COMMENTS_MIN_WIDTH = 300;
+  const THEATER_COMMENTS_MAX_WIDTH = 720;
+
+  class TheaterHoverComments {
+    constructor() {
+      this.enabled = false;
+      this.commentsSide = "left";
+      this.widths = { left: null, right: null };
+      this.comments = null;
+      this.watchFlexy = null;
+      this.handle = null;
+      this.observer = null;
+      this.syncQueued = false;
+      this.onPageChange = () => this.scheduleSync();
+    }
+
+    async setEnabled(enabled, options = {}) {
+      const nextSide = options.commentsSide === "right" ? "right" : "left";
+      const sideChanged = nextSide !== this.commentsSide;
+
+      if (enabled === this.enabled && !sideChanged) {
+        if (enabled) this.sync();
+        return;
+      }
+
+      this.commentsSide = nextSide;
+
+      if (!enabled) {
+        this.enabled = false;
+        this.destroy();
+        return;
+      }
+
+      const stored = await chrome.storage.local.get(THEATER_COMMENTS_WIDTH_KEY);
+      this.enabled = true;
+      this.widths = {
+        left: null,
+        right: null,
+        ...(stored[THEATER_COMMENTS_WIDTH_KEY] || {}),
+      };
+      this.ensureObserver();
+      this.sync();
+    }
+
+    ensureObserver() {
+      if (this.observer) return;
+      this.observer = new MutationObserver(() => this.scheduleSync());
+      this.observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["theater"],
+      });
+      window.addEventListener("yt-navigate-finish", this.onPageChange);
+    }
+
+    scheduleSync() {
+      if (this.syncQueued) return;
+      this.syncQueued = true;
+      requestAnimationFrame(() => {
+        this.syncQueued = false;
+        this.sync();
+      });
+    }
+
+    getStoredWidth() {
+      const stored = this.widths[this.commentsSide];
+      if (!Number.isFinite(stored)) return null;
+      return this.clampWidth(stored);
+    }
+
+    clampWidth(width) {
+      const maxByViewport = Math.max(
+        THEATER_COMMENTS_MIN_WIDTH,
+        window.innerWidth - 64
+      );
+      return Math.round(
+        Math.min(
+          THEATER_COMMENTS_MAX_WIDTH,
+          maxByViewport,
+          Math.max(THEATER_COMMENTS_MIN_WIDTH, width)
+        )
+      );
+    }
+
+    applyWidth(width) {
+      if (!this.watchFlexy || !Number.isFinite(width)) return;
+      const clamped = this.clampWidth(width);
+      this.widths[this.commentsSide] = clamped;
+      this.watchFlexy.style.setProperty(
+        "--ytm-comments-panel-width",
+        `${clamped}px`
+      );
+      if (this.comments) {
+        this.comments.style.setProperty("width", `${clamped}px`, "important");
+      }
+    }
+
+    clearWidth() {
+      this.watchFlexy?.style.removeProperty("--ytm-comments-panel-width");
+      this.comments?.style.removeProperty("width");
+    }
+
+    saveWidth() {
+      chrome.storage.local.set({
+        [THEATER_COMMENTS_WIDTH_KEY]: this.widths,
+      });
+    }
+
+    getHandleMount() {
+      if (!this.comments) return null;
+      const root = this.comments.shadowRoot;
+      if (root) {
+        this.injectShadowHandleStyles(root);
+        const container =
+          root.querySelector("#header")?.parentElement ||
+          root.querySelector("#contents")?.parentElement ||
+          root.querySelector("#container") ||
+          root.firstElementChild;
+        return container || root;
+      }
+      return this.comments;
+    }
+
+    injectShadowHandleStyles(root) {
+      if (root.querySelector("#ytm-comments-handle-style")) return;
+      const style = document.createElement("style");
+      style.id = "ytm-comments-handle-style";
+      style.textContent = `
+        .ytm-comments-resize-handle {
+          position: absolute;
+          top: 50%;
+          z-index: 5;
+          width: 4px;
+          height: 44px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 2px;
+          background: rgba(255, 255, 255, 0.22);
+          transform: translateY(-50%);
+          cursor: ew-resize;
+          touch-action: none;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+        }
+        :host(.ytm-comments-side-left) .ytm-comments-resize-handle {
+          right: 10px;
+          left: auto;
+        }
+        :host(.ytm-comments-side-right) .ytm-comments-resize-handle {
+          left: 10px;
+          right: auto;
+        }
+        :host(:hover) .ytm-comments-resize-handle,
+        :host(.ytm-comments-interacting) .ytm-comments-resize-handle {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+        }
+        .ytm-comments-resize-handle:hover,
+        .ytm-comments-resize-handle.ytm-comments-resize-active {
+          background: rgba(255, 255, 255, 0.42);
+        }
+      `;
+      root.appendChild(style);
+    }
+
+    ensureHandle() {
+      const mount = this.getHandleMount();
+      if (!mount) return;
+
+      if (this.handle?.parentElement === mount) return;
+
+      this.handle?.remove();
+      this.handle = document.createElement("div");
+      this.handle.className = "ytm-comments-resize-handle";
+      this.handle.setAttribute("aria-hidden", "true");
+      this.handle.addEventListener("pointerdown", (event) => this.startResize(event));
+      mount.appendChild(this.handle);
+    }
+
+    removeHandle() {
+      this.handle?.remove();
+      this.handle = null;
+      this.comments?.shadowRoot?.querySelector("#ytm-comments-handle-style")?.remove();
+    }
+
+    startResize(event) {
+      if (!this.comments || !this.watchFlexy || !this.handle) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const startWidth =
+        this.comments.getBoundingClientRect().width || this.getStoredWidth() || 360;
+      const originX = event.clientX;
+      const handle = event.currentTarget;
+      const side = this.commentsSide;
+
+      this.comments.classList.add("ytm-comments-interacting");
+      this.handle.classList.add("ytm-comments-resize-active");
+      handle.setPointerCapture(event.pointerId);
+
+      const onMove = (moveEvent) => {
+        const dx = moveEvent.clientX - originX;
+        const nextWidth = side === "left" ? startWidth + dx : startWidth - dx;
+        this.applyWidth(nextWidth);
+      };
+
+      const onEnd = () => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onEnd);
+        handle.removeEventListener("pointercancel", onEnd);
+        this.comments?.classList.remove("ytm-comments-interacting");
+        this.handle?.classList.remove("ytm-comments-resize-active");
+        this.saveWidth();
+      };
+
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", onEnd);
+      handle.addEventListener("pointercancel", onEnd);
+    }
+
+    detachComments() {
+      if (!this.comments) return;
+      this.comments.classList.remove(
+        "ytm-theater-comments-resizable",
+        "ytm-comments-interacting",
+        "ytm-comments-side-left",
+        "ytm-comments-side-right"
+      );
+      this.removeHandle();
+      this.comments = null;
+    }
+
+    sync() {
+      if (!this.enabled) return;
+
+      const watchFlexy = document.querySelector("ytd-watch-flexy[theater]:not([fullscreen])");
+      const inTheater = Boolean(watchFlexy);
+
+      if (!inTheater) {
+        if (this.watchFlexy) this.clearWidth();
+        this.detachComments();
+        this.watchFlexy = null;
+        return;
+      }
+
+      const comments = watchFlexy.querySelector("ytd-comments");
+      if (!comments) return;
+
+      if (this.comments !== comments) {
+        this.detachComments();
+        this.comments = comments;
+      }
+
+      this.watchFlexy = watchFlexy;
+      this.comments.classList.add("ytm-theater-comments-resizable");
+      this.comments.classList.toggle("ytm-comments-side-left", this.commentsSide === "left");
+      this.comments.classList.toggle("ytm-comments-side-right", this.commentsSide === "right");
+      this.ensureHandle();
+
+      const storedWidth = this.getStoredWidth();
+      if (storedWidth) {
+        this.applyWidth(storedWidth);
+      } else {
+        this.clearWidth();
+      }
+    }
+
+    destroy() {
+      this.observer?.disconnect();
+      this.observer = null;
+      window.removeEventListener("yt-navigate-finish", this.onPageChange);
+      this.clearWidth();
+      this.detachComments();
+      this.watchFlexy = null;
+    }
+  }
+
+  const theaterHoverComments = new TheaterHoverComments();
+
   async function applySettings(settings) {
     const generation = ++applyGeneration;
     const merged = mergeSettings(settings);
@@ -623,6 +919,12 @@
     );
     await movableLiveChat.setEnabled(
       merged.enabled && merged.features?.["movable-live-chat"] === true
+    );
+    await theaterHoverComments.setEnabled(
+      merged.enabled &&
+        merged.features?.["theater-mode"] !== false &&
+        merged.subsettings?.theater?.hoverComments !== false,
+      { commentsSide: merged.subsettings?.theater?.commentsSide ?? "left" }
     );
   }
 

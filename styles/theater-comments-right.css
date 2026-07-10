@@ -1,14 +1,14 @@
 /* Theater comments right — mirror the slide-in panel */
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments {
-  border-radius: 2em 0 0 2em !important;
+  border-radius: 16px 0 0 16px !important;
   left: auto !important;
   right: 0 !important;
-  transform: translateX(calc(100% - 24px)) !important;
+  transform: translate(calc(100% - var(--ytm-comments-hover-edge, 48px)), -50%) !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:focus-within {
   left: auto !important;
   right: 0 !important;
-  transform: translateX(0) !important;
+  transform: translate(0, -50%) !important;
 }

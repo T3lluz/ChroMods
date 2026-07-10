@@ -96,14 +96,18 @@ test("theater hide header extends hover reveal zone", () => {
   assert.match(css, /focus-within/);
 });
 
-test("theater layout is viewport-wide and resets control bounds on exit", () => {
+test("theater layout follows zen view height and resets control bounds on exit", () => {
   const css = read("styles/theater-base.css");
-  assert.match(css, /ytd-watch-flexy\[theater\].*#player-full-bleed-container/);
-  assert.match(css, /width:\s*100vw/);
-  assert.match(css, /margin:\s*0 0 0 -50vw/);
+  assert.match(css, /ytd-watch-flexy\[theater\].*#full-bleed-container/);
+  assert.match(css, /height:\s*100vh/);
+  assert.match(css, /#page-manager/);
+  assert.match(css, /margin:\s*0/);
   assert.match(css, /ytd-watch-flexy:not\(\[theater\]\) \.ytp-chrome-bottom/);
   assert.match(css, /width:\s*calc\(100% - 24px\)/);
   assert.doesNotMatch(css, /ytd-masthead\[theater/);
+  assert.doesNotMatch(css, /#player-full-bleed-container/);
+  assert.doesNotMatch(css, /100vw/);
+  assert.doesNotMatch(css, /margin:\s*0 0 0 -50vw/);
 });
 
 test("theater header blur matches player blur frosted glass", () => {
@@ -142,6 +146,7 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /MovableLiveChat/);
   assert.match(js, /movable-live-chat/);
   assert.match(js, /setTheaterLayoutSyncEnabled/);
+  assert.match(js, /TheaterHoverComments|theaterHoverComments/);
   assert.doesNotMatch(
     js,
     /showToast|youtube-theming-toast|ytm-toast|ytm-glow|ytm-vignette|createGlowRing/

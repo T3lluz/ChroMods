@@ -140,40 +140,49 @@ async function run() {
     await theaterFixture.setContent(`
       <style>
         html, body { margin: 0; width: 100%; }
-        #shell { position: relative; width: 70%; margin: 0 auto; }
-        ytd-watch-flexy, #player-full-bleed-container, #full-bleed-container,
-        #movie_player { display: block; position: relative; }
-        #player-full-bleed-container, #full-bleed-container, #movie_player { width: 100%; }
-        #movie_player { height: 360px; }
+        ytd-app, #page-manager, ytd-watch-flexy, #player-full-bleed-container,
+        #full-bleed-container, #movie_player { display: block; width: 100%; }
+        #page-manager { margin-left: 80px; }
+        #full-bleed-container { height: 360px; position: relative; }
+        #movie_player { height: 100%; }
         .ytp-chrome-bottom { position: absolute; right: auto; height: 40px; }
       </style>
-      <div id="shell">
-        <ytd-watch-flexy theater>
-          <div id="player-full-bleed-container">
-            <div id="full-bleed-container">
-              <div id="movie_player" class="html5-video-player">
-                <div class="ytp-chrome-bottom"></div>
+      <ytd-app>
+        <div id="page-manager">
+          <ytd-watch-flexy theater>
+            <div id="player-full-bleed-container">
+              <div id="full-bleed-container">
+                <div id="movie_player" class="html5-video-player">
+                  <div class="ytp-chrome-bottom"></div>
+                </div>
               </div>
             </div>
-          </div>
-        </ytd-watch-flexy>
-      </div>
+          </ytd-watch-flexy>
+        </div>
+      </ytd-app>
     `);
     await theaterFixture.addStyleTag({
       path: path.join(extensionPath, "styles", "theater-base.css"),
     });
 
     const theaterBounds = await theaterFixture.evaluate(() => {
-      const viewport = document.documentElement.clientWidth;
-      const player = document.querySelector("#player-full-bleed-container").getBoundingClientRect();
-      return { viewport, left: player.left, right: player.right, width: player.width };
+      const pageManager = document.querySelector("#page-manager");
+      const fullBleed = document.querySelector("#full-bleed-container");
+      const pageManagerStyle = getComputedStyle(pageManager);
+      const fullBleedStyle = getComputedStyle(fullBleed);
+      return {
+        pageManagerMarginLeft: pageManagerStyle.marginLeft,
+        fullBleedHeight: fullBleedStyle.height,
+        fullBleedTop: fullBleedStyle.top,
+        toolbarHeight: getComputedStyle(document.querySelector("ytd-app"))
+          .getPropertyValue("--ytd-toolbar-height")
+          .trim(),
+      };
     });
-    assert.ok(Math.abs(theaterBounds.left) <= 1, `Theater should start at viewport edge: ${JSON.stringify(theaterBounds)}`);
-    assert.ok(
-      Math.abs(theaterBounds.width - theaterBounds.viewport) <= 1 &&
-        Math.abs(theaterBounds.right - theaterBounds.viewport) <= 1,
-      `Theater should fill viewport width: ${JSON.stringify(theaterBounds)}`
-    );
+    assert.equal(theaterBounds.pageManagerMarginLeft, "0px", "Theater should clear sidebar margin");
+    assert.equal(theaterBounds.fullBleedHeight, `${theaterFixture.viewportSize().height}px`);
+    assert.equal(theaterBounds.fullBleedTop, "0px");
+    assert.equal(theaterBounds.toolbarHeight, "0px");
 
     const exitBounds = await theaterFixture.evaluate(() => {
       document.querySelector("ytd-watch-flexy").removeAttribute("theater");
@@ -185,7 +194,7 @@ async function run() {
       exitBounds.controlsRight <= exitBounds.playerRight + 1,
       `Controls should remain inside player after theater exit: ${JSON.stringify(exitBounds)}`
     );
-    results.push({ name: "Theater fills width and exit controls stay bounded", status: "pass" });
+    results.push({ name: "Theater zen layout clears margin and fills height", status: "pass" });
     await theaterFixture.close();
 
     const ytPage = await context.newPage();
