@@ -10,8 +10,8 @@
   background-color: #0001 !important;
 }
 
-.ytp-right-controls,
-.ytp-time-wrapper {
+.ytp-right-controls > .ytp-button,
+.ytp-time-wrapper .ytp-time-display > span {
   -webkit-backdrop-filter: blur(5px) !important;
   backdrop-filter: blur(5px) !important;
   background-color: #0001 !important;

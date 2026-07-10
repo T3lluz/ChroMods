@@ -62,6 +62,7 @@ const CATEGORY_META = [
   { id: "feed", title: "Home feed", icon: "category-feed" },
   { id: "navigation", title: "Navigation", icon: "category-nav" },
   { id: "player", title: "Player", icon: "category-player" },
+  { id: "live", title: "Live & comments", icon: "category-live" },
 ];
 
 const FEATURE_META = [
@@ -86,10 +87,40 @@ const FEATURE_META = [
     description: "Remove the category chip bar and header row on the home feed.",
   },
   {
+    id: "thumbnail-hover",
+    category: "feed",
+    title: "Thumbnail hover",
+    description: "Enlarge inline video previews after hovering a thumbnail.",
+    defaultEnabled: false,
+  },
+  {
+    id: "hide-distractions",
+    category: "feed",
+    title: "Hide distractions",
+    description: "Remove Shorts shelves, merch shelves, and legacy annotations.",
+    defaultEnabled: false,
+  },
+  {
     id: "compact-sidebar",
     category: "navigation",
     title: "Compact sidebar",
     description: "Icon-only guide sidebar with a cleaner, minimal layout.",
+    conflictsWith: "hide-side-guide",
+  },
+  {
+    id: "hide-side-guide",
+    category: "navigation",
+    title: "Hide side guide",
+    description: "Completely remove YouTube's side navigation.",
+    defaultEnabled: false,
+    conflictsWith: "compact-sidebar",
+  },
+  {
+    id: "clean-side-guide",
+    category: "navigation",
+    title: "Clean side guide",
+    description: "Hide Studio, Sports, Settings, and footer links from the guide.",
+    defaultEnabled: false,
   },
   {
     id: "theater-mode",
@@ -105,13 +136,52 @@ const FEATURE_META = [
     title: "Player blur",
     description: "Frosted-glass blur on video player controls and menus.",
   },
+  {
+    id: "disable-ambient-mode",
+    category: "player",
+    title: "Disable ambient mode",
+    description: "Remove YouTube's cinematic ambient glow behind the player.",
+    defaultEnabled: false,
+  },
+  {
+    id: "better-captions",
+    category: "player",
+    title: "Better captions",
+    description: "Use a compact frosted caption panel with clearer text.",
+    defaultEnabled: false,
+  },
+  {
+    id: "youtube-tv",
+    category: "player",
+    title: "YouTube TV",
+    description: "Polish the large-screen YouTube TV player and overlays.",
+    defaultEnabled: false,
+  },
+  {
+    id: "overlay-live-chat",
+    category: "live",
+    title: "Overlay live chat",
+    description: "Float live chat at the right edge while in theater mode.",
+    defaultEnabled: false,
+    conflictsWith: "movable-live-chat",
+  },
+  {
+    id: "movable-live-chat",
+    category: "live",
+    title: "Movable live chat",
+    description: "Drag, resize, and adjust live chat opacity in theater mode.",
+    defaultEnabled: false,
+    conflictsWith: "overlay-live-chat",
+  },
 ];
 
 const FEATURE_BY_ID = Object.fromEntries(FEATURE_META.map((feature) => [feature.id, feature]));
 
 const DEFAULT_SETTINGS = {
   enabled: true,
-  features: Object.fromEntries(FEATURE_META.map((f) => [f.id, true])),
+  features: Object.fromEntries(
+    FEATURE_META.map((feature) => [feature.id, feature.defaultEnabled !== false])
+  ),
   subsettings: {
     theater: { ...DEFAULT_THEATER },
     feed: { ...DEFAULT_FEED },
@@ -125,6 +195,20 @@ const featureCount = document.getElementById("feature-count");
 const versionPill = document.getElementById("version-pill");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
+const collapsedCategories = new Set();
+
+function mergeFeatureSettings(storedFeatures = {}) {
+  const merged = Object.fromEntries(
+    Object.entries(DEFAULT_SETTINGS.features).map(([id, defaultValue]) => [
+      id,
+      typeof storedFeatures[id] === "boolean" ? storedFeatures[id] : defaultValue,
+    ])
+  );
+
+  if (merged["hide-side-guide"]) merged["compact-sidebar"] = false;
+  if (merged["movable-live-chat"]) merged["overlay-live-chat"] = false;
+  return merged;
+}
 
 function migrateTheater(theater = {}) {
   const migrated = { ...DEFAULT_THEATER };
@@ -150,85 +234,30 @@ function getFeatureSubsettings(feature) {
 
 async function loadSettings() {
   const stored = await chrome.storage.sync.get("youtubeThemingSettings");
+  const storedSettings = stored.youtubeThemingSettings;
   settings = {
     ...DEFAULT_SETTINGS,
-    ...stored.youtubeThemingSettings,
-    features: {
-      ...DEFAULT_SETTINGS.features,
-      ...(stored.youtubeThemingSettings?.features || {}),
-    },
+    ...storedSettings,
+    features: mergeFeatureSettings(storedSettings?.features),
     subsettings: {
-      theater: migrateTheater(stored.youtubeThemingSettings?.subsettings?.theater),
+      theater: migrateTheater(storedSettings?.subsettings?.theater),
       feed: {
         ...DEFAULT_FEED,
-        ...(stored.youtubeThemingSettings?.subsettings?.feed || {}),
+        ...(storedSettings?.subsettings?.feed || {}),
       },
     },
   };
+
+  if (JSON.stringify(settings) !== JSON.stringify(storedSettings)) {
+    await chrome.storage.sync.set({ youtubeThemingSettings: settings });
+  }
 }
 
 async function saveSettings() {
   await chrome.storage.sync.set({ youtubeThemingSettings: settings });
-  await notifyActiveTab();
 }
 
 const YOUTUBE_URLS = ["*://*.youtube.com/*", "*://youtube.com/*"];
-
-async function getYouTubeTabs() {
-  return chrome.tabs.query({ url: YOUTUBE_URLS });
-}
-
-async function getYouTubeTab() {
-  const [activeTab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-    url: YOUTUBE_URLS,
-  });
-  if (activeTab?.id) return activeTab;
-
-  const tabs = await getYouTubeTabs();
-  return tabs[0] ?? null;
-}
-
-async function notifyAllYouTubeTabs() {
-  const tabs = await getYouTubeTabs();
-  await Promise.allSettled(
-    tabs.map((tab) =>
-      chrome.tabs.sendMessage(tab.id, {
-        action: "applySettings",
-        settings,
-      })
-    )
-  );
-}
-
-async function notifyActiveTab() {
-  await notifyAllYouTubeTabs();
-}
-
-async function showPageToast(text, isEnabled) {
-  const tab = await getYouTubeTab();
-  if (!tab?.id) return;
-
-  try {
-    await chrome.tabs.sendMessage(tab.id, {
-      action: "showToast",
-      text,
-      isEnabled,
-    });
-  } catch {
-    const tabs = await getYouTubeTabs();
-    await Promise.allSettled(
-      tabs.map((t) =>
-        chrome.tabs.sendMessage(t.id, {
-          action: "showToast",
-          text,
-          isEnabled,
-        })
-      )
-    );
-  }
-}
 
 function updateFeatureCount() {
   if (!featureCount) return;
@@ -294,7 +323,13 @@ function renderSubsettings(feature, featureSettings) {
     })
     .join("");
 
-  return `<div class="subsettings">${rows}</div>`;
+  return `
+    <div class="feature-expansion${featureEnabled ? " is-open" : ""}">
+      <div class="feature-expansion-inner">
+        <div class="subsettings">${rows}</div>
+      </div>
+    </div>
+  `;
 }
 
 function bindSubsettings(card, feature) {
@@ -312,21 +347,19 @@ function bindSubsettings(card, feature) {
       }
 
       settings.subsettings[feature.subsettingsKey] = featureSettings;
-      renderFeatures();
+      const dependentControls = card.querySelectorAll("[data-subsetting]");
+      dependentControls.forEach((dependentControl) => {
+        const dependentMeta = feature.subsettings.find(
+          (item) => item.id === dependentControl.dataset.subsetting
+        );
+        const active = isSubsettingActive(dependentMeta, featureSettings);
+        const disabled =
+          !settings.enabled || settings.features[feature.id] === false || !active;
+        dependentControl.disabled = disabled;
+        dependentControl.closest(".subsetting-row")?.classList.toggle("disabled", disabled);
+      });
       await saveSettings();
 
-      const sub = feature.subsettings.find((item) => item.id === id);
-      if (sub) {
-        const value =
-          event.target.type === "checkbox"
-            ? event.target.checked
-              ? "On"
-              : "Off"
-            : event.target.value;
-        const isEnabled =
-          event.target.type === "checkbox" ? event.target.checked : true;
-        await showPageToast(`${feature.title} · ${sub.title}: ${value}`, isEnabled);
-      }
     });
   });
 }
@@ -349,7 +382,7 @@ function renderFeatureCard(feature) {
         <span class="slider"></span>
       </label>
     </div>
-    ${enabled && settings.enabled ? renderSubsettings(feature, featureSettings) : ""}
+    ${renderSubsettings(feature, featureSettings)}
   `;
 
   bindSubsettings(card, feature);
@@ -369,17 +402,36 @@ function renderFeatures() {
     section.dataset.category = category.id;
 
     section.innerHTML = `
-      <div class="category-header">
+      <button class="category-header" type="button" aria-expanded="${!collapsedCategories.has(category.id)}">
         <span class="category-icon" aria-hidden="true">${iconMarkup(category.icon)}</span>
         <h3 class="category-title">${category.title}</h3>
+        <span class="category-count">${features.length}</span>
+        <span class="category-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="category-expansion${collapsedCategories.has(category.id) ? "" : " is-open"}">
+        <div class="category-expansion-inner">
+          <div class="category-features"></div>
+        </div>
       </div>
-      <div class="category-features"></div>
     `;
 
     const container = section.querySelector(".category-features");
     for (const feature of features) {
       container.appendChild(renderFeatureCard(feature));
     }
+
+    const categoryHeader = section.querySelector(".category-header");
+    const categoryExpansion = section.querySelector(".category-expansion");
+    categoryHeader.addEventListener("click", () => {
+      const willOpen = !categoryExpansion.classList.contains("is-open");
+      categoryExpansion.classList.toggle("is-open", willOpen);
+      categoryHeader.setAttribute("aria-expanded", String(willOpen));
+      if (willOpen) {
+        collapsedCategories.delete(category.id);
+      } else {
+        collapsedCategories.add(category.id);
+      }
+    });
 
     featuresList.appendChild(section);
   }
@@ -389,32 +441,90 @@ function renderFeatures() {
       const id = event.target.dataset.feature;
       const checked = event.target.checked;
       settings.features[id] = checked;
+      const meta = FEATURE_BY_ID[id];
+
+      if (checked && meta?.conflictsWith) {
+        settings.features[meta.conflictsWith] = false;
+      }
+
       updateFeatureCount();
-      renderFeatures();
+      const card = event.target.closest(".feature-card");
+      card
+        ?.querySelector(".feature-expansion")
+        ?.classList.toggle("is-open", checked && settings.enabled);
+      card?.querySelectorAll("[data-subsetting]").forEach((control) => {
+        const sub = meta?.subsettings?.find(
+          (item) => item.id === control.dataset.subsetting
+        );
+        const active = sub ? isSubsettingActive(sub, getFeatureSubsettings(meta)) : true;
+        control.disabled = !checked || !settings.enabled || !active;
+        control
+          .closest(".subsetting-row")
+          ?.classList.toggle("disabled", control.disabled);
+      });
+
+      if (checked && meta?.conflictsWith) {
+        const conflictingCard = featuresList.querySelector(
+          `.feature-card[data-feature="${meta.conflictsWith}"]`
+        );
+        const conflictingInput = conflictingCard?.querySelector("input[data-feature]");
+        if (conflictingInput) conflictingInput.checked = false;
+        conflictingCard
+          ?.querySelector(".feature-expansion")
+          ?.classList.remove("is-open");
+      }
+
       await saveSettings();
 
-      const meta = FEATURE_BY_ID[id];
-      if (meta) {
-        await showPageToast(`${meta.title}: ${checked ? "On" : "Off"}`, checked);
-      }
     });
   });
+}
+
+function updateMasterState() {
+  updateFeatureCount();
+
+  for (const feature of FEATURE_META) {
+    const card = featuresList.querySelector(
+      `.feature-card[data-feature="${feature.id}"]`
+    );
+    if (!card) continue;
+
+    const featureEnabled = settings.features[feature.id] !== false;
+    card.classList.toggle("disabled", !settings.enabled);
+    const featureInput = card.querySelector("input[data-feature]");
+    if (featureInput) featureInput.disabled = !settings.enabled;
+    card
+      .querySelector(".feature-expansion")
+      ?.classList.toggle("is-open", settings.enabled && featureEnabled);
+
+    const featureSettings = getFeatureSubsettings(feature);
+    card.querySelectorAll("[data-subsetting]").forEach((control) => {
+      const sub = feature.subsettings?.find(
+        (item) => item.id === control.dataset.subsetting
+      );
+      const active = sub ? isSubsettingActive(sub, featureSettings) : true;
+      control.disabled = !settings.enabled || !featureEnabled || !active;
+      control
+        .closest(".subsetting-row")
+        ?.classList.toggle("disabled", control.disabled);
+    });
+  }
 }
 
 function bindControls() {
   masterToggle.checked = settings.enabled;
   masterToggle.addEventListener("change", async () => {
     settings.enabled = masterToggle.checked;
-    renderFeatures();
+    updateMasterState();
     await saveSettings();
-    await showPageToast(
-      `YouTube Theming: ${masterToggle.checked ? "On" : "Off"}`,
-      masterToggle.checked
-    );
   });
 
   reloadBtn.addEventListener("click", async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+      url: YOUTUBE_URLS,
+    });
     if (tab?.id) {
       await chrome.tabs.reload(tab.id);
       window.close();

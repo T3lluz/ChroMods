@@ -18,9 +18,11 @@ Chrome MV3 extension — CSS mods for `youtube.com`. Styles adapted from [my-int
 | **Hide filter chips** | Removes the home feed category chip bar and header row |
 | **Player blur** | Frosted-glass blur on video player controls and menus |
 
+The curated panel also includes side-guide controls, thumbnail previews, distraction hiding, ambient-mode control, captions, live-chat overlays, movable live chat, and YouTube TV. Disruptive mods default to off.
+
 ### Popup categories
 
-Settings are grouped in the panel as **Search**, **Home feed**, **Navigation**, and **Player**.
+Settings are grouped in animated, collapsible **Search**, **Home feed**, **Navigation**, **Player**, and **Live & comments** categories.
 
 ### Theater subsettings
 
@@ -41,8 +43,8 @@ Settings are grouped in the panel as **Search**, **Home feed**, **Navigation**, 
 
 ```bash
 npm install          # playwright for e2e
-npm test             # manifest, CSS compat, wiring (12 tests)
-npm run test:e2e     # popup UI + YouTube injection (7 tests)
+npm test             # manifest, CSS compatibility, and wiring
+npm run test:e2e     # popup UI, theater geometry, and YouTube injection
 ```
 
 Screenshots: `tests/screenshots/`
@@ -51,9 +53,8 @@ Screenshots: `tests/screenshots/`
 
 ```
 manifest.json          MV3 config
-background.js          default settings on install
-content-script.js      injects CSS from toggles + subsettings
-popup/                 dark settings panel (categorized + icons)
+scripts/               background, content, popup, and icon JavaScript
+popup/                 dark settings panel markup and styles
 icons/                 extension icon (SVG source + PNG sizes)
 styles/                per-feature CSS modules
 tests/                 node:test + playwright e2e
@@ -62,6 +63,8 @@ tests/                 node:test + playwright e2e
 ## Notes
 
 - Chromium only (`:has()`, `scale`, `backdrop-filter` with `-webkit-` prefix)
+- Movable live chat stores its position and opacity in `chrome.storage.local`
+- Zen's browser-window transparency mod is intentionally excluded because Chromium cannot expose the browser chrome backdrop to page CSS
 - YouTube DOM changes may break selectors — report issues on GitHub
 - Settings sync via `chrome.storage.sync` under key `youtubeThemingSettings`
 

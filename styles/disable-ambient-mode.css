@@ -1,0 +1,5 @@
+/* Disable ambient mode */
+#cinematics-container,
+#cinematics {
+  display: none !important;
+}

@@ -1,0 +1,21 @@
+/* Theater overlay live chat */
+ytd-watch-flexy[theater]:not([fullscreen]) #chat:not(.ytm-movable-chat) {
+  position: fixed !important;
+  z-index: 1900 !important;
+  top: 50% !important;
+  right: 0 !important;
+  width: min(400px, 36vw) !important;
+  height: min(800px, 82vh) !important;
+  margin: 0 !important;
+  opacity: 0.82;
+  transform: translateY(-50%) !important;
+  transition: opacity 0.2s ease !important;
+}
+
+ytd-watch-flexy[theater]:not([fullscreen]) #chat:not(.ytm-movable-chat):hover {
+  opacity: 1;
+}
+
+ytd-watch-flexy[theater]:not([fullscreen]) #chat:not(.ytm-movable-chat) yt-live-chat-renderer {
+  background: transparent !important;
+}

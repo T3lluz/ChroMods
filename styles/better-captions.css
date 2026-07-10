@@ -1,0 +1,14 @@
+/* Better captions */
+.caption-window {
+  width: fit-content !important;
+  padding: 1em !important;
+  border-radius: 1em !important;
+  background: #0008 !important;
+  box-shadow: 0 0 20px #0008 !important;
+  backdrop-filter: blur(10px) brightness(70%) !important;
+  -webkit-backdrop-filter: blur(10px) brightness(70%) !important;
+}
+
+.ytp-caption-segment {
+  background: none !important;
+}

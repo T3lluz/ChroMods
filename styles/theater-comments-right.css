@@ -1,31 +1,14 @@
-/* Theater comments right — Position hover comments on the right edge */
-ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments,
-ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments,
-#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments,
-#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments {
+/* Theater comments right — mirror the slide-in panel */
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments {
   border-radius: 2em 0 0 2em !important;
   left: auto !important;
-  right: -36em !important;
-}
-
-ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments::before,
-ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments::before,
-#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments::before,
-#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: auto !important;
-  width: 4em !important;
-  z-index: 2 !important;
+  right: 0 !important;
+  transform: translateX(calc(100% - 24px)) !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
-ytd-watch-flexy[theater=""]:not([fullscreen=""]) ytd-comments:hover,
-#content:has(ytd-masthead[theater=""]:not([fullscreen=""])) ytd-comments:hover,
-#content:has([data-title-no-tooltip="Full screen"]):has([data-title-no-tooltip="Default view"]) ytd-comments:hover {
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:focus-within {
   left: auto !important;
   right: 0 !important;
+  transform: translateX(0) !important;
 }

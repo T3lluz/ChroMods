@@ -15,6 +15,23 @@ function getExtensionIdFromUrl(url) {
   return match?.[1] ?? null;
 }
 
+function getExtensionIdFromPreferences(userDataDir) {
+  const preferencesPath = path.join(userDataDir, "Default", "Preferences");
+  if (!fs.existsSync(preferencesPath)) return null;
+
+  try {
+    const preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"));
+    const settings = preferences.extensions?.settings || {};
+    for (const [id, extension] of Object.entries(settings)) {
+      if (!extension.path) continue;
+      if (path.resolve(extension.path) === extensionPath) return id;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function launchWithExtension() {
   const userDataDir = path.join(extensionPath, "tests", ".pw-profile");
   fs.mkdirSync(userDataDir, { recursive: true });
@@ -29,12 +46,15 @@ async function launchWithExtension() {
     ],
   });
 
-  let serviceWorker = context.serviceWorkers()[0];
-  if (!serviceWorker) {
-    serviceWorker = await context.waitForEvent("serviceworker", { timeout: 30000 });
+  const deadline = Date.now() + 30000;
+  let extensionId = null;
+  while (!extensionId && Date.now() < deadline) {
+    extensionId =
+      getExtensionIdFromUrl(context.serviceWorkers()[0]?.url() ?? "") ||
+      getExtensionIdFromPreferences(userDataDir);
+    if (!extensionId) await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  const extensionId = getExtensionIdFromUrl(serviceWorker.url());
   assert.ok(extensionId, "Could not resolve extension id");
 
   return { context, extensionId };
@@ -76,17 +96,17 @@ async function run() {
     await popupPage.waitForSelector("#features-list .feature-card", { timeout: 10000 });
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 4, "Expected 4 feature cards");
+    assert.equal(featureCards, 15, "Expected the curated YouTube mod cards");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /YouTube Theming/);
 
     const countText = await popupPage.locator("#feature-count").textContent();
-    assert.match(countText ?? "", /4 of 4 enabled/);
+    assert.match(countText ?? "", /6 of 15 enabled/);
 
     const theaterCard = popupPage.locator('.feature-card[data-feature="theater-mode"]');
     const theaterSubs = theaterCard.locator(".subsettings .subsetting-row");
-    assert.equal(await theaterSubs.count(), 3, "Expected 3 theater subsettings");
+    assert.equal(await theaterSubs.count(), 4, "Expected 4 theater subsettings");
     assert.equal(await theaterCard.locator(".subsetting-row").filter({ hasText: "Comments background" }).count(), 0);
 
     const feedCard = popupPage.locator('.feature-card[data-feature="feed-layout"]');
@@ -107,7 +127,7 @@ async function run() {
       return input && !input.disabled;
     });
     await popupPage.locator('.feature-card[data-feature="compact-sidebar"] label.switch').click();
-    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /3 of 4 enabled/);
+    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /5 of 15 enabled/);
 
     await theaterCard.locator('label[aria-label="Hover comments"]').click();
     await popupPage.waitForTimeout(250);
@@ -115,6 +135,58 @@ async function run() {
 
     results.push({ name: "popup UI and theater subsettings", status: "pass" });
     await popupPage.close();
+
+    const theaterFixture = await context.newPage();
+    await theaterFixture.setContent(`
+      <style>
+        html, body { margin: 0; width: 100%; }
+        #shell { position: relative; width: 70%; margin: 0 auto; }
+        ytd-watch-flexy, #player-full-bleed-container, #full-bleed-container,
+        #movie_player { display: block; position: relative; }
+        #player-full-bleed-container, #full-bleed-container, #movie_player { width: 100%; }
+        #movie_player { height: 360px; }
+        .ytp-chrome-bottom { position: absolute; right: auto; height: 40px; }
+      </style>
+      <div id="shell">
+        <ytd-watch-flexy theater>
+          <div id="player-full-bleed-container">
+            <div id="full-bleed-container">
+              <div id="movie_player" class="html5-video-player">
+                <div class="ytp-chrome-bottom"></div>
+              </div>
+            </div>
+          </div>
+        </ytd-watch-flexy>
+      </div>
+    `);
+    await theaterFixture.addStyleTag({
+      path: path.join(extensionPath, "styles", "theater-base.css"),
+    });
+
+    const theaterBounds = await theaterFixture.evaluate(() => {
+      const viewport = document.documentElement.clientWidth;
+      const player = document.querySelector("#player-full-bleed-container").getBoundingClientRect();
+      return { viewport, left: player.left, right: player.right, width: player.width };
+    });
+    assert.ok(Math.abs(theaterBounds.left) <= 1, `Theater should start at viewport edge: ${JSON.stringify(theaterBounds)}`);
+    assert.ok(
+      Math.abs(theaterBounds.width - theaterBounds.viewport) <= 1 &&
+        Math.abs(theaterBounds.right - theaterBounds.viewport) <= 1,
+      `Theater should fill viewport width: ${JSON.stringify(theaterBounds)}`
+    );
+
+    const exitBounds = await theaterFixture.evaluate(() => {
+      document.querySelector("ytd-watch-flexy").removeAttribute("theater");
+      const player = document.querySelector("#movie_player").getBoundingClientRect();
+      const controls = document.querySelector(".ytp-chrome-bottom").getBoundingClientRect();
+      return { playerRight: player.right, controlsRight: controls.right };
+    });
+    assert.ok(
+      exitBounds.controlsRight <= exitBounds.playerRight + 1,
+      `Controls should remain inside player after theater exit: ${JSON.stringify(exitBounds)}`
+    );
+    results.push({ name: "Theater fills width and exit controls stay bounded", status: "pass" });
+    await theaterFixture.close();
 
     const ytPage = await context.newPage();
     await ytPage.goto("https://www.youtube.com/", {
@@ -149,10 +221,17 @@ async function run() {
       .locator('.feature-card[data-feature="compact-sidebar"] label.switch')
       .click();
     await ytPage.waitForFunction(() => {
-      return Boolean(document.getElementById("youtube-theming-toast"));
+      const css = document.getElementById("youtube-theming-styles")?.textContent ?? "";
+      return /mini guide/i.test(css);
     }, { timeout: 10000 });
+    await ytPage.waitForTimeout(300);
+    assert.equal(
+      await ytPage.locator("#youtube-theming-toast").count(),
+      0,
+      "Toggles should not inject page notifications"
+    );
 
-    results.push({ name: "Toggle shows glow toast on YouTube", status: "pass" });
+    results.push({ name: "Toggle updates cleanly without page toast", status: "pass" });
 
     await popupPage2.locator('.feature-card[data-feature="theater-mode"] label[aria-label="Hover comments"]').click();
 

@@ -1,0 +1,15 @@
+/* Clean side guide */
+ytd-guide-section-renderer:has(
+    a[title="YouTube Studio"],
+    a[title="Sports"],
+    a[title="Sport"],
+    a[title="Settings"]
+  ),
+ytd-guide-renderer #footer {
+  display: none !important;
+}
+
+ytd-guide-section-renderer,
+ytd-guide-collapsible-section-entry-renderer {
+  border: 0 !important;
+}

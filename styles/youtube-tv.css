@@ -1,0 +1,31 @@
+/* YouTube TV layout */
+.ytLrWatchDefaultControlsBackground,
+ytlr-watch-metadata,
+.ytVirtualListItem:not(.ytVirtualListItemSelected) ytlr-comment-renderer,
+.ytLrChannelHeaderRendererMetadata,
+ytlr-surface-page::before {
+  background-color: #fff7 !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+html[dark] .ytLrWatchDefaultControlsBackground,
+html[dark] ytlr-watch-metadata,
+html[dark] .ytVirtualListItem:not(.ytVirtualListItemSelected) ytlr-comment-renderer,
+html[dark] .ytLrChannelHeaderRendererMetadata,
+html[dark] ytlr-surface-page::before {
+  background-color: #0007 !important;
+}
+
+.ytLrWatchDefaultControlsBackground {
+  left: 50% !important;
+  width: min(80rem, 94vw) !important;
+  border-radius: 1em 1em 0 0 !important;
+  transform: translateX(-50%) !important;
+}
+
+.ytLrAnimatedOverlayContainer,
+ytlr-compact-link-renderer {
+  background-color: transparent !important;
+  font-size: 0.7em !important;
+}

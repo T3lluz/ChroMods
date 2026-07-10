@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YouTube Theming",
-  "version": "1.0.0",
-  "description": "Custom YouTube theming — immersive search, theater mode, player blur, compact sidebar, and feed layout tweaks.",
+  "version": "1.1.0",
+  "description": "Chromium-ready YouTube layout, player, navigation, and live chat mods.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -10,7 +10,7 @@
   },
   "permissions": ["storage", "activeTab"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "scripts/background.js"
   },
   "host_permissions": [
     "*://*.youtube.com/*",
@@ -27,14 +27,14 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*", "*://youtube.com/*"],
-      "js": ["content-script.js"],
+      "js": ["scripts/content-script.js"],
       "run_at": "document_start",
       "all_frames": false
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["styles/*.css", "icons/icon48.png"],
+      "resources": ["styles/*.css"],
       "matches": ["*://*.youtube.com/*", "*://youtube.com/*"]
     }
   ]

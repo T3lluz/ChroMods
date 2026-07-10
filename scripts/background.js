@@ -1,5 +1,3 @@
-const YOUTUBE_URLS = ["*://*.youtube.com/*", "*://youtube.com/*"];
-
 const DEFAULT_SETTINGS = {
   enabled: true,
   features: {
@@ -9,6 +7,15 @@ const DEFAULT_SETTINGS = {
     "compact-sidebar": true,
     "hide-filter-chips": true,
     "player-blur": true,
+    "thumbnail-hover": false,
+    "hide-distractions": false,
+    "hide-side-guide": false,
+    "clean-side-guide": false,
+    "disable-ambient-mode": false,
+    "better-captions": false,
+    "youtube-tv": false,
+    "overlay-live-chat": false,
+    "movable-live-chat": false,
   },
   subsettings: {
     theater: {
@@ -23,23 +30,9 @@ const DEFAULT_SETTINGS = {
   },
 };
 
-function broadcastSettings(settings) {
-  chrome.tabs.query({ url: YOUTUBE_URLS }, (tabs) => {
-    for (const tab of tabs) {
-      if (!tab.id) continue;
-      chrome.tabs.sendMessage(tab.id, { action: "applySettings", settings }).catch(() => {});
-    }
-  });
-}
-
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get("youtubeThemingSettings", (stored) => {
     if (stored.youtubeThemingSettings) return;
     chrome.storage.sync.set({ youtubeThemingSettings: DEFAULT_SETTINGS });
   });
-});
-
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "sync" || !changes.youtubeThemingSettings) return;
-  broadcastSettings(changes.youtubeThemingSettings.newValue);
 });

@@ -39,7 +39,7 @@ test("manifest is valid Chrome MV3", () => {
   const manifest = JSON.parse(read("manifest.json"));
   assert.equal(manifest.manifest_version, 3);
   assert.ok(manifest.name);
-  assert.ok(manifest.content_scripts?.[0]?.js?.includes("content-script.js"));
+  assert.ok(manifest.content_scripts?.[0]?.js?.includes("scripts/content-script.js"));
   assert.ok(manifest.action?.default_popup);
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtube.com")));
 });
@@ -96,6 +96,16 @@ test("theater hide header extends hover reveal zone", () => {
   assert.match(css, /focus-within/);
 });
 
+test("theater layout is viewport-wide and resets control bounds on exit", () => {
+  const css = read("styles/theater-base.css");
+  assert.match(css, /ytd-watch-flexy\[theater\].*#player-full-bleed-container/);
+  assert.match(css, /width:\s*100vw/);
+  assert.match(css, /margin:\s*0 0 0 -50vw/);
+  assert.match(css, /ytd-watch-flexy:not\(\[theater\]\) \.ytp-chrome-bottom/);
+  assert.match(css, /width:\s*calc\(100% - 24px\)/);
+  assert.doesNotMatch(css, /ytd-masthead\[theater/);
+});
+
 test("theater header blur matches player blur frosted glass", () => {
   const css = read("styles/theater-header-blur.css");
   assert.match(css, /backdrop-filter:\s*blur\(5px\)/);
@@ -112,14 +122,14 @@ test("immersive search includes transform fallbacks for scale", () => {
 test("popup assets exist and reference each other", () => {
   const html = read("popup/popup.html");
   assert.match(html, /popup\.css/);
-  assert.match(html, /popup\.js/);
+  assert.match(html, /\.\.\/scripts\/popup\.js/);
   assert.match(html, /id="master-toggle"/);
   assert.match(html, /id="features-list"/);
   assert.match(html, /id="feature-count"/);
 });
 
 test("content script maps features and theater subsettings", () => {
-  const js = read("content-script.js");
+  const js = read("scripts/content-script.js");
   assert.match(js, /"theater-mode"/);
   assert.match(js, /theater-base\.css/);
   assert.match(js, /theater-header-blur\.css/);
@@ -129,35 +139,56 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /"feed-layout"/);
   assert.match(js, /"compact-sidebar"/);
   assert.match(js, /feed-layout-compact\.css/);
-  assert.match(js, /showToast/);
-  assert.match(js, /ytm-glow-out/);
-  assert.match(js, /ytm-vignette/);
+  assert.match(js, /MovableLiveChat/);
+  assert.match(js, /movable-live-chat/);
+  assert.match(js, /setTheaterLayoutSyncEnabled/);
+  assert.doesNotMatch(
+    js,
+    /showToast|youtube-theming-toast|ytm-toast|ytm-glow|ytm-vignette|createGlowRing/
+  );
   assert.doesNotMatch(js, /theater-glass-comments|theater-translucent-comments|commentsBackground/);
 });
 
-test("background broadcasts settings changes to YouTube tabs", () => {
-  const js = read("background.js");
-  assert.match(js, /chrome\.storage\.onChanged/);
-  assert.match(js, /broadcastSettings/);
-  assert.match(js, /applySettings/);
+test("background only seeds install defaults", () => {
+  const js = read("scripts/background.js");
+  assert.match(js, /chrome\.runtime\.onInstalled/);
+  assert.match(js, /chrome\.storage\.sync\.set/);
+  assert.doesNotMatch(js, /chrome\.tabs|sendMessage|broadcastSettings/);
 });
 
-test("popup triggers page toast on toggle", () => {
-  const js = read("popup/popup.js");
-  assert.match(js, /showPageToast/);
-  assert.match(js, /action:\s*"showToast"/);
-  assert.match(js, /notifyAllYouTubeTabs/);
+test("popup applies toggles through storage without page messaging", () => {
+  const js = read("scripts/popup.js");
+  assert.match(js, /chrome\.storage\.sync\.set/);
+  assert.match(js, /updateMasterState/);
+  assert.doesNotMatch(
+    js,
+    /sendMessage|notifyAllYouTubeTabs|showPageToast|showToast|youtube-theming-toast/
+  );
 });
 
 test("popup defines theater and feed subsettings", () => {
-  const js = read("popup/popup.js");
+  const js = read("scripts/popup.js");
   assert.match(js, /hoverComments/);
   assert.match(js, /hideHeader/);
   assert.match(js, /headerBlur/);
   assert.match(js, /commentsSide/);
   assert.match(js, /FEED_SUBSETTINGS/);
   assert.match(js, /columns/);
+  assert.match(js, /overlay-live-chat/);
+  assert.doesNotMatch(
+    js,
+    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme/
+  );
   assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
+});
+
+test("popup categories have custom icons and animated expansion", () => {
+  const js = read("scripts/icons.js");
+  const css = read("popup/popup.css");
+  assert.match(js, /category-live/);
+  assert.match(css, /category-expansion/);
+  assert.match(css, /feature-expansion/);
+  assert.match(css, /prefers-reduced-motion/);
 });
 
 test("popup CSS uses forced dark theme", () => {

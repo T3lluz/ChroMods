@@ -1,0 +1,6 @@
+/* Hide feed distractions */
+ytd-rich-grid-renderer #contents > ytd-rich-section-renderer,
+ytd-merch-shelf-renderer,
+.annotation {
+  display: none !important;
+}

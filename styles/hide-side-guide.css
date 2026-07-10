@@ -1,0 +1,14 @@
+/* Hide side guide */
+ytd-mini-guide-renderer,
+ytd-app[guide-persistent-and-visible] tp-yt-app-drawer #contentContainer::after {
+  display: none !important;
+}
+
+tp-yt-app-drawer > #contentContainer:not([opened]),
+#contentContainer:not([opened]) #guide-content {
+  background: var(--yt-spec-base-background, #0f0f0f) !important;
+}
+
+#content:not(:has(#contentContainer[opened])) #page-manager {
+  margin-left: 0 !important;
+}
