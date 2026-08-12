@@ -54,7 +54,7 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` â
    - matching defaults in `scripts/background.js` and `scripts/popup.js`
    - `FEATURE_META` entry (title, description, category, `defaultEnabled`, and `site` â€” defaults to `youtube`)
    - If it is a new website, add it to `SITE_META` in `scripts/sites.js` (id, title, hostnames, icon) and a matching icon in `scripts/icons.js`
-   - Add a glowing site badge at `docs/sites/<id>.svg` (README artwork)
+   - Add a site icon at `docs/sites/<id>.svg` (plain brand mark, same as the popup)
    - `web_accessible_resources` already covers `styles/*.css`
 5. Add/adjust a test in `tests/css-compat.test.js` for the new module.
 6. Keep MIT attribution; CSS is derived from my-internet.
