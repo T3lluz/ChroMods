@@ -1,0 +1,4 @@
+/* ddg-hidden promo — remove the homepage hero block */
+.desktop-homepage_heroContent__4HUFA {
+  display: none !important;
+}

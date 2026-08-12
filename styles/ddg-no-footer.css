@@ -1,0 +1,6 @@
+/* ddg-No Footer — hide DuckDuckGo's page footer */
+footer,
+.footer,
+#footer {
+  display: none !important;
+}

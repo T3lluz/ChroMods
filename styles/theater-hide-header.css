@@ -2,8 +2,8 @@
 body:has(ytd-watch-flexy[theater]:not([hidden])) #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)) {
   top: -40px !important;
   opacity: 0 !important;
-  padding-bottom: 140px !important;
-  margin-bottom: -140px !important;
+  padding-bottom: 24px !important;
+  margin-bottom: -24px !important;
   box-sizing: content-box !important;
   transition:
     top 0.3s cubic-bezier(0.445, 0.05, 0.55, 0.95),

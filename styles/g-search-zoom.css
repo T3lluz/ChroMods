@@ -1,0 +1,25 @@
+/* google-search zoom — blur and scale results when the search box is focused */
+#main {
+  transition: all 0.3s ease-in-out !important;
+}
+
+body:has(.A8SBwf.emcav) #main {
+  filter: blur(20px) !important;
+  scale: 0.98 !important;
+  transform: scale(0.98) !important;
+}
+
+.aajZCb,
+.emcav .RNNXgb {
+  background-color: light-dark(#fff5, #0007) !important;
+}
+
+/* @slow reveal search filters */
+.rfiSsc {
+  transition: all 1s ease-in-out !important;
+}
+
+.rfiSsc.JiJthb {
+  transition: all 0s ease-in-out !important;
+  opacity: 0 !important;
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 28" width="720" height="28" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="line" x1="0" y1="14" x2="720" y2="14" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff8f6b" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ff8f6b"/>
+      <stop offset="1" stop-color="#ff4f6e" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-200%" width="120%" height="500%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <rect x="40" y="10" width="640" height="8" rx="4" fill="url(#line)" filter="url(#glow)" opacity="0.85">
+    <animate attributeName="opacity" values="0.45;0.95;0.45" dur="4.5s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="80" y="13" width="560" height="2" rx="1" fill="url(#line)"/>
+</svg>

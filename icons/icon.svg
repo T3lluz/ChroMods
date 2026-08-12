@@ -1,34 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
   <defs>
     <linearGradient id="bg" x1="12" y1="8" x2="116" y2="120" gradientUnits="userSpaceOnUse">
       <stop stop-color="#2e2c38"/>
       <stop offset="1" stop-color="#1c1a24"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.88" cy="0.12" r="0.72" gradientUnits="objectBoundingBox">
-      <stop stop-color="#ff7a52" stop-opacity="0.38"/>
+    <radialGradient id="glow" cx="0.86" cy="0.14" r="0.7" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ff7a52" stop-opacity="0.4"/>
       <stop offset="1" stop-color="#ff7a52" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="accent" x1="25" y1="16" x2="51" y2="44" gradientUnits="userSpaceOnUse">
+    <linearGradient id="accent" x1="8" y1="10" x2="118" y2="120" gradientUnits="userSpaceOnUse">
       <stop stop-color="#ffd9c4"/>
-      <stop offset="0.4" stop-color="#ff9a5a"/>
+      <stop offset="0.45" stop-color="#ff8f6b"/>
       <stop offset="1" stop-color="#ff4f6e"/>
-    </linearGradient>
-    <linearGradient id="layer" x1="0" y1="0" x2="76" y2="60" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ff8f6b" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#ff6b8a" stop-opacity="0.12"/>
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="28" fill="url(#bg)"/>
   <rect width="128" height="128" rx="28" fill="url(#glow)"/>
   <rect x="0.75" y="0.75" width="126.5" height="126.5" rx="27.25" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-  <g transform="translate(56 56) rotate(-15) translate(-38 -30)">
-    <rect width="76" height="60" rx="14" fill="url(#layer)"/>
-  </g>
-  <g transform="translate(64 64) rotate(-7) translate(-38 -30)">
-    <rect width="76" height="60" rx="14" stroke="rgba(255, 200, 175, 0.45)" stroke-width="2"/>
-    <path
-      d="M 25 19.2 L 25 40.8 Q 25 44 27.8 42.4 L 48.2 31.6 Q 51 30 48.2 28.4 L 27.8 17.6 Q 25 16 25 19.2 Z"
-      fill="url(#accent)"
-    />
-  </g>
+  <path
+    d="M88.34 39.45 A36 36 0 1 0 88.34 88.55"
+    stroke="url(#accent)"
+    stroke-width="34"
+    stroke-linecap="butt"
+    fill="none"
+  />
+  <rect x="82" y="37" width="40" height="15" rx="7.5" fill="#ffd9c4"/>
+  <rect x="76" y="56.5" width="40" height="15" rx="7.5" fill="#ff8f6b"/>
+  <rect x="70" y="76" width="40" height="15" rx="7.5" fill="#ff4f6e"/>
 </svg>

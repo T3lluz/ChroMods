@@ -1,0 +1,11 @@
+/* gh-hover — home-feed sidebars show on hover */
+.feed-left-sidebar,
+.feed-right-column {
+  opacity: 0 !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+.feed-left-sidebar:hover,
+.feed-right-column:hover {
+  opacity: 1 !important;
+}

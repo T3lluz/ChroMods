@@ -1,0 +1,5 @@
+/* ddg-No Learn more — hide homepage features and the scroll prompt */
+#features,
+.homepage-cta-section_scrollCta__Wmixn {
+  display: none !important;
+}

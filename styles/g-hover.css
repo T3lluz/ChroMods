@@ -1,0 +1,9 @@
+/* google-hover — hide the filter chip row until hover */
+.rfiSsc {
+  opacity: 0 !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+.rfiSsc:hover {
+  opacity: 1 !important;
+}

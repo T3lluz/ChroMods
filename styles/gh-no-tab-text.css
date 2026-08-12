@@ -1,0 +1,22 @@
+/* gh-no-tab-text — repository tabs are icons only; labels show on hover */
+nav[aria-label="Repository"] > ul > li > a span[data-component="text"] {
+  opacity: 0 !important;
+  width: 0em !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+}
+
+nav[aria-label="Repository"] > ul > li > a:hover span[data-component="text"] {
+  width: 9em !important;
+  opacity: 1 !important;
+}
+
+.UnderlineNav-item:hover .Counter {
+  margin-left: var(--control-medium-gap) !important;
+}
+
+.AppHeader-localBar .Counter {
+  margin-left: 0px !important;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+}

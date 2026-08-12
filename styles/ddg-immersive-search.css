@@ -1,0 +1,157 @@
+/* ddg immersive search — blur and scale the page when the search box is focused */
+:is(
+  [data-testid="belowTheFold"],
+  [data-testid="pull-tab-scroll-button"],
+  [data-testid="home-hero"],
+  #features,
+  #home-download,
+  #home-setdefault,
+  .desktop-homepage_heroContent__4HUFA,
+  .homepage-cta-section_scrollCta__Wmixn,
+  .minimal-homepage_minimalContentWrap__YnOEL,
+  .center_intrinsic__Gt_PZ,
+  #web_content_wrapper,
+  #react-duckbar,
+  #zero_click_wrapper,
+  #vertical_wrapper,
+  #react-layout,
+  [data-testid="mainline"],
+  [data-testid="duckbar"],
+  footer,
+  .footer
+) {
+  transition: all 0.3s ease-in-out !important;
+}
+
+body:has(
+    :is(
+      #searchbox_input:focus,
+      #searchbox_input[aria-expanded="true"],
+      #ai-searchbox-input:focus,
+      [data-testid="searchbox-form"]:focus-within,
+      #searchbox_homepage_search:focus-within,
+      #searchbox_homepage:focus-within,
+      #search_form:focus-within,
+      #search_form_input:focus,
+      #react-search-form:focus-within,
+      #search_form > [data-expanded],
+      #searchbox_homepage > [data-expanded]
+    )
+  )
+  :is(
+    [data-testid="belowTheFold"],
+    [data-testid="pull-tab-scroll-button"],
+    #features,
+    #home-download,
+    #home-setdefault,
+    .desktop-homepage_heroContent__4HUFA,
+    .homepage-cta-section_scrollCta__Wmixn,
+    .minimal-homepage_minimalContentWrap__YnOEL,
+    .center_intrinsic__Gt_PZ,
+    #web_content_wrapper,
+    #react-duckbar,
+    #zero_click_wrapper,
+    #vertical_wrapper,
+    #react-layout,
+    [data-testid="mainline"],
+    [data-testid="duckbar"],
+    footer,
+    .footer
+  ) {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+/* Match Google immersive search: scale a single layer by 0.98, not nested children. */
+body:has(
+    :is(
+      #searchbox_input:focus,
+      #searchbox_input[aria-expanded="true"],
+      #ai-searchbox-input:focus,
+      [data-testid="searchbox-form"]:focus-within,
+      #searchbox_homepage_search:focus-within,
+      #searchbox_homepage:focus-within,
+      #search_form:focus-within,
+      #search_form_input:focus,
+      #react-search-form:focus-within,
+      #search_form > [data-expanded],
+      #searchbox_homepage > [data-expanded]
+    )
+  )
+  :is(
+    [data-testid="belowTheFold"],
+    #features,
+    #home-download,
+    #home-setdefault,
+    .desktop-homepage_heroContent__4HUFA,
+    .homepage-cta-section_scrollCta__Wmixn,
+    .minimal-homepage_minimalContentWrap__YnOEL,
+    .center_intrinsic__Gt_PZ,
+    #web_content_wrapper,
+    #react-duckbar,
+    #zero_click_wrapper,
+    #vertical_wrapper,
+    #react-layout,
+    footer,
+    .footer
+  ) {
+  scale: 0.98 !important;
+  transform: scale(0.98) !important;
+}
+
+body:has(
+    :is(
+      #searchbox_input:focus,
+      #searchbox_input[aria-expanded="true"],
+      #ai-searchbox-input:focus,
+      [data-testid="searchbox-form"]:focus-within,
+      #searchbox_homepage_search:focus-within,
+      #searchbox_homepage:focus-within,
+      #search_form:focus-within,
+      #search_form_input:focus,
+      #react-search-form:focus-within,
+      #search_form > [data-expanded],
+      #searchbox_homepage > [data-expanded]
+    )
+  )
+  :is(header, [data-testid="home-hero"], #header, #header-non-nav)
+  > :not(
+    :has(
+      #searchbox_input,
+      #searchbox_homepage_search,
+      #search_form,
+      #react-search-form,
+      [data-testid="searchbox-form"]
+    )
+  ) {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+body:has(
+    :is(
+      #searchbox_input:focus,
+      #searchbox_input[aria-expanded="true"],
+      #ai-searchbox-input:focus,
+      [data-testid="searchbox-form"]:focus-within,
+      #searchbox_homepage_search:focus-within,
+      #searchbox_homepage:focus-within,
+      #search_form:focus-within,
+      #search_form_input:focus,
+      #react-search-form:focus-within,
+      #search_form > [data-expanded],
+      #searchbox_homepage > [data-expanded]
+    )
+  )
+  :is(
+    #searchbox_homepage_search,
+    #searchbox_homepage,
+    #search_form,
+    #react-search-form,
+    [data-testid="searchbox-form"],
+    #ai-searchbox-root
+  ) {
+  position: relative !important;
+  z-index: 2002 !important;
+  pointer-events: auto !important;
+}

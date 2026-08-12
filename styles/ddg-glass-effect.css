@@ -1,0 +1,46 @@
+/* ddg-Glass Effect — frosted panels on search, cards, menus, and modules */
+:root,
+.cta-cards_card__v9a4R,
+.searchbox_combobox__P9Gnn,
+.fCp5GIWYTsUwPglO0ME2,
+.O9Ipab51rBntYb0pwOQn,
+.T265XEcezvjUhK71U8pN {
+  --theme-bg-cta-cards: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-bg-home-searchbox: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-sidemenu-bg: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-searchbox-bg--focused: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-searchbox-suggestion--hover: hsla(0, 0%, 100%, 0.08) !important;
+  --sds-color-background-01: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-col-bg-card: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-col-bg-button-secondary: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-col-bg-page-alt-2: hsla(0, 0%, 100%, 0.08) !important;
+  --sds-color-background-container-01: hsla(0, 0%, 100%, 0.08) !important;
+  --theme-assist-bg-chat-system: hsla(0, 0%, 100%, 0.08) !important;
+  --sds-color-background-utility: hsla(0, 0%, 100%, 0.08) !important;
+  --sds-color-background-02: hsla(0, 0%, 100%, 0.08) !important;
+  --sds-color-background-container-pre: hsla(0, 0%, 100%, 0.08) !important;
+}
+
+.related-searches__item,
+.modal__box,
+.nav-menu--slideout,
+.search--header,
+.set-head__menu > .set-tab:not(.is-active),
+.frm__select,
+.btn,
+.cloudsave,
+.set-bookmarklet,
+.set-reset,
+.badge-link,
+.frm__input,
+.YejuTyTJeJ_rpBUTUpcl,
+.HHJGgzrZRmw9obWw1QS1 > :first-child,
+.module,
+code {
+  background-color: hsla(0, 0%, 100%, 0.08) !important;
+}
+
+.settings-page-wrapper .is-checked .frm__switch__label,
+.settings-page-wrapper .btn--primary {
+  background-color: #7295f666 !important;
+}

@@ -1,6 +1,13 @@
 (function () {
-  const STYLE_ID = "youtube-theming-styles";
+  const STYLE_ID = "chromods-styles";
   const ACCENT_COLOR = "#ff8f6b";
+  const SETTINGS_KEY = "chroModsSettings";
+  const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
+  const LIVE_CHAT_POSITION_KEY = "chroModsLiveChatPosition";
+  const LIVE_CHAT_OPACITY_KEY = "chroModsLiveChatOpacity";
+  const LEGACY_LIVE_CHAT_POSITION_KEY = "youtubeThemingLiveChatPosition";
+  const LEGACY_LIVE_CHAT_OPACITY_KEY = "youtubeThemingLiveChatOpacity";
+  const MOVABLE_CHAT_STYLE_ID = "chromods-movable-chat-styles";
 
   const FEATURES = {
     "immersive-search": ["styles/immersive-search.css"],
@@ -15,6 +22,59 @@
     "better-captions": ["styles/better-captions.css"],
     "youtube-tv": ["styles/youtube-tv.css"],
     "overlay-live-chat": ["styles/overlay-live-chat.css"],
+    "gh-no-tab-text": ["styles/gh-no-tab-text.css"],
+    "gh-no-footer": ["styles/gh-no-footer.css"],
+    "gh-hover": ["styles/gh-hover.css"],
+    "gh-border-mods": ["styles/gh-border-mods.css"],
+    "gh-glass-effect": ["styles/gh-glass-effect.css"],
+    "gh-repo-sidebar-hover": ["styles/gh-repo-sidebar-hover.css"],
+    "gh-immersive-search": ["styles/gh-immersive-search.css"],
+    "gh-hide-toolbar-separator": ["styles/gh-hide-toolbar-separator.css"],
+    "gh-timeline-badge": ["styles/gh-timeline-badge.css"],
+    "gh-chip-margin": ["styles/gh-chip-margin.css"],
+    "gh-remove-borders": ["styles/gh-remove-borders.css"],
+    "g-search-zoom": ["styles/g-search-zoom.css"],
+    "g-glass-effect": ["styles/g-glass-effect.css"],
+    "g-overlay-fix": ["styles/g-overlay-fix.css"],
+    "g-shadows-borders": ["styles/g-shadows-borders.css"],
+    "g-hover": ["styles/g-hover.css"],
+    "ddg-immersive-search": ["styles/ddg-immersive-search.css"],
+    "ddg-immersive-popup": ["styles/ddg-immersive-popup.css"],
+    "ddg-glass-effect": ["styles/ddg-glass-effect.css"],
+    "ddg-animations": ["styles/ddg-animations.css"],
+    "ddg-misc": ["styles/ddg-misc.css"],
+    "ddg-no-learn-more": ["styles/ddg-no-learn-more.css"],
+    "ddg-hidden-promo": ["styles/ddg-hidden-promo.css"],
+    "ddg-no-share-feedback": ["styles/ddg-no-share-feedback.css"],
+    "ddg-no-footer": ["styles/ddg-no-footer.css"],
+  };
+
+  const FEATURE_SITE = {
+    "gh-no-tab-text": "github",
+    "gh-no-footer": "github",
+    "gh-hover": "github",
+    "gh-border-mods": "github",
+    "gh-glass-effect": "github",
+    "gh-repo-sidebar-hover": "github",
+    "gh-immersive-search": "github",
+    "gh-hide-toolbar-separator": "github",
+    "gh-timeline-badge": "github",
+    "gh-chip-margin": "github",
+    "gh-remove-borders": "github",
+    "g-search-zoom": "google",
+    "g-glass-effect": "google",
+    "g-overlay-fix": "google",
+    "g-shadows-borders": "google",
+    "g-hover": "google",
+    "ddg-immersive-search": "duckduckgo",
+    "ddg-immersive-popup": "duckduckgo",
+    "ddg-glass-effect": "duckduckgo",
+    "ddg-animations": "duckduckgo",
+    "ddg-misc": "duckduckgo",
+    "ddg-no-learn-more": "duckduckgo",
+    "ddg-hidden-promo": "duckduckgo",
+    "ddg-no-share-feedback": "duckduckgo",
+    "ddg-no-footer": "duckduckgo",
   };
 
   const FEED_PARTS = {
@@ -59,10 +119,41 @@
       "youtube-tv": false,
       "overlay-live-chat": false,
       "movable-live-chat": false,
+      "gh-no-tab-text": true,
+      "gh-no-footer": true,
+      "gh-hover": false,
+      "gh-border-mods": true,
+      "gh-glass-effect": true,
+      "gh-repo-sidebar-hover": false,
+      "gh-immersive-search": true,
+      "gh-hide-toolbar-separator": true,
+      "gh-timeline-badge": true,
+      "gh-chip-margin": true,
+      "gh-remove-borders": true,
+      "g-search-zoom": true,
+      "g-glass-effect": true,
+      "g-overlay-fix": true,
+      "g-shadows-borders": true,
+      "g-hover": false,
+      "ddg-immersive-search": true,
+      "ddg-immersive-popup": true,
+      "ddg-glass-effect": true,
+      "ddg-animations": true,
+      "ddg-misc": true,
+      "ddg-no-learn-more": true,
+      "ddg-hidden-promo": false,
+      "ddg-no-share-feedback": true,
+      "ddg-no-footer": true,
     },
     subsettings: {
       theater: { ...DEFAULT_THEATER },
       feed: { ...DEFAULT_FEED },
+    },
+    sites: {
+      youtube: { enabled: true },
+      github: { enabled: true },
+      google: { enabled: true },
+      duckduckgo: { enabled: true },
     },
   };
 
@@ -87,7 +178,12 @@
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
+      enabled: stored.sites?.youtube?.enabled ?? stored.enabled ?? true,
       features,
+      sites: {
+        ...DEFAULT_SETTINGS.sites,
+        ...(stored.sites || {}),
+      },
       subsettings: {
         theater: migrateTheater(stored.subsettings?.theater),
         feed: {
@@ -96,6 +192,27 @@
         },
       },
     };
+  }
+
+  function getFeatureSite(featureId) {
+    if (FEATURE_SITE[featureId]) return FEATURE_SITE[featureId];
+    const id = String(featureId);
+    if (id.startsWith("ddg-")) return "duckduckgo";
+    if (id.startsWith("gh-")) return "github";
+    if (id.startsWith("g-")) return "google";
+    return "youtube";
+  }
+
+  function getCurrentSiteId() {
+    return matchSiteFromHostname(location.hostname)?.id ?? null;
+  }
+
+  function isCurrentSiteEnabled(merged, siteId) {
+    if (!siteId) return false;
+    if (typeof merged.sites?.[siteId]?.enabled === "boolean") {
+      return merged.sites[siteId].enabled;
+    }
+    return siteId === "youtube" ? merged.enabled !== false : true;
   }
 
   function getStyleEl() {
@@ -326,12 +443,14 @@
       }
 
       const stored = await chrome.storage.local.get([
-        "youtubeThemingLiveChatPosition",
-        "youtubeThemingLiveChatOpacity",
+        LIVE_CHAT_POSITION_KEY,
+        LIVE_CHAT_OPACITY_KEY,
+        LEGACY_LIVE_CHAT_POSITION_KEY,
+        LEGACY_LIVE_CHAT_OPACITY_KEY,
       ]);
       if (!this.enabled) return;
-      this.position = stored.youtubeThemingLiveChatPosition || null;
-      this.opacity = stored.youtubeThemingLiveChatOpacity ?? 1;
+      this.position = stored[LIVE_CHAT_POSITION_KEY] || stored[LEGACY_LIVE_CHAT_POSITION_KEY] || null;
+      this.opacity = stored[LIVE_CHAT_OPACITY_KEY] ?? stored[LEGACY_LIVE_CHAT_OPACITY_KEY] ?? 1;
       this.injectStyles();
       this.observer = new MutationObserver(() => this.scheduleSync());
       this.observer.observe(document.documentElement, {
@@ -355,9 +474,9 @@
     }
 
     injectStyles() {
-      if (document.getElementById("youtube-theming-movable-chat-styles")) return;
+      if (document.getElementById(MOVABLE_CHAT_STYLE_ID)) return;
       const style = document.createElement("style");
-      style.id = "youtube-theming-movable-chat-styles";
+      style.id = MOVABLE_CHAT_STYLE_ID;
       style.textContent = `
         ytd-watch-flexy[theater] #chat.ytm-movable-chat {
           position: fixed !important;
@@ -464,7 +583,7 @@
           );
           this.chat.style.setProperty("opacity", String(this.opacity), "important");
           chrome.storage.local.set({
-            youtubeThemingLiveChatOpacity: this.opacity,
+            [LIVE_CHAT_OPACITY_KEY]: this.opacity,
           });
         },
         { passive: false }
@@ -571,8 +690,8 @@
         height: Math.round(rect.height),
       };
       chrome.storage.local.set({
-        youtubeThemingLiveChatPosition: this.position,
-        youtubeThemingLiveChatOpacity: this.opacity,
+        [LIVE_CHAT_POSITION_KEY]: this.position,
+        [LIVE_CHAT_OPACITY_KEY]: this.opacity,
       });
     }
 
@@ -606,13 +725,14 @@
       window.removeEventListener("yt-navigate-finish", this.onPageChange);
       window.removeEventListener("resize", this.onResize);
       this.detachChat();
-      document.getElementById("youtube-theming-movable-chat-styles")?.remove();
+      document.getElementById(MOVABLE_CHAT_STYLE_ID)?.remove();
     }
   }
 
   const movableLiveChat = new MovableLiveChat();
 
-  const THEATER_COMMENTS_WIDTH_KEY = "youtubeThemingTheaterCommentsWidth";
+  const THEATER_COMMENTS_WIDTH_KEY = "chroModsTheaterCommentsWidth";
+  const LEGACY_THEATER_COMMENTS_WIDTH_KEY = "youtubeThemingTheaterCommentsWidth";
   const THEATER_COMMENTS_MIN_WIDTH = 300;
   const THEATER_COMMENTS_MAX_WIDTH = 720;
 
@@ -646,11 +766,15 @@
         return;
       }
 
-      const stored = await chrome.storage.local.get(THEATER_COMMENTS_WIDTH_KEY);
+      const stored = await chrome.storage.local.get([
+        THEATER_COMMENTS_WIDTH_KEY,
+        LEGACY_THEATER_COMMENTS_WIDTH_KEY,
+      ]);
       this.enabled = true;
       this.widths = {
         left: null,
         right: null,
+        ...(stored[LEGACY_THEATER_COMMENTS_WIDTH_KEY] || {}),
         ...(stored[THEATER_COMMENTS_WIDTH_KEY] || {}),
       };
       this.ensureObserver();
@@ -899,9 +1023,11 @@
   async function applySettings(settings) {
     const generation = ++applyGeneration;
     const merged = mergeSettings(settings);
-    const enabledIds = merged.enabled
+    const siteId = getCurrentSiteId();
+    const siteEnabled = isCurrentSiteEnabled(merged, siteId);
+    const enabledIds = siteEnabled
       ? Object.keys({ ...FEATURES, "theater-mode": true, "feed-layout": true }).filter(
-          (id) => merged.features?.[id] !== false
+          (id) => merged.features?.[id] !== false && getFeatureSite(id) === siteId
         )
       : [];
 
@@ -914,14 +1040,16 @@
     el.textContent = chunks.filter(Boolean).join("\n\n");
     ensureLastInHead();
     startObserver();
+
+    const youtubeEnabled = siteId === "youtube" && siteEnabled;
     setTheaterLayoutSyncEnabled(
-      merged.enabled && merged.features?.["theater-mode"] !== false
+      youtubeEnabled && merged.features?.["theater-mode"] !== false
     );
     await movableLiveChat.setEnabled(
-      merged.enabled && merged.features?.["movable-live-chat"] === true
+      youtubeEnabled && merged.features?.["movable-live-chat"] === true
     );
     await theaterHoverComments.setEnabled(
-      merged.enabled &&
+      youtubeEnabled &&
         merged.features?.["theater-mode"] !== false &&
         merged.subsettings?.theater?.hoverComments !== false,
       { commentsSide: merged.subsettings?.theater?.commentsSide ?? "left" }
@@ -938,13 +1066,19 @@
   }
 
   async function init() {
-    const stored = await chrome.storage.sync.get("youtubeThemingSettings");
-    await bootstrap(mergeSettings(stored.youtubeThemingSettings));
+    const stored = await chrome.storage.sync.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY]);
+    await bootstrap(mergeSettings(stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY]));
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "sync" || !changes.youtubeThemingSettings) return;
-    applySettings(mergeSettings(changes.youtubeThemingSettings.newValue));
+    if (area !== "sync") return;
+    if (changes[SETTINGS_KEY]) {
+      applySettings(mergeSettings(changes[SETTINGS_KEY].newValue));
+      return;
+    }
+    if (changes[LEGACY_SETTINGS_KEY]) {
+      applySettings(mergeSettings(changes[LEGACY_SETTINGS_KEY].newValue));
+    }
   });
 
   init();

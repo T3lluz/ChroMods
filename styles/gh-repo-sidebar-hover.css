@@ -1,0 +1,18 @@
+/* repo sidebar hover — reveal About / sidebar details on hover */
+.Layout-sidebar .BorderGrid-cell .mt-2,
+.Layout-sidebar .BorderGrid-cell ul,
+.Layout-sidebar .BorderGrid-cell div:not(.hide-sm.hide-md, .flex-items-center, .my-3, .f6) {
+  height: 0 !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  transition: all 0.5s ease-out !important;
+}
+
+.Layout-sidebar:hover .BorderGrid-cell .mt-2,
+.Layout-sidebar:hover .BorderGrid-cell ul,
+.Layout-sidebar:hover .BorderGrid-cell div:not(.hide-sm.hide-md, .flex-items-center, .my-3, .f6) {
+  height: 100% !important;
+  opacity: 1 !important;
+  margin: 0.5em !important;
+}

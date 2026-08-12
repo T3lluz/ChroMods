@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "test:e2e": "node tests/extension.e2e.mjs"
+    "test:e2e": "node tests/extension.e2e.mjs",
+    "readme": "node scripts/generate-readme.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

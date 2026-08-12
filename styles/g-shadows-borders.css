@@ -1,0 +1,17 @@
+/* google-shadows and borders — drop extra chrome shadows and hide the footer */
+.minidiv .sfbg,
+.JryvJ .qS9jbf,
+.sHEJob,
+.Hwkikb.WY0eLb {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+#sfooter,
+[role="contentinfo"] {
+  display: none !important;
+}
+
+.w6VYqd {
+  background-color: #fff !important;
+}

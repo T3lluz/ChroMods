@@ -1,0 +1,4 @@
+/* Hide Separator in toolbar */
+.AppHeader .AppHeader-globalBar .AppHeader-actions::before {
+  display: none !important;
+}

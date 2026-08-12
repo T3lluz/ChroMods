@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.35" r="0.7">
+      <stop stop-color="#4285F4" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#4285F4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#101318"/>
+  <rect width="128" height="128" rx="28" fill="url(#glow)"/>
+  <rect x="0.75" y="0.75" width="126.5" height="126.5" rx="27.25" stroke="rgba(66,133,244,0.32)" stroke-width="1.5"/>
+  <g transform="translate(22,22) scale(3.5)" filter="url(#soft)" opacity="0.35">
+    <path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.61-.21-2.36H12v4.47h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.73Z"/>
+  </g>
+  <g transform="translate(22,22) scale(3.5)">
+    <path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.61-.21-2.36H12v4.47h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.73Z"/>
+    <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3c-1.08.72-2.46 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.26v3.09A12 12 0 0 0 12 24Z"/>
+    <path fill="#FBBC05" d="M5.27 14.3A7.21 7.21 0 0 1 4.89 12c0-.8.14-1.57.38-2.3V6.61H1.26A12 12 0 0 0 0 12c0 1.94.46 3.77 1.26 5.39l4.01-3.09Z"/>
+    <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.61 4.58 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.26 6.61l4.01 3.09C6.22 6.86 8.87 4.75 12 4.75Z"/>
+  </g>
+</svg>

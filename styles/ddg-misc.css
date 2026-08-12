@@ -1,0 +1,8 @@
+/* ddg-Misc — remove leftover nav and chat form decorations */
+nav::before,
+nav::after,
+nav > ul::before,
+.js-ask-ai-chat-wrapper > form::after,
+.XvPRmQVeIoCP5lQhICTv.ofDl_1VxUG_EKc3b9E3x::before {
+  display: none !important;
+}

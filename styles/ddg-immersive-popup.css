@@ -1,0 +1,69 @@
+/* ddg-Immersive Popup — blur the page behind menus and settings */
+:root {
+  --theme-col-bg-page-alt-2: transparent !important;
+  --theme-sidemenu-bg: transparent !important;
+  --sds-color-background-backdrop: transparent !important;
+  --sds-color-background-02: transparent !important;
+}
+
+.modal__box,
+.modal__header,
+.nav-menu--slideout,
+.searchbox_input__rnFzM,
+.modal--popover--gray {
+  background-color: transparent !important;
+}
+
+.S344rnw9ISpO7vPLUpsK {
+  position: relative !important;
+}
+
+.IrVYRCUvYQ98h_9Xp7aN {
+  height: 100% !important;
+}
+
+body:has(.modal.is-showing) .site-wrapper {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+body:has(
+    .nav-menu--slideout.is-open,
+    header.header_header__w2BOs > [data-testid="sidemenu"],
+    div > div[data-type="modal-overlay"]
+  )
+  :is(
+    #header_wrapper,
+    #content_wrapper,
+    #web_content_wrapper,
+    header > .header_headerContent__LYxh6,
+    .desktop-homepage_heroContent__4HUFA,
+    .homepage-cta-section_scrollCta__Wmixn,
+    #features,
+    .minimal-homepage_minimalContentWrap__YnOEL
+  ) {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+body:has([data-testid="dropdown-options"].eRQYVfFPOfM6ezz54H_V)
+  :is(#react-layout .FMPme3X940xAt4SKPFuw, .CWpd1G8aesXbBJgiTnPA, .REA4sYRb0Pu217KZv20I) {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+article[data-testid="result"]:has(.OHr0VX9IuNcv6iakvT6A.IBL7rESCoklmJ_3nDLDz)
+  > div:not(.OHr0VX9IuNcv6iakvT6A.IBL7rESCoklmJ_3nDLDz),
+article[data-testid="result"]:has(.OHr0VX9IuNcv6iakvT6A.IBL7rESCoklmJ_3nDLDz)
+  > .OHr0VX9IuNcv6iakvT6A.IBL7rESCoklmJ_3nDLDz
+  > button {
+  filter: blur(20px) !important;
+  pointer-events: none !important;
+}
+
+.CtkpS3dEx_8mUSlrwMlb,
+.sz280YLkLemh3mLtestR,
+.fzkQi_OLimocjCZsGKGh {
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}

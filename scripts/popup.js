@@ -61,6 +61,7 @@ const CATEGORY_META = [
   { id: "search", title: "Search", icon: "category-search" },
   { id: "feed", title: "Home feed", icon: "category-feed" },
   { id: "navigation", title: "Navigation", icon: "category-nav" },
+  { id: "appearance", title: "Appearance", icon: "category-appearance" },
   { id: "player", title: "Player", icon: "category-player" },
   { id: "live", title: "Live & comments", icon: "category-live" },
 ];
@@ -173,12 +174,198 @@ const FEATURE_META = [
     defaultEnabled: false,
     conflictsWith: "overlay-live-chat",
   },
+  {
+    id: "gh-immersive-search",
+    site: "github",
+    category: "search",
+    title: "Immersive search",
+    description: "Blur and zoom the page when focusing the header search bar.",
+  },
+  {
+    id: "gh-hover",
+    site: "github",
+    category: "feed",
+    title: "Hover sidebars",
+    description: "Hide the home-feed left and right sidebars until you hover them.",
+    defaultEnabled: false,
+  },
+  {
+    id: "gh-no-tab-text",
+    site: "github",
+    category: "navigation",
+    title: "No tab text",
+    description: "Repository tabs show icons only; labels appear on hover.",
+  },
+  {
+    id: "gh-repo-sidebar-hover",
+    site: "github",
+    category: "navigation",
+    title: "Repo sidebar hover",
+    description: "Collapse the repository About sidebar until you hover it.",
+    defaultEnabled: false,
+  },
+  {
+    id: "gh-no-footer",
+    site: "github",
+    category: "navigation",
+    title: "Hide footer",
+    description: "Hide GitHub's page footer.",
+  },
+  {
+    id: "gh-hide-toolbar-separator",
+    site: "github",
+    category: "navigation",
+    title: "Hide toolbar separator",
+    description: "Remove the divider in the header actions toolbar.",
+  },
+  {
+    id: "gh-glass-effect",
+    site: "github",
+    category: "appearance",
+    title: "Glass effect",
+    description: "Frosted-glass look on buttons, comments, editors, and cards.",
+  },
+  {
+    id: "gh-border-mods",
+    site: "github",
+    category: "appearance",
+    title: "Softer borders",
+    description: "Drop table borders and round file, tab, and header edges.",
+  },
+  {
+    id: "gh-remove-borders",
+    site: "github",
+    category: "appearance",
+    title: "Remove button borders",
+    description: "Strip borders from secondary buttons, inputs, and the branch bar.",
+  },
+  {
+    id: "gh-timeline-badge",
+    site: "github",
+    category: "appearance",
+    title: "Timeline badges",
+    description: "Give issue and pull-request timeline icons a clearer glass background.",
+  },
+  {
+    id: "gh-chip-margin",
+    site: "github",
+    category: "appearance",
+    title: "Chip spacing",
+    description: "Add breathing room around overview chips and the Copilot menu button.",
+  },
+  {
+    id: "g-search-zoom",
+    site: "google",
+    category: "search",
+    title: "Immersive search",
+    description: "Blur and scale the results page when the search box is focused.",
+  },
+  {
+    id: "g-hover",
+    site: "google",
+    category: "feed",
+    title: "Hover filter chips",
+    description: "Hide the Images and search filter chip row until you hover it.",
+    defaultEnabled: false,
+  },
+  {
+    id: "g-glass-effect",
+    site: "google",
+    category: "appearance",
+    title: "Glass search bar",
+    description: "Inset glass on the search box and a softer AI Overview panel.",
+  },
+  {
+    id: "g-overlay-fix",
+    site: "google",
+    category: "appearance",
+    title: "Solid overlays",
+    description: "Keep sports, dialog, and mini-search overlays readable.",
+  },
+  {
+    id: "g-shadows-borders",
+    site: "google",
+    category: "appearance",
+    title: "Softer chrome",
+    description: "Drop extra search-bar shadows and hide the page footer.",
+  },
+  {
+    id: "ddg-immersive-search",
+    site: "duckduckgo",
+    category: "search",
+    title: "Immersive search",
+    description: "Blur and scale the page when the search box is focused.",
+  },
+  {
+    id: "ddg-immersive-popup",
+    site: "duckduckgo",
+    category: "search",
+    title: "Immersive popups",
+    description: "Blur the page behind menus and settings.",
+  },
+  {
+    id: "ddg-no-learn-more",
+    site: "duckduckgo",
+    category: "feed",
+    title: "Hide Learn more",
+    description: "Remove the homepage features section and scroll prompt.",
+  },
+  {
+    id: "ddg-hidden-promo",
+    site: "duckduckgo",
+    category: "feed",
+    title: "Hide homepage hero",
+    description: "Remove the homepage hero promo block.",
+    defaultEnabled: false,
+  },
+  {
+    id: "ddg-no-share-feedback",
+    site: "duckduckgo",
+    category: "navigation",
+    title: "Hide feedback",
+    description: "Remove the Share Feedback control.",
+  },
+  {
+    id: "ddg-no-footer",
+    site: "duckduckgo",
+    category: "navigation",
+    title: "Hide footer",
+    description: "Hide DuckDuckGo's page footer.",
+  },
+  {
+    id: "ddg-glass-effect",
+    site: "duckduckgo",
+    category: "appearance",
+    title: "Glass surfaces",
+    description: "Frosted panels on the search box, cards, menus, and modules.",
+  },
+  {
+    id: "ddg-animations",
+    site: "duckduckgo",
+    category: "appearance",
+    title: "Smooth blur",
+    description: "Ease the immersive blur in and out.",
+  },
+  {
+    id: "ddg-misc",
+    site: "duckduckgo",
+    category: "appearance",
+    title: "Clean decorations",
+    description: "Remove leftover nav and chat form overlays.",
+  },
 ];
+
+for (const feature of FEATURE_META) {
+  feature.site ??= "youtube";
+}
 
 const FEATURE_BY_ID = Object.fromEntries(FEATURE_META.map((feature) => [feature.id, feature]));
 
+const DEFAULT_SITES = Object.fromEntries(SITE_META.map((site) => [site.id, { enabled: true }]));
+
 const DEFAULT_SETTINGS = {
   enabled: true,
+  sites: structuredClone(DEFAULT_SITES),
   features: Object.fromEntries(
     FEATURE_META.map((feature) => [feature.id, feature.defaultEnabled !== false])
   ),
@@ -188,14 +375,20 @@ const DEFAULT_SETTINGS = {
   },
 };
 
-const masterToggle = document.getElementById("master-toggle");
-const featuresList = document.getElementById("features-list");
+const appEl = document.getElementById("app");
+const siteRail = document.getElementById("site-rail");
+const currentPane = document.getElementById("current-pane");
+const otherSitesList = document.getElementById("other-sites-list");
+const otherSitesTitle = document.getElementById("other-sites-title");
+const subtitleEl = document.getElementById("subtitle");
 const reloadBtn = document.getElementById("reload");
-const featureCount = document.getElementById("feature-count");
 const versionPill = document.getElementById("version-pill");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
+let currentSite = null;
+let activeTab = null;
 const collapsedCategories = new Set();
+const collapsedOtherSites = new Set();
 
 function mergeFeatureSettings(storedFeatures = {}) {
   const merged = Object.fromEntries(
@@ -232,13 +425,17 @@ function getFeatureSubsettings(feature) {
   };
 }
 
+const SETTINGS_KEY = "chroModsSettings";
+const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
+
 async function loadSettings() {
-  const stored = await chrome.storage.sync.get("youtubeThemingSettings");
-  const storedSettings = stored.youtubeThemingSettings;
+  const stored = await chrome.storage.sync.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY]);
+  const storedSettings = stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY];
   settings = {
     ...DEFAULT_SETTINGS,
     ...storedSettings,
     features: mergeFeatureSettings(storedSettings?.features),
+    sites: mergeSiteSettings(storedSettings),
     subsettings: {
       theater: migrateTheater(storedSettings?.subsettings?.theater),
       feed: {
@@ -248,26 +445,72 @@ async function loadSettings() {
     },
   };
 
-  if (JSON.stringify(settings) !== JSON.stringify(storedSettings)) {
-    await chrome.storage.sync.set({ youtubeThemingSettings: settings });
+  if (JSON.stringify(settings) !== JSON.stringify(storedSettings) || !stored[SETTINGS_KEY]) {
+    await chrome.storage.sync.set({ [SETTINGS_KEY]: settings });
   }
 }
 
 async function saveSettings() {
-  await chrome.storage.sync.set({ youtubeThemingSettings: settings });
+  await chrome.storage.sync.set({ [SETTINGS_KEY]: settings });
 }
 
-const YOUTUBE_URLS = ["*://*.youtube.com/*", "*://youtube.com/*"];
+function mergeSiteSettings(storedSettings = {}) {
+  const storedSites = storedSettings.sites || {};
+  const youtubeEnabled =
+    typeof storedSites.youtube?.enabled === "boolean"
+      ? storedSites.youtube.enabled
+      : storedSettings.enabled !== false;
+
+  return Object.fromEntries(
+    SITE_META.map((site) => [
+      site.id,
+      {
+        enabled:
+          site.id === "youtube"
+            ? youtubeEnabled
+            : typeof storedSites[site.id]?.enabled === "boolean"
+              ? storedSites[site.id].enabled
+              : true,
+      },
+    ])
+  );
+}
+
+function featuresForSite(siteId) {
+  return FEATURE_META.filter((feature) => feature.site === siteId);
+}
+
+function isSiteEnabled(siteId) {
+  return settings.sites?.[siteId]?.enabled !== false;
+}
+
+function setSiteEnabled(siteId, enabled) {
+  settings.sites[siteId] = { ...(settings.sites[siteId] || {}), enabled };
+  if (siteId === "youtube") settings.enabled = enabled;
+}
+
+function siteCountLabel(siteId) {
+  const features = featuresForSite(siteId);
+  if (!features.length) return "No mods yet";
+  if (!isSiteEnabled(siteId)) return "All disabled";
+  const enabled = features.filter((feature) => settings.features[feature.id] !== false).length;
+  return `${enabled} of ${features.length} enabled`;
+}
+
+async function detectActiveTab() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    activeTab = tab ?? null;
+  } catch {
+    activeTab = null;
+  }
+  currentSite = matchSiteFromUrl(activeTab?.url || "");
+}
 
 function updateFeatureCount() {
-  if (!featureCount) return;
-  const total = FEATURE_META.length;
-  const enabled = settings.enabled
-    ? FEATURE_META.filter((feature) => settings.features[feature.id] !== false).length
-    : 0;
-  featureCount.textContent = settings.enabled
-    ? `${enabled} of ${total} enabled`
-    : "All disabled";
+  document.querySelectorAll("[data-site-count]").forEach((el) => {
+    el.textContent = siteCountLabel(el.dataset.siteCount);
+  });
 }
 
 function isSubsettingActive(sub, featureSettings) {
@@ -278,8 +521,8 @@ function isSubsettingActive(sub, featureSettings) {
 function renderSubsettings(feature, featureSettings) {
   if (!feature.subsettings?.length) return "";
 
-  const featureEnabled =
-    settings.enabled && settings.features[feature.id] !== false;
+  const siteEnabled = isSiteEnabled(feature.site);
+  const featureEnabled = siteEnabled && settings.features[feature.id] !== false;
 
   const rows = feature.subsettings
     .map((sub) => {
@@ -354,7 +597,7 @@ function bindSubsettings(card, feature) {
         );
         const active = isSubsettingActive(dependentMeta, featureSettings);
         const disabled =
-          !settings.enabled || settings.features[feature.id] === false || !active;
+          !isSiteEnabled(feature.site) || settings.features[feature.id] === false || !active;
         dependentControl.disabled = disabled;
         dependentControl.closest(".subsetting-row")?.classList.toggle("disabled", disabled);
       });
@@ -365,11 +608,13 @@ function bindSubsettings(card, feature) {
 }
 
 function renderFeatureCard(feature) {
+  const siteEnabled = isSiteEnabled(feature.site);
   const enabled = settings.features[feature.id] !== false;
   const featureSettings = getFeatureSubsettings(feature);
   const card = document.createElement("article");
-  card.className = `feature-card${settings.enabled ? "" : " disabled"}`;
+  card.className = `feature-card${siteEnabled ? "" : " disabled"}`;
   card.dataset.feature = feature.id;
+  card.dataset.site = feature.site;
 
   card.innerHTML = `
     <div class="feature-header">
@@ -378,7 +623,7 @@ function renderFeatureCard(feature) {
         <p>${feature.description}</p>
       </div>
       <label class="switch" aria-label="${feature.title}">
-        <input type="checkbox" data-feature="${feature.id}" ${enabled ? "checked" : ""} ${settings.enabled ? "" : "disabled"} />
+        <input type="checkbox" data-feature="${feature.id}" ${enabled ? "checked" : ""} ${siteEnabled ? "" : "disabled"} />
         <span class="slider"></span>
       </label>
     </div>
@@ -389,26 +634,35 @@ function renderFeatureCard(feature) {
   return card;
 }
 
-function renderFeatures() {
-  featuresList.innerHTML = "";
-  updateFeatureCount();
+function renderCategoryList(parent, siteId) {
+  const siteFeatures = featuresForSite(siteId);
+  parent.innerHTML = "";
+
+  if (!siteFeatures.length) {
+    const empty = document.createElement("p");
+    empty.className = "site-empty";
+    empty.textContent = `No ${SITE_BY_ID[siteId]?.title ?? siteId} mods yet. They'll appear here once added.`;
+    parent.appendChild(empty);
+    return;
+  }
 
   for (const category of CATEGORY_META) {
-    const features = FEATURE_META.filter((feature) => feature.category === category.id);
+    const features = siteFeatures.filter((feature) => feature.category === category.id);
     if (!features.length) continue;
 
     const section = document.createElement("section");
     section.className = "category-section";
-    section.dataset.category = category.id;
+    section.dataset.category = `${siteId}:${category.id}`;
 
+    const collapsedKey = `${siteId}:${category.id}`;
     section.innerHTML = `
-      <button class="category-header" type="button" aria-expanded="${!collapsedCategories.has(category.id)}">
+      <button class="category-header" type="button" aria-expanded="${!collapsedCategories.has(collapsedKey)}">
         <span class="category-icon" aria-hidden="true">${iconMarkup(category.icon)}</span>
         <h3 class="category-title">${category.title}</h3>
         <span class="category-count">${features.length}</span>
         <span class="category-chevron" aria-hidden="true"></span>
       </button>
-      <div class="category-expansion${collapsedCategories.has(category.id) ? "" : " is-open"}">
+      <div class="category-expansion${collapsedCategories.has(collapsedKey) ? "" : " is-open"}">
         <div class="category-expansion-inner">
           <div class="category-features"></div>
         </div>
@@ -427,21 +681,26 @@ function renderFeatures() {
       categoryExpansion.classList.toggle("is-open", willOpen);
       categoryHeader.setAttribute("aria-expanded", String(willOpen));
       if (willOpen) {
-        collapsedCategories.delete(category.id);
+        collapsedCategories.delete(collapsedKey);
       } else {
-        collapsedCategories.add(category.id);
+        collapsedCategories.add(collapsedKey);
       }
     });
 
-    featuresList.appendChild(section);
+    parent.appendChild(section);
   }
 
-  featuresList.querySelectorAll("input[data-feature]").forEach((input) => {
+  bindFeatureToggles(parent);
+}
+
+function bindFeatureToggles(scope) {
+  scope.querySelectorAll("input[data-feature]").forEach((input) => {
     input.addEventListener("change", async (event) => {
       const id = event.target.dataset.feature;
       const checked = event.target.checked;
       settings.features[id] = checked;
       const meta = FEATURE_BY_ID[id];
+      const siteEnabled = isSiteEnabled(meta.site);
 
       if (checked && meta?.conflictsWith) {
         settings.features[meta.conflictsWith] = false;
@@ -451,20 +710,20 @@ function renderFeatures() {
       const card = event.target.closest(".feature-card");
       card
         ?.querySelector(".feature-expansion")
-        ?.classList.toggle("is-open", checked && settings.enabled);
+        ?.classList.toggle("is-open", checked && siteEnabled);
       card?.querySelectorAll("[data-subsetting]").forEach((control) => {
         const sub = meta?.subsettings?.find(
           (item) => item.id === control.dataset.subsetting
         );
         const active = sub ? isSubsettingActive(sub, getFeatureSubsettings(meta)) : true;
-        control.disabled = !checked || !settings.enabled || !active;
+        control.disabled = !checked || !siteEnabled || !active;
         control
           .closest(".subsetting-row")
           ?.classList.toggle("disabled", control.disabled);
       });
 
       if (checked && meta?.conflictsWith) {
-        const conflictingCard = featuresList.querySelector(
+        const conflictingCard = document.querySelector(
           `.feature-card[data-feature="${meta.conflictsWith}"]`
         );
         const conflictingInput = conflictingCard?.querySelector("input[data-feature]");
@@ -475,27 +734,202 @@ function renderFeatures() {
       }
 
       await saveSettings();
-
     });
   });
 }
 
-function updateMasterState() {
-  updateFeatureCount();
+function bindSiteEnableToggle(input, siteId) {
+  input.checked = isSiteEnabled(siteId);
+  input.addEventListener("click", (event) => event.stopPropagation());
+  input.addEventListener("change", async () => {
+    setSiteEnabled(siteId, input.checked);
+    updateMasterState(siteId);
+    await saveSettings();
+  });
+}
 
-  for (const feature of FEATURE_META) {
-    const card = featuresList.querySelector(
-      `.feature-card[data-feature="${feature.id}"]`
-    );
+function renderEnableSwitch(site) {
+  const idAttr = site.id === "youtube" ? ` id="master-toggle"` : "";
+  const countId = site.id === "youtube" ? ` id="feature-count"` : "";
+  return `
+    <span class="feature-count" data-site-count="${site.id}"${countId}>${siteCountLabel(site.id)}</span>
+    <label class="switch" aria-label="Enable ${site.title}">
+      <input type="checkbox" data-site-enable="${site.id}"${idAttr} ${isSiteEnabled(site.id) ? "checked" : ""} />
+      <span class="slider"></span>
+    </label>
+  `;
+}
+
+function renderCurrentPane() {
+  currentPane.innerHTML = "";
+
+  if (!currentSite) {
+    currentPane.innerHTML = `
+      <div class="empty-current card">
+        <h2>No supported site in this tab</h2>
+        <p>Open YouTube, GitHub, Google, or DuckDuckGo to edit that site's mods, or expand a site below.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const panel = document.createElement("section");
+  panel.className = "site-panel-current";
+  panel.dataset.site = currentSite.id;
+  panel.id = `site-panel-${currentSite.id}`;
+  panel.innerHTML = `
+    <div class="site-heading">
+      <span class="site-heading-icon" aria-hidden="true">${iconMarkup(currentSite.icon)}</span>
+      <div class="site-heading-text">
+        <h2>${currentSite.title}</h2>
+        <p class="site-heading-meta">On this page</p>
+      </div>
+      ${
+        featuresForSite(currentSite.id).length
+          ? renderEnableSwitch(currentSite)
+          : `<span class="feature-count" data-site-count="${currentSite.id}">${siteCountLabel(currentSite.id)}</span>`
+      }
+    </div>
+    <div class="features-list" id="features-list"></div>
+  `;
+  currentPane.appendChild(panel);
+  const enableInput = panel.querySelector("[data-site-enable]");
+  if (enableInput) bindSiteEnableToggle(enableInput, currentSite.id);
+  renderCategoryList(panel.querySelector(".features-list"), currentSite.id);
+}
+
+function renderOtherSitePanel(site, expanded) {
+  const features = featuresForSite(site.id);
+  const panel = document.createElement("section");
+  panel.className = "site-panel-other card";
+  panel.dataset.site = site.id;
+  panel.id = `site-panel-${site.id}`;
+
+  const listId = !currentSite && site.id === "youtube" ? "features-list" : "";
+  panel.innerHTML = `
+    <div class="site-accordion-bar">
+      <button class="site-accordion-toggle" type="button" aria-expanded="${expanded}">
+        <span class="site-heading-icon" aria-hidden="true">${iconMarkup(site.icon)}</span>
+        <div class="site-accordion-copy">
+          <h2>${site.title}</h2>
+          <p>${features.length ? `${features.length} mods` : "Coming soon"}</p>
+        </div>
+        <span class="category-chevron" aria-hidden="true"></span>
+      </button>
+      <span class="feature-count" data-site-count="${site.id}"${site.id === "youtube" && !currentSite ? ` id="feature-count"` : ""}>${siteCountLabel(site.id)}</span>
+      ${
+        features.length
+          ? `<label class="switch switch-sm" aria-label="Enable ${site.title}">
+        <input type="checkbox" data-site-enable="${site.id}"${site.id === "youtube" && !currentSite ? ` id="master-toggle"` : ""} ${isSiteEnabled(site.id) ? "checked" : ""} />
+        <span class="slider"></span>
+      </label>`
+          : ""
+      }
+    </div>
+    <div class="category-expansion${expanded ? " is-open" : ""}">
+      <div class="category-expansion-inner">
+        <div class="site-panel-body${listId ? `" id="${listId}` : ""}"></div>
+      </div>
+    </div>
+  `;
+
+  const header = panel.querySelector(".site-accordion-toggle");
+  const expansion = panel.querySelector(".category-expansion");
+  const body = panel.querySelector(".site-panel-body");
+  const enableInput = panel.querySelector("[data-site-enable]");
+  if (enableInput) bindSiteEnableToggle(enableInput, site.id);
+
+  header.addEventListener("click", () => {
+    const willOpen = !expansion.classList.contains("is-open");
+    expansion.classList.toggle("is-open", willOpen);
+    header.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) {
+      collapsedOtherSites.delete(site.id);
+      if (!body.dataset.rendered) {
+        renderCategoryList(body, site.id);
+        body.dataset.rendered = "true";
+      }
+    } else {
+      collapsedOtherSites.add(site.id);
+    }
+  });
+
+  if (expanded) {
+    renderCategoryList(body, site.id);
+    body.dataset.rendered = "true";
+  }
+
+  return panel;
+}
+
+function renderOtherSites() {
+  otherSitesList.innerHTML = "";
+  otherSitesTitle.textContent = currentSite ? "Other sites" : "Sites";
+
+  const others = SITE_META.filter((site) => site.id !== currentSite?.id);
+  for (const site of others) {
+    const hasMods = featuresForSite(site.id).length > 0;
+    const expanded = !currentSite && hasMods && !collapsedOtherSites.has(site.id);
+    if (currentSite) collapsedOtherSites.add(site.id);
+    otherSitesList.appendChild(renderOtherSitePanel(site, expanded));
+  }
+}
+
+function scrollToSite(siteId) {
+  const panel = document.getElementById(`site-panel-${siteId}`);
+  if (!panel) return;
+
+  const header = panel.querySelector(".site-accordion-toggle");
+  const expansion = panel.querySelector(".category-expansion");
+  if (header && expansion && !expansion.classList.contains("is-open")) {
+    header.click();
+  }
+
+  requestAnimationFrame(() => {
+    const headerHeight = document.querySelector(".app-header")?.offsetHeight ?? 0;
+    const top = panel.getBoundingClientRect().top + appEl.scrollTop - headerHeight - 6;
+    appEl.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  });
+}
+
+function renderSiteRail() {
+  siteRail.innerHTML = "";
+  for (const site of SITE_META) {
+    const isCurrent = currentSite?.id === site.id;
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `site-chip${isCurrent ? " is-current" : ""}`;
+    chip.dataset.site = site.id;
+    chip.title = isCurrent ? `${site.title} — on this page` : `Show ${site.title} mods`;
+    chip.innerHTML = `
+      <span class="site-chip-icon" aria-hidden="true">${iconMarkup(site.icon)}</span>
+      <span class="site-chip-name">${site.title}</span>
+      ${isCurrent ? `<span class="site-chip-dot" aria-hidden="true"></span>` : ""}
+    `;
+    chip.addEventListener("click", () => scrollToSite(site.id));
+    siteRail.appendChild(chip);
+  }
+}
+
+function updateMasterState(siteId) {
+  updateFeatureCount();
+  const siteEnabled = isSiteEnabled(siteId);
+
+  document.querySelectorAll(`[data-site-enable="${siteId}"]`).forEach((input) => {
+    input.checked = siteEnabled;
+  });
+
+  for (const feature of featuresForSite(siteId)) {
+    const card = document.querySelector(`.feature-card[data-feature="${feature.id}"]`);
     if (!card) continue;
 
     const featureEnabled = settings.features[feature.id] !== false;
-    card.classList.toggle("disabled", !settings.enabled);
+    card.classList.toggle("disabled", !siteEnabled);
     const featureInput = card.querySelector("input[data-feature]");
-    if (featureInput) featureInput.disabled = !settings.enabled;
+    if (featureInput) featureInput.disabled = !siteEnabled;
     card
       .querySelector(".feature-expansion")
-      ?.classList.toggle("is-open", settings.enabled && featureEnabled);
+      ?.classList.toggle("is-open", siteEnabled && featureEnabled);
 
     const featureSettings = getFeatureSubsettings(feature);
     card.querySelectorAll("[data-subsetting]").forEach((control) => {
@@ -503,7 +937,7 @@ function updateMasterState() {
         (item) => item.id === control.dataset.subsetting
       );
       const active = sub ? isSubsettingActive(sub, featureSettings) : true;
-      control.disabled = !settings.enabled || !featureEnabled || !active;
+      control.disabled = !siteEnabled || !featureEnabled || !active;
       control
         .closest(".subsetting-row")
         ?.classList.toggle("disabled", control.disabled);
@@ -511,25 +945,32 @@ function updateMasterState() {
   }
 }
 
-function bindControls() {
-  masterToggle.checked = settings.enabled;
-  masterToggle.addEventListener("change", async () => {
-    settings.enabled = masterToggle.checked;
-    updateMasterState();
-    await saveSettings();
-  });
+function updateReloadButton() {
+  const canReload = Boolean(currentSite && activeTab?.id);
+  reloadBtn.disabled = !canReload;
+  reloadBtn.title = canReload ? `Reload ${currentSite.title}` : "Open a supported site to reload it";
+}
 
+function bindControls() {
   reloadBtn.addEventListener("click", async () => {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-      url: YOUTUBE_URLS,
-    });
-    if (tab?.id) {
-      await chrome.tabs.reload(tab.id);
-      window.close();
-    }
+    if (!activeTab?.id || !currentSite) return;
+    await chrome.tabs.reload(activeTab.id);
+    window.close();
   });
+}
+
+function renderPopup() {
+  if (currentSite) {
+    subtitleEl.textContent = `${currentSite.title} · on this page`;
+  } else {
+    subtitleEl.textContent = "Chromium theming mods";
+  }
+
+  renderSiteRail();
+  renderCurrentPane();
+  renderOtherSites();
+  updateReloadButton();
+  updateFeatureCount();
 }
 
 async function init() {
@@ -537,8 +978,9 @@ async function init() {
     versionPill.textContent = `v${chrome.runtime.getManifest().version}`;
   }
   await loadSettings();
+  await detectActiveTab();
   bindControls();
-  renderFeatures();
+  renderPopup();
 }
 
 init();

@@ -3,54 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouTube Theming</title>
+    <title>ChroMods</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="container">
+    <div class="container" id="app">
       <header class="app-header">
-        <div class="logo-container">
-          <img src="../icons/icon48.png" alt="" class="logo-img" width="32" height="32" />
-          <div class="title-wrap">
-            <h1 class="app-title">YouTube Theming</h1>
-            <p class="subtitle">Visual tweaks for youtube.com</p>
+        <div class="header-fade" aria-hidden="true">
+          <div class="header-frost">
+            <div class="header-frost-dots"></div>
+          </div>
+          <div class="header-glass"></div>
+        </div>
+        <div class="header-top">
+          <div class="logo-container">
+            <img src="../icons/icon48.png" alt="" class="logo-img" width="32" height="32" />
+            <div class="title-wrap">
+              <h1 class="app-title">ChroMods</h1>
+              <p class="subtitle" id="subtitle">Chromium theming mods</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <span class="version-pill" id="version-pill">v1.0.0</span>
+            <button id="reload" class="reload-btn" type="button" title="Reload this page">
+              Reload page
+            </button>
           </div>
         </div>
-        <div class="header-actions">
-          <span class="version-pill" id="version-pill">v1.0.0</span>
-          <button id="reload" class="reload-btn" type="button" title="Reload YouTube tab">
-            Reload page
-          </button>
-        </div>
+        <nav id="site-rail" class="site-rail" aria-label="Supported sites"></nav>
       </header>
 
-      <main class="app-content">
-        <section class="master-toggle card">
-          <div class="toggle-row">
-            <div>
-              <h2>Enable theming</h2>
-              <p>Turn all mods on or off for YouTube</p>
-            </div>
-            <label class="switch" aria-label="Enable theming">
-              <input type="checkbox" id="master-toggle" checked />
-              <span class="slider"></span>
-            </label>
-          </div>
-        </section>
+      <section id="current-pane" class="current-pane"></section>
 
-        <section class="features-section">
-          <div class="section-header">
-            <h3 class="section-title">Features</h3>
-            <span class="feature-count" id="feature-count">6 enabled</span>
-          </div>
-          <div id="features-list" class="features-list"></div>
-        </section>
+      <section class="other-sites" aria-label="Other sites">
+        <div class="section-header other-sites-header">
+          <h3 class="section-title" id="other-sites-title">Other sites</h3>
+        </div>
+        <div id="other-sites-list" class="other-sites-list"></div>
+      </section>
 
-        <footer class="app-footer">
-          <p>Styles adapted from <a href="https://github.com/sameerasw/my-internet" target="_blank" rel="noreferrer">my-internet</a></p>
-        </footer>
-      </main>
+      <footer class="app-footer">
+        <p>Styles adapted from <a href="https://github.com/sameerasw/my-internet" target="_blank" rel="noreferrer">my-internet</a></p>
+      </footer>
     </div>
+    <script src="../scripts/sites.js"></script>
     <script src="../scripts/icons.js"></script>
     <script src="../scripts/popup.js"></script>
   </body>
