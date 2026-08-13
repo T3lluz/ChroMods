@@ -52,6 +52,7 @@ test("manifest is valid Chrome MV3", () => {
   assert.ok(contentJs.includes("scripts/sites.js"));
   assert.ok(contentJs.includes("scripts/vendor/darkreader.js"));
   assert.ok(contentJs.includes("scripts/dark-mode.js"));
+  assert.ok(contentJs.includes("scripts/shortcuts.js"));
   assert.ok(contentJs.includes("scripts/dark-proxy.js"));
   assert.ok(contentJs.includes("scripts/dark-chrome-guard.js"));
   const darkProxy = (manifest.content_scripts || []).find((entry) =>
@@ -386,7 +387,14 @@ test("popup assets exist and reference each other", () => {
   assert.match(html, /id="current-pane"/);
   assert.match(html, /id="other-sites-list"/);
   assert.match(html, /id="theme-toggle"/);
+  assert.match(html, /id="settings-open"/);
+  assert.match(html, /id="settings-view"/);
+  assert.match(html, /id="settings-back"/);
+  assert.match(html, /id="mod-search"/);
+  assert.match(html, /data-icon="action-reload"/);
+  assert.match(html, /data-icon="dark-skip-native"/);
   assert.match(html, /\.\.\/scripts\/dark-sites\.js/);
+  assert.match(html, /\.\.\/scripts\/shortcuts\.js/);
   assert.match(html, /\.\.\/scripts\/style-request\.js/);
   assert.match(html, /header-frost/);
   assert.match(html, /header-glass/);
@@ -444,7 +452,14 @@ test("background only seeds install defaults", () => {
   const js = read("scripts/background.js");
   assert.match(js, /chrome\.runtime\.onInstalled/);
   assert.match(js, /chrome\.storage\.sync\.set/);
-  assert.doesNotMatch(js, /chrome\.tabs|broadcastSettings/);
+  assert.match(js, /importScripts/);
+  assert.match(js, /CHROMODS_SHORTCUT_RUN/);
+  assert.match(js, /chrome\.commands\.onCommand/);
+  assert.match(js, /chromodsApplyShortcutCommand/);
+  assert.match(js, /chromodsApplyDarkShortcut/);
+  assert.match(js, /captureVisibleTab/);
+  assert.match(js, /CHROMODS_DARK_WIPE/);
+  assert.doesNotMatch(js, /broadcastSettings/);
 });
 
 test("popup applies toggles through storage without page messaging", () => {
@@ -456,6 +471,18 @@ test("popup applies toggles through storage without page messaging", () => {
   assert.match(js, /CHROMODS_DARK_PING/);
   assert.match(js, /CHROMODS_DARK_WIPE/);
   assert.match(js, /captureVisibleTab/);
+  assert.match(js, /setSettingsOpen/);
+  assert.match(js, /renderSearchResults/);
+  assert.match(js, /setSearchFocused/);
+  assert.match(js, /stampStaticIcons/);
+  assert.match(js, /chromodsSetDarkSiteTheme/);
+  assert.match(js, /CHROMODS_DARK_THEME_UPDATE/);
+  assert.match(js, /queueDarkThemeSave/);
+  assert.match(js, /readDarkConfigFromUi/);
+  assert.match(js, /__chromodsApplyDarkTheme/);
+  assert.match(js, /requestAnimationFrame/);
+  assert.match(js, /executeScript/);
+  assert.match(js, /chromodsSetShortcut/);
   assert.doesNotMatch(
     js,
     /notifyAllYouTubeTabs|showPageToast|showToast|youtube-theming-toast|chromods-toast/
@@ -548,6 +575,13 @@ test("popup categories have custom icons and animated expansion", () => {
   const css = read("popup/popup.css");
   assert.match(js, /category-live/);
   assert.match(js, /category-appearance/);
+  assert.match(js, /dark-brightness/);
+  assert.match(js, /dark-contrast/);
+  assert.match(js, /dark-sepia/);
+  assert.match(js, /dark-grayscale/);
+  assert.match(js, /action-reload/);
+  assert.match(js, /ui-keyboard/);
+  assert.match(js, /shortcut-dark/);
   assert.match(js, /site-youtube/);
   assert.match(js, /site-github/);
   assert.match(js, /site-google/);
@@ -567,6 +601,8 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(css, /feature-expansion/);
   assert.match(css, /site-rail/);
   assert.match(css, /other-sites/);
+  assert.match(css, /other-sites-list/);
+  assert.match(css, /subgrid/);
   assert.match(css, /header-frost/);
   assert.match(css, /header-glass/);
   assert.match(css, /header-fade/);
@@ -584,6 +620,15 @@ test("popup CSS uses forced dark theme", () => {
   assert.match(css, /\.theme-toggle/);
   assert.match(css, /\.theme-rays/);
   assert.match(css, /\.theme-cut/);
+  assert.match(css, /\.settings-view/);
+  assert.match(css, /translateX\(100%\)/);
+  assert.match(css, /overscroll-behavior:\s*contain/);
+  assert.match(css, /--popup-max-height:\s*600px/);
+  assert.doesNotMatch(css, /\.shell\.is-settings-open\s*\{\s*height:/);
+  assert.match(css, /\.search-wrap/);
+  assert.match(css, /is-search-focused/);
+  assert.match(css, /\.shortcut-bind/);
+  assert.match(css, /\.dark-slider-row/);
 });
 
 test("popup uses aligned feature toggles and a compact style request", () => {
@@ -594,6 +639,8 @@ test("popup uses aligned feature toggles and a compact style request", () => {
   assert.match(css, /\.feature-header\s*\{[^}]*grid-template-areas:/s);
   assert.match(css, /"title switch"/);
   assert.match(css, /\.heading-actions/);
+  assert.match(css, /\.heading-actions\s*\{[^}]*gap:\s*12px/s);
+  assert.doesNotMatch(css, /\.site-accordion-bar \.heading-actions\s*\{[^}]*gap:\s*0/);
   assert.match(css, /\.unsupported-bar/);
   assert.match(css, /\.unsupported-tag/);
   assert.match(css, /\.request-style-btn/);
@@ -626,14 +673,33 @@ test("global dark mode uses Dark Reader and remembers per host", () => {
   const proxy = read("scripts/dark-proxy.js");
 
   assert.match(html, /id="theme-toggle"/);
+  assert.match(html, /id="dark-skip-native"/);
+  assert.match(html, /Don’t invert sites that already have native dark/);
   assert.match(html, /scripts\/dark-sites\.js/);
+  assert.match(html, /scripts\/shortcuts\.js/);
   assert.match(popup, /chromodsSetDarkSite/);
   assert.match(popup, /ensureDarkModeScript/);
   assert.match(popup, /world:\s*"MAIN"/);
   assert.match(darkSites, /chroModsDarkMode/);
   assert.match(darkSites, /chromodsDarkHostFromUrl/);
   assert.match(darkSites, /chromods-dark-wipe/);
+  assert.match(darkSites, /chromodsSetDarkSiteTheme/);
+  assert.match(darkSites, /chromodsDarkReaderTheme/);
+  assert.match(darkSites, /icon:\s*"dark-brightness"/);
+  assert.match(darkSites, /immediateModify:\s*true/);
+  assert.match(darkSites, /skipNativeDark/);
+  assert.match(darkSites, /chromodsPageLooksNativelyDark/);
   assert.match(darkMode, /DarkReader\.enable/);
+  assert.match(darkMode, /DR_FIXES/);
+  assert.match(darkMode, /__chromodsApplyDarkTheme/);
+  assert.match(darkMode, /DarkReader\.enable\(\s*theme/);
+  assert.doesNotMatch(darkMode, /backdrop-filter/);
+  assert.doesNotMatch(darkMode, /chromodsDarkAdjustmentFilters/);
+  assert.match(darkMode, /shouldSkipNativeDark|chromodsPageLooksNativelyDark/);
+  assert.match(darkMode, /CHROMODS_DARK_THEME_UPDATE/);
+  assert.match(darkMode, /message\.config/);
+  assert.match(darkMode, /chromodsDarkReaderTheme|themeForHost/);
+  assert.match(darkMode, /theme\.brightness/);
   assert.match(darkMode, /__chromodsDarkEnabled/);
   assert.match(darkMode, /darkreader--fallback/);
   assert.match(darkMode, /CHROMODS_DARK_WIPE/);
@@ -644,6 +710,11 @@ test("global dark mode uses Dark Reader and remembers per host", () => {
   assert.doesNotMatch(darkMode, /::view-transition/);
   assert.match(darkMode, /CHROMODS_DARK_FETCH/);
   assert.match(background, /chromods-dark-fetch/);
+  assert.match(read("scripts/shortcuts.js"), /chromods-shortcut-run/);
+  assert.match(read("scripts/shortcuts.js"), /__chromodsSendMessage/);
+  assert.match(read("manifest.json"), /"toggle-dark"/);
+  assert.match(read("manifest.json"), /"toggle-mods"/);
+  assert.match(read("manifest.json"), /Alt\+Shift\+D/);
   assert.doesNotMatch(background, /registerContentScripts/);
   assert.match(proxy, /function injectProxy/);
   assert.match(proxy, /__darkreader__cleanUp/);

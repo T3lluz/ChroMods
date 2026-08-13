@@ -127,8 +127,29 @@ async function run() {
     assert.equal(await popupPage.locator('.feature-card[data-feature="g-transparency"]').count(), 0);
     assert.equal(await popupPage.locator('.feature-card[data-feature="ddg-transparency"]').count(), 0);
 
+    await popupPage.locator("#settings-open").click();
+    await popupPage.waitForFunction(() => document.getElementById("shell")?.classList.contains("is-settings-open"));
+    assert.equal(await popupPage.locator("#shortcut-list .shortcut-row").count(), 2, "Expected two shortcut rows");
+    assert.equal(await popupPage.locator("[data-dark-slider]").count(), 4, "Expected Dark Reader sliders");
+    assert.equal(await popupPage.locator(".dark-slider-icon").count(), 4, "Expected an icon on each dark slider");
+    assert.equal(await popupPage.locator("#dark-skip-native").count(), 1);
+    await popupPage.locator("#settings-back").click();
+    await popupPage.waitForFunction(() => !document.getElementById("shell")?.classList.contains("is-settings-open"));
+
+    await popupPage.locator("#mod-search").fill("glass");
+    await popupPage.waitForSelector(".search-result");
+    await popupPage.waitForFunction(() => document.getElementById("shell")?.classList.contains("is-search-focused"));
+    const searchHits = await popupPage.locator(".search-result-title").allTextContents();
+    assert.ok(
+      searchHits.some((text) => /glass/i.test(text)),
+      `Expected glass mods in live search, got ${JSON.stringify(searchHits)}`
+    );
+    await popupPage.locator("#mod-search").fill("");
+    await popupPage.locator("#mod-search").blur();
+    await popupPage.waitForFunction(() => !document.getElementById("shell")?.classList.contains("is-search-focused"));
+
     const countText = await popupPage.locator("#feature-count").textContent();
-    assert.match(countText ?? "", /6 of 15 enabled/);
+    assert.match(countText ?? "", /6\/15/);
 
     const theaterCard = popupPage.locator('.feature-card[data-feature="theater-mode"]');
     const theaterSubs = theaterCard.locator(".subsettings .subsetting-row");
@@ -153,7 +174,7 @@ async function run() {
       return input && !input.disabled;
     });
     await popupPage.locator('.feature-card[data-feature="compact-sidebar"] label.switch').click();
-    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /5 of 15 enabled/);
+    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /5\/15/);
 
     await theaterCard.locator('label[aria-label="Hover comments"]').click();
     await popupPage.waitForTimeout(250);

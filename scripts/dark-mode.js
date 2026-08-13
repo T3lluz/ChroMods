@@ -3,8 +3,11 @@
   const FALLBACK_CLASS = "darkreader darkreader--fallback";
   const WIPE_ATTR = "data-chromods-theme-wipe";
   const WIPE_STYLE_ID = "chromods-wipe-style";
+  const DR_FIXES = {};
   const WIPE_MS = 380;
   let wiping = false;
+  let cachedSites = {};
+  let lastEngineKey = "";
 
   function currentHost() {
     return chromodsDarkHostFromUrl(location.href);
@@ -186,31 +189,101 @@
     } finally {
       overlay.remove();
       wiping = false;
+      syncFromStorage();
     }
   }
 
-  function applyDark(enabled) {
-    if (!hasEngine()) return;
-    writeHint(enabled);
-    if (enabled) {
-      injectFallback();
-      DarkReader.enable(CHROMODS_DARK_THEME);
-    } else {
-      DarkReader.disable();
-    }
+  function themeForHost(host) {
+    return chromodsDarkReaderTheme(chromodsDarkSiteConfig(cachedSites, host));
   }
+
+  function shouldSkipNativeDark(host) {
+    const config = chromodsDarkSiteConfig(cachedSites, host);
+    return config.skipNativeDark && chromodsPageLooksNativelyDark();
+  }
+
+  function engineThemeKey(theme) {
+    return [
+      theme.brightness,
+      theme.contrast,
+      theme.grayscale,
+      theme.sepia,
+      theme.styleSystemControls !== false ? "1" : "0",
+    ].join(":");
+  }
+
+  function applyDark(enabled, themeOverride) {
+    // Drop the old full-page filter overlay if a prior build left one behind.
+    document.getElementById("chromods-dark-adjust")?.remove();
+    const theme = themeOverride || themeForHost(currentHost());
+    if (!enabled) {
+      writeHint(false);
+      lastEngineKey = "";
+      if (hasEngine()) DarkReader.disable();
+      return;
+    }
+    if (shouldSkipNativeDark(currentHost()) || !hasEngine()) {
+      writeHint(false);
+      lastEngineKey = "";
+      if (hasEngine()) DarkReader.disable();
+      return;
+    }
+    writeHint(true);
+    const key = engineThemeKey(theme);
+    if (hasEngine() && DarkReader.isEnabled() && key === lastEngineKey) return;
+    lastEngineKey = key;
+    injectFallback();
+    DarkReader.enable(theme, DR_FIXES);
+  }
+
+  function applyIncomingTheme(config, enabled) {
+    const host = currentHost();
+    if (!host || !config) {
+      syncFromStorage();
+      return;
+    }
+    cachedSites[host] = chromodsNormalizeDarkSite(config);
+    const on = enabled !== false;
+    applyDark(on, on ? chromodsDarkReaderTheme(cachedSites[host]) : null);
+  }
+
+  globalThis.__chromodsApplyDarkTheme = applyIncomingTheme;
 
   async function syncFromStorage() {
     const host = currentHost();
-    if (!host || !hasEngine()) return;
-    const sites = await chromodsGetDarkSites();
-    const enabled = chromodsIsDarkHostEnabled(sites, host);
-    const currentlyOn = DarkReader.isEnabled();
-    if (enabled === currentlyOn) {
-      writeHint(enabled);
-      return;
-    }
-    applyDark(enabled);
+    if (!host) return;
+    cachedSites = await chromodsGetDarkSites();
+    applyDark(chromodsIsDarkHostEnabled(cachedSites, host));
+  }
+
+  function watchNativeDark() {
+    if (typeof MutationObserver !== "function") return;
+    const observed = new WeakSet();
+    let timer = 0;
+    const observer = new MutationObserver(() => {
+      if (wiping) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => syncFromStorage(), 50);
+    });
+    const observe = (node) => {
+      if (!node || observed.has(node)) return;
+      observed.add(node);
+      observer.observe(node, {
+        attributes: true,
+        attributeFilter: [
+          "class",
+          "dark",
+          "data-color-mode",
+          "data-color-scheme",
+          "data-theme",
+          "data-bs-theme",
+          "data-theme-mode",
+        ],
+      });
+    };
+    observe(document.documentElement);
+    if (document.body) observe(document.body);
+    else document.addEventListener("DOMContentLoaded", () => observe(document.body), { once: true });
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -222,6 +295,15 @@
         enabled: hasEngine() ? DarkReader.isEnabled() : false,
       });
       return;
+    }
+    if (message.type === CHROMODS_DARK_THEME_UPDATE) {
+      if (message.config) {
+        applyIncomingTheme(message.config, message.enabled !== false);
+        sendResponse({ ok: true });
+        return;
+      }
+      syncFromStorage().then(() => sendResponse({ ok: true }));
+      return true;
     }
     if (message.type === CHROMODS_DARK_WIPE) {
       const enabled = Boolean(message.enabled);
@@ -239,5 +321,6 @@
 
   if (readHint()) injectFallback();
   setupFetchProxy();
+  watchNativeDark();
   syncFromStorage();
 })();

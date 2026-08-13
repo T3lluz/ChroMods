@@ -1,3 +1,5 @@
+importScripts("dark-sites.js", "sites.js", "shortcuts.js");
+
 const DEFAULT_SETTINGS = {
   enabled: true,
   features: {
@@ -92,7 +94,85 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+async function chromodsShortcutTab(tab) {
+  if (tab?.id && tab.url) return tab;
+  const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  return active || tab || null;
+}
+
+async function chromodsCaptureTab(tab) {
+  if (!tab?.windowId) return null;
+  try {
+    return await chrome.tabs.captureVisibleTab(tab.windowId, {
+      format: "jpeg",
+      quality: 70,
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function chromodsApplyDarkShortcut(tab, url) {
+  const host = chromodsDarkHostFromUrl(url);
+  if (!host || !tab?.id) return false;
+
+  const key = `${tab.id}:toggle-dark`;
+  const now = Date.now();
+  if (now - (chromodsShortcutRecent.get(key) || 0) < 300) return false;
+  chromodsShortcutRecent.set(key, now);
+
+  const sites = await chromodsGetDarkSites();
+  const next = !chromodsIsDarkHostEnabled(sites, host);
+  const screenshot = await chromodsCaptureTab(tab);
+
+  if (screenshot) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        type: CHROMODS_DARK_WIPE,
+        enabled: next,
+        screenshot,
+      });
+    } catch {
+      /* storage apply below still runs */
+    }
+  }
+
+  await chromodsSetDarkSite(host, next);
+
+  if (!screenshot) {
+    try {
+      const updated = await chromodsGetDarkSites();
+      await chrome.tabs.sendMessage(tab.id, {
+        type: CHROMODS_DARK_THEME_UPDATE,
+        config: chromodsDarkSiteConfig(updated, host),
+        enabled: next,
+      });
+    } catch {
+      /* page may not have the script yet */
+    }
+  }
+  return true;
+}
+
+async function chromodsApplyShortcutCommand(actionId, tab) {
+  const target = await chromodsShortcutTab(tab);
+  const url = target?.url || "";
+  if (actionId === "toggle-dark") return chromodsApplyDarkShortcut(target, url);
+  return chromodsHandleShortcutMessage(actionId, url, target?.id || 0);
+}
+
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command !== "toggle-dark" && command !== "toggle-mods") return;
+  chromodsApplyShortcutCommand(command, tab);
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === CHROMODS_SHORTCUT_RUN) {
+    chromodsApplyShortcutCommand(message.actionId, sender.tab)
+      .then((ok) => sendResponse({ ok: Boolean(ok) }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
   if (!message || message.type !== "chromods-dark-fetch") return;
   const url = String(message.url || "");
   if (!/^https?:\/\//i.test(url)) {

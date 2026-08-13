@@ -477,6 +477,7 @@ const DEFAULT_SETTINGS = {
 };
 
 const appEl = document.getElementById("app");
+const shellEl = document.getElementById("shell");
 const siteRail = document.getElementById("site-rail");
 const currentPane = document.getElementById("current-pane");
 const otherSitesList = document.getElementById("other-sites-list");
@@ -484,10 +485,32 @@ const otherSitesTitle = document.getElementById("other-sites-title");
 const reloadBtn = document.getElementById("reload");
 const versionPill = document.getElementById("version-pill");
 const themeToggle = document.getElementById("theme-toggle");
+const settingsView = document.getElementById("settings-view");
+const settingsOpenBtn = document.getElementById("settings-open");
+const settingsBackBtn = document.getElementById("settings-back");
+const searchInput = document.getElementById("mod-search");
+const searchResults = document.getElementById("search-results");
+const shortcutList = document.getElementById("shortcut-list");
+const darkSiteTitle = document.getElementById("dark-site-title");
+const darkSiteHost = document.getElementById("dark-site-host");
+const darkSiteToggle = document.getElementById("dark-site-toggle");
+const darkSliders = document.getElementById("dark-sliders");
+const darkSystemControls = document.getElementById("dark-system-controls");
+const darkSkipNative = document.getElementById("dark-skip-native");
+const darkSiteListWrap = document.getElementById("dark-site-list-wrap");
+const darkSiteList = document.getElementById("dark-site-list");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let currentSite = null;
 let activeTab = null;
+let darkSettingsHost = null;
+let darkThemeSaveTimer = 0;
+let darkThemePushFrame = 0;
+let darkScriptReady = false;
+let shortcutState = chromodsMergeShortcuts();
+let recordingShortcutId = null;
+let searchActiveIndex = -1;
+let searchHitTimer = 0;
 const collapsedCategories = new Set();
 const collapsedOtherSites = new Set();
 
@@ -595,7 +618,7 @@ function siteCountLabel(siteId) {
   if (!features.length) return "No mods yet";
   if (!isSiteEnabled(siteId)) return "All disabled";
   const enabled = features.filter((feature) => settings.features[feature.id] !== false).length;
-  return `${enabled} of ${features.length} enabled`;
+  return `${enabled}/${features.length}`;
 }
 
 async function detectActiveTab() {
@@ -1031,7 +1054,7 @@ function renderOtherSitePanel(site, expanded) {
 
 function renderOtherSites() {
   otherSitesList.innerHTML = "";
-  otherSitesTitle.textContent = currentSite ? "Other sites" : "Sites";
+  setTitledIcon(otherSitesTitle, "ui-globe", currentSite ? "Other sites" : "Sites");
 
   const others = SITE_META.filter((site) => site.id !== currentSite?.id);
   for (const site of others) {
@@ -1154,6 +1177,8 @@ async function ensureDarkModeScript(tabId) {
       "scripts/vendor/darkreader.js",
       "scripts/dark-sites.js",
       "scripts/dark-mode.js",
+      "scripts/sites.js",
+      "scripts/shortcuts.js",
     ];
     try {
       await chrome.scripting.executeScript({
@@ -1203,6 +1228,436 @@ async function captureVisibleTab(tab) {
   }
 }
 
+function activeDarkHost() {
+  return chromodsDarkHostFromUrl(activeTab?.url || "");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function highlightMatch(text, query) {
+  const escaped = escapeHtml(text);
+  const needle = query.trim();
+  if (!needle) return escaped;
+  const re = new RegExp(`(${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
+  return escaped.replace(re, "<mark>$1</mark>");
+}
+
+function buildSearchIndex() {
+  const items = [];
+  for (const site of SITE_META) {
+    const hosts = (site.hostnames || []).join(" ");
+    items.push({
+      type: "site",
+      siteId: site.id,
+      title: site.title,
+      meta: hosts || site.id,
+      haystack: `${site.title} ${site.id} ${hosts}`.toLowerCase(),
+    });
+    for (const feature of featuresForSite(site.id)) {
+      items.push({
+        type: "mod",
+        siteId: site.id,
+        featureId: feature.id,
+        title: feature.title,
+        meta: `${site.title} · ${feature.description}`,
+        haystack: `${site.title} ${feature.title} ${feature.description} ${feature.id}`.toLowerCase(),
+      });
+    }
+  }
+  return items;
+}
+
+function stampStaticIcons() {
+  document.querySelectorAll("[data-icon]").forEach((el) => {
+    if (el.querySelector("svg")) return;
+    const markup = iconMarkup(el.dataset.icon);
+    if (markup) el.insertAdjacentHTML("afterbegin", markup);
+  });
+}
+
+function setTitledIcon(el, icon, text) {
+  if (!el) return;
+  el.replaceChildren();
+  el.dataset.icon = icon;
+  el.insertAdjacentHTML("afterbegin", iconMarkup(icon));
+  el.append(text);
+}
+
+function setSearchFocused(on) {
+  shellEl.classList.toggle("is-search-focused", Boolean(on));
+}
+
+function clearSearchResults() {
+  searchActiveIndex = -1;
+  searchResults.hidden = true;
+  searchResults.innerHTML = "";
+  if (document.activeElement !== searchInput) setSearchFocused(false);
+}
+
+function clearSearch() {
+  searchInput.value = "";
+  clearSearchResults();
+}
+
+function currentSearchItems() {
+  return [...searchResults.querySelectorAll(".search-result")];
+}
+
+function setSearchActiveIndex(index) {
+  const items = currentSearchItems();
+  if (!items.length) {
+    searchActiveIndex = -1;
+    return;
+  }
+  searchActiveIndex = (index + items.length) % items.length;
+  items.forEach((item, i) => item.classList.toggle("is-active", i === searchActiveIndex));
+  items[searchActiveIndex]?.scrollIntoView({ block: "nearest" });
+}
+
+function renderSearchResults(query) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    clearSearchResults();
+    return;
+  }
+
+  const matches = buildSearchIndex().filter((item) => item.haystack.includes(needle)).slice(0, 14);
+  searchResults.hidden = false;
+  if (!matches.length) {
+    searchResults.innerHTML = `<p class="search-empty">No matching sites or mods</p>`;
+    searchActiveIndex = -1;
+    return;
+  }
+
+  searchResults.innerHTML = matches
+    .map((item) => {
+      const icon = iconMarkup(SITE_BY_ID[item.siteId]?.icon);
+      const attrs =
+        item.type === "mod"
+          ? `data-type="mod" data-site="${item.siteId}" data-feature="${item.featureId}"`
+          : `data-type="site" data-site="${item.siteId}"`;
+      return `
+        <button class="search-result" type="button" role="option" ${attrs}>
+          <span class="search-result-icon" aria-hidden="true">${icon}</span>
+          <span class="search-result-copy">
+            <span class="search-result-title">${highlightMatch(item.title, query)}</span>
+            <span class="search-result-meta">${highlightMatch(item.meta, query)}</span>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+  setSearchActiveIndex(0);
+}
+
+function revealFeature(siteId, featureId) {
+  scrollToSite(siteId);
+  const tryHighlight = (attempt = 0) => {
+    const card = document.querySelector(`.feature-card[data-feature="${featureId}"]`);
+    if (!card) {
+      if (attempt < 10) requestAnimationFrame(() => tryHighlight(attempt + 1));
+      return;
+    }
+    const section = card.closest(".category-section");
+    const expansion = section?.querySelector(".category-expansion");
+    const header = section?.querySelector(".category-header");
+    if (expansion && !expansion.classList.contains("is-open")) header?.click();
+    card.classList.add("is-search-hit");
+    clearTimeout(searchHitTimer);
+    searchHitTimer = window.setTimeout(() => card.classList.remove("is-search-hit"), 1600);
+    const headerHeight = document.querySelector(".app-header")?.offsetHeight ?? 0;
+    const top = card.getBoundingClientRect().top + appEl.scrollTop - headerHeight - 8;
+    appEl.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
+  requestAnimationFrame(() => tryHighlight());
+}
+
+function activateSearchResult(button) {
+  if (!button) return;
+  const siteId = button.dataset.site;
+  const featureId = button.dataset.feature;
+  clearSearch();
+  searchInput.blur();
+  setSearchFocused(false);
+  if (featureId) revealFeature(siteId, featureId);
+  else scrollToSite(siteId);
+}
+
+function isSettingsOpen() {
+  return shellEl.classList.contains("is-settings-open");
+}
+
+async function setSettingsOpen(open) {
+  if (open === isSettingsOpen()) {
+    if (open) await renderSettings();
+    return;
+  }
+  if (open) {
+    setSearchFocused(false);
+    await renderSettings();
+    settingsView.setAttribute("aria-hidden", "false");
+    settingsOpenBtn.setAttribute("aria-expanded", "true");
+    void settingsView.offsetWidth;
+    shellEl.classList.add("is-settings-open");
+    return;
+  }
+  stopShortcutRecording();
+  shellEl.classList.remove("is-settings-open");
+  settingsView.setAttribute("aria-hidden", "true");
+  settingsOpenBtn.setAttribute("aria-expanded", "false");
+  settingsOpenBtn.focus({ preventScroll: true });
+}
+
+function readDarkConfigFromUi() {
+  const values = {};
+  for (const slider of CHROMODS_DARK_SLIDERS) {
+    const input = darkSliders.querySelector(`[data-dark-slider="${slider.id}"]`);
+    values[slider.id] = Number(input?.value);
+  }
+  return chromodsNormalizeDarkSite({
+    enabled: darkSiteToggle.checked,
+    styleSystemControls: darkSystemControls.checked,
+    skipNativeDark: darkSkipNative.checked,
+    ...values,
+  });
+}
+
+function sendDarkThemeMessage(tabId, config, enabled) {
+  try {
+    const sent = chrome.tabs.sendMessage(tabId, {
+      type: CHROMODS_DARK_THEME_UPDATE,
+      config,
+      enabled,
+    });
+    if (sent && typeof sent.catch === "function") sent.catch(() => {});
+  } catch {
+    /* page may not have the script yet */
+  }
+}
+
+async function pushDarkThemeToTab(host, config) {
+  if (!host || !activeTab?.id) return;
+  if (host !== chromodsDarkHostFromUrl(activeTab.url)) return;
+  const next = config || readDarkConfigFromUi();
+  const enabled = next.enabled !== false;
+  const tabId = activeTab.id;
+  if (!darkScriptReady) darkScriptReady = await ensureDarkModeScript(tabId);
+  if (darkScriptReady) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        func: (siteConfig, isEnabled) => {
+          globalThis.__chromodsApplyDarkTheme?.(siteConfig, isEnabled);
+        },
+        args: [next, enabled],
+      });
+      return;
+    } catch {
+      /* fall through to a runtime message */
+    }
+  }
+  sendDarkThemeMessage(tabId, next, enabled);
+}
+
+function queueDarkThemeSave(host) {
+  if (!host) return;
+  if (!darkThemePushFrame) {
+    darkThemePushFrame = requestAnimationFrame(() => {
+      darkThemePushFrame = 0;
+      pushDarkThemeToTab(host, readDarkConfigFromUi());
+    });
+  }
+  clearTimeout(darkThemeSaveTimer);
+  darkThemeSaveTimer = window.setTimeout(() => {
+    const config = readDarkConfigFromUi();
+    chromodsSetDarkSiteTheme(host, {
+      brightness: config.brightness,
+      contrast: config.contrast,
+      sepia: config.sepia,
+      grayscale: config.grayscale,
+      styleSystemControls: config.styleSystemControls,
+      skipNativeDark: config.skipNativeDark,
+    }).catch(() => {});
+  }, 80);
+}
+
+function stopShortcutRecording() {
+  recordingShortcutId = null;
+  shortcutList?.querySelectorAll(".shortcut-bind").forEach((button) => {
+    button.classList.remove("is-recording");
+    button.textContent = chromodsShortcutLabel(shortcutState[button.dataset.shortcut]);
+  });
+}
+
+function renderShortcutList() {
+  shortcutList.innerHTML = CHROMODS_SHORTCUT_ACTIONS.map((action) => {
+    const label = chromodsShortcutLabel(shortcutState[action.id]);
+    return `
+      <div class="shortcut-row">
+        <span class="shortcut-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>
+        <div class="shortcut-copy">
+          <h3>${action.title}</h3>
+          <p>${action.description}</p>
+        </div>
+        <button class="shortcut-bind" type="button" data-shortcut="${action.id}">${label}</button>
+      </div>
+    `;
+  }).join("");
+
+  shortcutList.querySelectorAll(".shortcut-bind").forEach((button) => {
+    button.addEventListener("click", () => {
+      const actionId = button.dataset.shortcut;
+      if (recordingShortcutId === actionId) {
+        stopShortcutRecording();
+        return;
+      }
+      stopShortcutRecording();
+      recordingShortcutId = actionId;
+      button.classList.add("is-recording");
+      button.textContent = "Press keys…";
+      button.focus();
+    });
+  });
+}
+
+async function handleShortcutCapture(event) {
+  if (!recordingShortcutId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.key === "Escape") {
+    stopShortcutRecording();
+    return;
+  }
+  if (event.key === "Backspace" || event.key === "Delete") {
+    shortcutState = await chromodsSetShortcut(recordingShortcutId, null);
+    stopShortcutRecording();
+    renderShortcutList();
+    return;
+  }
+  const next = chromodsShortcutFromEvent(event);
+  if (!next) return;
+  for (const action of CHROMODS_SHORTCUT_ACTIONS) {
+    if (action.id !== recordingShortcutId && chromodsShortcutsEqual(shortcutState[action.id], next)) {
+      await chromodsSetShortcut(action.id, null);
+    }
+  }
+  shortcutState = await chromodsSetShortcut(recordingShortcutId, next);
+  stopShortcutRecording();
+  renderShortcutList();
+}
+
+function renderDarkSliders(config, enabled) {
+  darkSliders.innerHTML = CHROMODS_DARK_SLIDERS.map((slider) => {
+    const value = config[slider.id];
+    return `
+      <div class="dark-slider-row">
+        <label for="dark-${slider.id}">
+          <span class="dark-slider-icon" aria-hidden="true">${iconMarkup(slider.icon)}</span>
+          ${slider.label}
+        </label>
+        <input
+          id="dark-${slider.id}"
+          type="range"
+          min="${slider.min}"
+          max="${slider.max}"
+          value="${value}"
+          data-dark-slider="${slider.id}"
+          ${enabled ? "" : "disabled"}
+        />
+        <span class="dark-slider-value" data-dark-value="${slider.id}">${value}</span>
+      </div>
+    `;
+  }).join("");
+
+  darkSliders.querySelectorAll("[data-dark-slider]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const host = darkSettingsHost;
+      if (!host) return;
+      const id = input.dataset.darkSlider;
+      const valueLabel = darkSliders.querySelector(`[data-dark-value="${id}"]`);
+      if (valueLabel) valueLabel.textContent = String(input.value);
+      queueDarkThemeSave(host);
+    });
+  });
+}
+
+async function renderDarkSettings() {
+  const sites = await chromodsGetDarkSites();
+  if (!darkSettingsHost) darkSettingsHost = activeDarkHost();
+  const host = darkSettingsHost;
+  const config = host ? chromodsDarkSiteConfig(sites, host) : chromodsNormalizeDarkSite();
+  const canEdit = Boolean(host);
+
+  darkSiteTitle.textContent = host ? host : "This site";
+  darkSiteHost.textContent = host
+    ? "Brightness, contrast, sepia, and grayscale apply only here."
+    : "Open a website to configure dark mode for it.";
+  darkSiteToggle.disabled = !canEdit;
+  darkSiteToggle.checked = Boolean(host && config.enabled);
+  darkSystemControls.disabled = !canEdit;
+  darkSystemControls.checked = config.styleSystemControls;
+  darkSkipNative.disabled = !canEdit;
+  darkSkipNative.checked = config.skipNativeDark;
+  renderDarkSliders(config, canEdit);
+
+  const enabledHosts = chromodsDarkEnabledHosts(sites);
+  darkSiteListWrap.hidden = enabledHosts.length === 0;
+  darkSiteList.innerHTML = enabledHosts
+    .map(
+      (item) => `
+        <button class="dark-site-item${item === host ? " is-active" : ""}" type="button" data-dark-host="${item}">
+          <span class="ui-icon" aria-hidden="true">${iconMarkup("ui-globe")}</span>
+          <span class="dark-site-item-name">${item}</span>
+        </button>
+      `
+    )
+    .join("");
+  darkSiteList.querySelectorAll("[data-dark-host]").forEach((button) => {
+    button.addEventListener("click", () => {
+      darkSettingsHost = button.dataset.darkHost;
+      renderDarkSettings();
+    });
+  });
+}
+
+async function renderSettings() {
+  shortcutState = await chromodsGetShortcuts();
+  if (!darkSettingsHost) darkSettingsHost = activeDarkHost();
+  renderShortcutList();
+  await renderDarkSettings();
+  if (activeTab?.id && activeDarkHost()) {
+    darkScriptReady = await ensureDarkModeScript(activeTab.id);
+  }
+}
+
+async function applyDarkOnActiveTab(enabled) {
+  const host = activeDarkHost();
+  if (!host || !activeTab?.id) return false;
+  const injected = await ensureDarkModeScript(activeTab.id);
+  if (!injected) return false;
+  if (host === chromodsDarkHostFromUrl(activeTab.url)) {
+    const screenshot = await captureVisibleTab(activeTab);
+    if (screenshot) {
+      try {
+        await chrome.tabs.sendMessage(activeTab.id, {
+          type: CHROMODS_DARK_WIPE,
+          enabled,
+          screenshot,
+        });
+      } catch {
+        /* storage apply still runs */
+      }
+    }
+  }
+  return true;
+}
+
 function bindControls() {
   reloadBtn.addEventListener("click", async () => {
     if (!activeTab?.id || !currentSite) return;
@@ -1242,6 +1697,128 @@ function bindControls() {
       await chromodsSetDarkSite(host, next);
     } finally {
       await updateThemeToggle();
+      if (isSettingsOpen()) await renderDarkSettings();
+    }
+  });
+
+  settingsOpenBtn.addEventListener("click", () => setSettingsOpen(true));
+  settingsBackBtn.addEventListener("click", () => setSettingsOpen(false));
+
+  searchInput.addEventListener("focus", () => setSearchFocused(true));
+  searchInput.addEventListener("blur", () => {
+    requestAnimationFrame(() => {
+      if (document.activeElement === searchInput) return;
+      if (!searchResults.hidden) return;
+      setSearchFocused(false);
+    });
+  });
+  searchInput.addEventListener("input", () => {
+    setSearchFocused(true);
+    renderSearchResults(searchInput.value);
+  });
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSearchActiveIndex(searchActiveIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSearchActiveIndex(searchActiveIndex - 1);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      activateSearchResult(currentSearchItems()[Math.max(0, searchActiveIndex)]);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      clearSearch();
+      searchInput.blur();
+    }
+  });
+  searchResults.addEventListener("mousedown", (event) => {
+    const button = event.target.closest(".search-result");
+    if (button) {
+      event.preventDefault();
+      activateSearchResult(button);
+    }
+  });
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".search-wrap")) clearSearchResults();
+  });
+
+  darkSiteToggle.addEventListener("change", async () => {
+    const host = darkSettingsHost;
+    if (!host) return;
+    const next = darkSiteToggle.checked;
+    if (host === activeDarkHost() && activeTab?.id) {
+      setThemeTogglePressed(next);
+      const ok = await applyDarkOnActiveTab(next);
+      if (!ok) {
+        darkSiteToggle.checked = !next;
+        await updateThemeToggle();
+        return;
+      }
+    }
+    await chromodsSetDarkSite(host, next);
+    await updateThemeToggle();
+    await renderDarkSettings();
+  });
+
+  darkSystemControls.addEventListener("change", () => {
+    if (!darkSettingsHost) return;
+    queueDarkThemeSave(darkSettingsHost);
+  });
+
+  darkSkipNative.addEventListener("change", () => {
+    if (!darkSettingsHost) return;
+    queueDarkThemeSave(darkSettingsHost);
+  });
+
+  document.addEventListener(
+    "wheel",
+    (event) => {
+      if (event.ctrlKey || event.defaultPrevented) return;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      if (event.target.closest("input, textarea, select")) return;
+
+      const root = isSettingsOpen() ? settingsView : appEl;
+      if (!root) return;
+      let node = event.target.nodeType === 1 ? event.target : event.target.parentElement;
+      while (node && node !== document.body) {
+        const style = getComputedStyle(node);
+        const canY =
+          (style.overflowY === "auto" || style.overflowY === "scroll") &&
+          node.scrollHeight > node.clientHeight + 1;
+        const canX =
+          (style.overflowX === "auto" || style.overflowX === "scroll") &&
+          node.scrollWidth > node.clientWidth + 1;
+        if (canY) {
+          const atTop = node.scrollTop <= 0 && event.deltaY < 0;
+          const atBottom =
+            node.scrollTop + node.clientHeight >= node.scrollHeight - 1 && event.deltaY > 0;
+          if ((atTop || atBottom) && node !== root) {
+            event.preventDefault();
+            root.scrollTop += event.deltaY;
+          }
+          return;
+        }
+        if (canX) {
+          event.preventDefault();
+          root.scrollTop += event.deltaY;
+          return;
+        }
+        node = node.parentElement;
+      }
+    },
+    { passive: false }
+  );
+
+  window.addEventListener("keydown", (event) => {
+    if (recordingShortcutId) {
+      handleShortcutCapture(event);
+      return;
+    }
+    if (event.key !== "Escape") return;
+    if (isSettingsOpen()) {
+      event.preventDefault();
+      setSettingsOpen(false);
     }
   });
 }
@@ -1256,11 +1833,14 @@ function renderPopup() {
 }
 
 async function init() {
+  stampStaticIcons();
   if (versionPill && chrome.runtime?.getManifest) {
     versionPill.textContent = `v${chrome.runtime.getManifest().version}`;
   }
   await loadSettings();
+  shortcutState = await chromodsGetShortcuts();
   await detectActiveTab();
+  darkSettingsHost = activeDarkHost();
   bindControls();
   renderPopup();
 }

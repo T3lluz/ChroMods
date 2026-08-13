@@ -88,6 +88,22 @@
     "*://*.twitter.com/*",
     "*://twitter.com/*"
   ],
+  "commands": {
+    "toggle-dark": {
+      "suggested_key": {
+        "default": "Alt+Shift+D",
+        "mac": "Alt+Shift+D"
+      },
+      "description": "Toggle dark mode for the current site"
+    },
+    "toggle-mods": {
+      "suggested_key": {
+        "default": "Alt+Shift+M",
+        "mac": "Alt+Shift+M"
+      },
+      "description": "Toggle ChroMods for the current site"
+    }
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "ChroMods",
@@ -110,7 +126,9 @@
         "scripts/dark-chrome-guard.js",
         "scripts/vendor/darkreader.js",
         "scripts/dark-sites.js",
-        "scripts/dark-mode.js"
+        "scripts/dark-mode.js",
+        "scripts/sites.js",
+        "scripts/shortcuts.js"
       ],
       "run_at": "document_start",
       "all_frames": true

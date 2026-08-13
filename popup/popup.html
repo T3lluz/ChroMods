@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <div class="shell" id="shell">
     <div class="container" id="app">
       <header class="app-header">
         <div class="header-fade" aria-hidden="true">
@@ -24,6 +25,7 @@
             </div>
           </div>
           <div class="header-actions">
+            <div class="header-icon-row">
             <button
               id="theme-toggle"
               class="theme-toggle"
@@ -53,10 +55,48 @@
                 </g>
               </svg>
             </button>
-            <button id="reload" class="reload-btn" type="button" title="Reload this page">
+            <button
+              id="settings-open"
+              class="icon-btn"
+              type="button"
+              aria-label="Open settings"
+              aria-expanded="false"
+              aria-controls="settings-view"
+              title="Settings"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.8 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.92 14.5a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.39 1.04.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.24.1.51 0 .64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z"
+                />
+              </svg>
+            </button>
+            </div>
+            <button id="reload" class="reload-btn" type="button" title="Reload this page" data-icon="action-reload">
               Reload page
             </button>
           </div>
+        </div>
+        <div class="search-wrap">
+          <label class="search-field" for="mod-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                d="m16.4 16.4 4.1 4.1M6.2 11a4.8 4.8 0 1 1 9.6 0 4.8 4.8 0 0 1-9.6 0Z"
+              />
+            </svg>
+            <input
+              id="mod-search"
+              type="search"
+              placeholder="Search sites and mods"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+          <div id="search-results" class="search-results" hidden role="listbox" aria-label="Search results"></div>
         </div>
         <nav id="site-rail" class="site-rail" aria-label="Supported sites"></nav>
       </header>
@@ -65,7 +105,7 @@
 
       <section class="other-sites" aria-label="Other sites">
         <div class="section-header other-sites-header">
-          <h3 class="section-title" id="other-sites-title">Other sites</h3>
+          <h3 class="section-title" id="other-sites-title" data-icon="ui-globe">Other sites</h3>
         </div>
         <div id="other-sites-list" class="other-sites-list"></div>
       </section>
@@ -74,9 +114,72 @@
         <p>Styles adapted from <a href="https://github.com/sameerasw/my-internet" target="_blank" rel="noreferrer">my-internet</a></p>
       </footer>
     </div>
+    <section id="settings-view" class="settings-view" aria-hidden="true">
+      <header class="settings-header">
+        <button id="settings-back" class="icon-btn settings-back" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M14.5 5.5 8 12l6.5 6.5"
+            />
+          </svg>
+        </button>
+        <h1 class="settings-title" data-icon="ui-sliders">Settings</h1>
+      </header>
+      <div class="settings-body">
+        <section class="settings-section">
+          <h2 class="section-title" data-icon="ui-keyboard">Keyboard shortcuts</h2>
+          <p class="settings-lead">Shortcuts work on any website. Click a binding to change the combo, or remap them in chrome://extensions/shortcuts.</p>
+          <div id="shortcut-list" class="settings-card"></div>
+        </section>
+        <section class="settings-section">
+          <h2 class="section-title" data-icon="shortcut-dark">Dark mode</h2>
+          <p class="settings-lead" id="dark-settings-lead">Per-site brightness, contrast, sepia, and grayscale — like Dark Reader.</p>
+          <div class="settings-card dark-settings">
+            <div class="dark-site-heading">
+              <div class="dark-site-copy">
+                <h3 id="dark-site-title">This site</h3>
+                <p id="dark-site-host" class="settings-muted">Open a website to configure it</p>
+              </div>
+              <label class="switch switch-sm" aria-label="Force dark mode on this site">
+                <input id="dark-site-toggle" type="checkbox" disabled />
+                <span class="slider">
+                  <span class="knob">
+                    <svg class="switch-check" viewBox="0 0 12 12" aria-hidden="true">
+                      <path d="M2.1 6.2 4.8 8.8 9.9 3.2" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+              </label>
+            </div>
+            <div id="dark-sliders" class="dark-sliders"></div>
+            <label class="dark-check-row">
+              <input id="dark-system-controls" type="checkbox" checked disabled />
+              <span class="ui-icon" data-icon="dark-system"></span>
+              <span>Style system controls</span>
+            </label>
+            <label class="dark-check-row">
+              <input id="dark-skip-native" type="checkbox" checked disabled />
+              <span class="ui-icon" data-icon="dark-skip-native"></span>
+              <span>Don’t invert sites that already have native dark</span>
+            </label>
+          </div>
+          <div id="dark-site-list-wrap" hidden>
+            <h3 class="settings-subhead" data-icon="ui-globe">Sites with dark mode</h3>
+            <div id="dark-site-list" class="settings-card dark-site-list"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+    </div>
     <script src="../scripts/sites.js"></script>
     <script src="../scripts/icons.js"></script>
     <script src="../scripts/dark-sites.js"></script>
+    <script src="../scripts/shortcuts.js"></script>
     <script src="../scripts/style-request.js"></script>
     <script src="../scripts/popup.js"></script>
   </body>

@@ -90,7 +90,7 @@ function buildReadme({ version, sites, features }) {
   </p>
 </div>
 
-The popup detects the active tab and shows that site's mods first. A moon/sun toggle in the header can force dark mode on **any website** (Dark Reader engine), remembered per hostname. Unsupported sites get a compact tag and a **Request styling** action that opens a GitHub issue (or an existing one) on this repo.
+The popup detects the active tab and shows that site's mods first. Search the header to jump to a site or mod. A moon/sun toggle can force dark mode on **any website** (Dark Reader engine), with per-site brightness, contrast, sepia, and grayscale in Settings. Sites that already ship a native dark theme are left alone by default. Keyboard shortcuts live in the same settings panel. Unsupported sites get a compact tag and a **Request styling** action that opens a GitHub issue (or an existing one) on this repo.
 
 | | Site | Mods | Hosts |
 | :---: | --- | ---: | --- |
