@@ -1290,6 +1290,16 @@ function setTitledIcon(el, icon, text) {
 }
 
 function setSearchFocused(on) {
+  const wrap = document.querySelector(".search-wrap");
+  const headerTop = document.querySelector(".header-top");
+  if (wrap) {
+    if (on && headerTop) {
+      const lift = Math.max(0, headerTop.offsetHeight - 30);
+      wrap.style.setProperty("--search-lift", `${-lift}px`);
+    } else {
+      wrap.style.setProperty("--search-lift", "0px");
+    }
+  }
   shellEl.classList.toggle("is-search-focused", Boolean(on));
 }
 

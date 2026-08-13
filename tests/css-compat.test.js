@@ -397,6 +397,8 @@ test("popup assets exist and reference each other", () => {
   assert.match(html, /\.\.\/scripts\/shortcuts\.js/);
   assert.match(html, /\.\.\/scripts\/style-request\.js/);
   assert.match(html, /header-frost/);
+  assert.match(html, /search-frost/);
+  assert.match(html, /search-title/);
   assert.match(html, /header-glass/);
   assert.match(html, /header-fade/);
   assert.match(html, /ChroMods/);
@@ -474,6 +476,7 @@ test("popup applies toggles through storage without page messaging", () => {
   assert.match(js, /setSettingsOpen/);
   assert.match(js, /renderSearchResults/);
   assert.match(js, /setSearchFocused/);
+  assert.match(js, /--search-lift/);
   assert.match(js, /stampStaticIcons/);
   assert.match(js, /chromodsSetDarkSiteTheme/);
   assert.match(js, /CHROMODS_DARK_THEME_UPDATE/);
@@ -627,6 +630,20 @@ test("popup CSS uses forced dark theme", () => {
   assert.doesNotMatch(css, /\.shell\.is-settings-open\s*\{\s*height:/);
   assert.match(css, /\.search-wrap/);
   assert.match(css, /is-search-focused/);
+  assert.match(css, /\.shell\.is-search-focused \.container/);
+  assert.match(css, /\.search-frost/);
+  assert.match(css, /\.shell\.is-search-focused \.search-frost/);
+  assert.match(css, /\.shell\.is-search-focused \.search-frost-dots/);
+  assert.match(css, /\.shell\.is-search-focused \.header-frost-dots/);
+  assert.match(css, /\.shell\.is-search-focused \.header-glass/);
+  assert.match(css, /cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/);
+  assert.match(css, /\.search-title/);
+  assert.match(css, /\.shell\.is-search-focused \.search-title/);
+  assert.match(css, /\.shell\.is-search-focused \.app-header/);
+  assert.match(css, /input::placeholder/);
+  assert.match(css, /--search-lift/);
+  assert.doesNotMatch(css, /filter:\s*blur\(10px\)/);
+  assert.doesNotMatch(css, /\.shell\.is-search-focused \.header-top\s*\{[^}]*max-height:\s*0/s);
   assert.match(css, /\.shortcut-bind/);
   assert.match(css, /\.dark-slider-row/);
 });
