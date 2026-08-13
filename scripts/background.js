@@ -41,6 +41,20 @@ const DEFAULT_SETTINGS = {
     "ddg-hidden-promo": false,
     "ddg-no-share-feedback": true,
     "ddg-no-footer": true,
+    "gmail-no-borders": true,
+    "gmail-hidden": true,
+    "gmail-preview": false,
+    "gmail-glass": true,
+    "gmail-rounded-corners": true,
+    "gmail-flashbangless-loading": true,
+    "gemini-better-text-input": true,
+    "gemini-other-changes": true,
+    "gemini-hover": false,
+    "gemini-input-code": true,
+    "x-overlay-fix": true,
+    "x-layout-fixes": true,
+    "x-hover": false,
+    "x-no-thanks": true,
   },
   subsettings: {
     theater: {
@@ -57,7 +71,10 @@ const DEFAULT_SETTINGS = {
     youtube: { enabled: true },
     github: { enabled: true },
     google: { enabled: true },
+    gmail: { enabled: true },
+    gemini: { enabled: true },
     duckduckgo: { enabled: true },
+    x: { enabled: true },
   },
 };
 

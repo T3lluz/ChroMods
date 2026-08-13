@@ -1,0 +1,15 @@
+/* x-hover — hide the left nav and right rail until hover */
+header[role="banner"],
+[data-testid="sidebarColumn"],
+div.css-175oi2r.r-vacyoi.r-ttdzmv,
+div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd {
+  opacity: 0.01 !important;
+  transition: opacity 0.3s ease-in-out !important;
+}
+
+header[role="banner"]:hover,
+[data-testid="sidebarColumn"]:hover,
+div.css-175oi2r.r-vacyoi.r-ttdzmv:hover,
+div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd:hover {
+  opacity: 1 !important;
+}

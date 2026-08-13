@@ -22,10 +22,28 @@ const SITE_META = [
     icon: "site-google",
   },
   {
+    id: "gmail",
+    title: "Gmail",
+    hostnames: ["mail.google.com"],
+    icon: "site-gmail",
+  },
+  {
+    id: "gemini",
+    title: "Gemini",
+    hostnames: ["gemini.google.com"],
+    icon: "site-gemini",
+  },
+  {
     id: "duckduckgo",
     title: "DuckDuckGo",
     hostnames: ["duckduckgo.com"],
     icon: "site-duckduckgo",
+  },
+  {
+    id: "x",
+    title: "X",
+    hostnames: ["x.com", "twitter.com"],
+    icon: "site-x",
   },
 ];
 

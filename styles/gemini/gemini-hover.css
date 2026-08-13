@@ -1,0 +1,21 @@
+/* gemini-hover — hide the conversation sidenav and top chrome until hover */
+bard-sidenav,
+mat-sidenav,
+.mat-drawer:not(.mat-sidenav-content):not(mat-sidenav-content),
+.mat-sidenav,
+.side-nav-menu-button,
+.boqOnegoogleliteOgbOneGoogleBar,
+top-bar-actions {
+  opacity: 0.01 !important;
+  transition: opacity 0.3s ease-in-out !important;
+}
+
+bard-sidenav:hover,
+mat-sidenav:hover,
+.mat-drawer:not(.mat-sidenav-content):not(mat-sidenav-content):hover,
+.mat-sidenav:hover,
+.side-nav-menu-button:hover,
+.boqOnegoogleliteOgbOneGoogleBar:hover,
+top-bar-actions:hover {
+  opacity: 1 !important;
+}

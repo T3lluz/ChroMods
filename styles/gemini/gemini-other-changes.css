@@ -1,0 +1,30 @@
+/* gemini-other changes — extra composer space, hide the disclaimer, solid overlay cards */
+.content-container chat-window .chat-container .bottom-container,
+.chat-container .bottom-container,
+.input-area-container {
+  margin-bottom: 2em !important;
+}
+
+.content-container chat-window .chat-container .bottom-container {
+  margin-bottom: 30px !important;
+}
+
+input-container hallucination-disclaimer,
+hallucination-disclaimer,
+.disclaimer,
+.hallucination-disclaimer {
+  display: none !important;
+}
+
+.cdk-overlay-pane > div,
+.cdk-overlay-pane .mat-mdc-menu-panel,
+mat-card,
+.mat-mdc-card,
+[role="menu"],
+[role="dialog"] {
+  background-color: var(
+    --bard-color-neutral-96,
+    var(--gem-sys-color--surface-container, light-dark(#fff, #1e1f20))
+  ) !important;
+  border-radius: 1em !important;
+}

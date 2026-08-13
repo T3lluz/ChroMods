@@ -1,0 +1,11 @@
+/* gemini-better text input — drop the composer border and use a matching fill */
+input-area-v2,
+.input-area-container input-area-v2,
+input-container input-area-v2,
+.input-area-container {
+  border: 0 !important;
+  background: var(
+    --bard-color-new-conversation-button,
+    var(--gem-sys-color--surface-container-high, light-dark(#eef0f2, #2a2b2e))
+  ) !important;
+}

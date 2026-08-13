@@ -1,0 +1,11 @@
+/* x-overlay-fix — keep menus, dialogs, and hover cards readable */
+[data-testid="Dropdown"],
+[data-testid="HoverCard"],
+[data-testid="confirmationSheetDialog"],
+.css-175oi2r[role="dialog"],
+div.r-ifefl9:nth-child(2),
+[role="dialog"],
+[role="menu"] {
+  background-color: light-dark(#ffffff, #000000) !important;
+  background-color: Canvas !important;
+}

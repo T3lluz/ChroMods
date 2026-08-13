@@ -1,0 +1,11 @@
+/* gmail-rounded corners — round the list, thread, and nav panes */
+[role="main"],
+.AO,
+.aeF,
+.aeN,
+.nH.bkK,
+.aAU,
+#\:3,
+div.nH:nth-child(4) > div:nth-child(1) {
+  border-radius: 8px !important;
+}

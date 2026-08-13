@@ -172,7 +172,7 @@ async function run() {
       </ytd-app>
     `);
     await theaterFixture.addStyleTag({
-      path: path.join(extensionPath, "styles", "theater-base.css"),
+      path: path.join(extensionPath, "styles", "youtube", "theater-base.css"),
     });
 
     const theaterBounds = await theaterFixture.evaluate(() => {

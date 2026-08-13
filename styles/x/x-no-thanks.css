@@ -1,0 +1,11 @@
+/* x-no thanks — hide Premium subscribe, footer, and upsell cards */
+[aria-label="Subscribe to Premium"],
+[aria-label="Premium"],
+[aria-label="Footer"],
+nav[aria-label="Footer"],
+[data-testid="super-upsell-UpsellCardRenderProperties"],
+[data-testid="sidebarColumn"] a[href*="premium"],
+[data-testid="sidebarColumn"] a[href*="/i/verified-orgs-signup"],
+aside a[href*="/i/premium"] {
+  display: none !important;
+}

@@ -7,6 +7,15 @@ import test from "node:test";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const stylesDir = path.join(root, "styles");
+const SITE_STYLE_DIRS = [
+  "youtube",
+  "github",
+  "google",
+  "gmail",
+  "gemini",
+  "duckduckgo",
+  "x",
+];
 
 const FORBIDDEN_PATTERNS = [
   { name: "@-moz-document", pattern: /@-moz-document/i },
@@ -14,25 +23,24 @@ const FORBIDDEN_PATTERNS = [
   { name: "Nested CSS ampersand", pattern: /&\s*[:{]/ },
 ];
 
-const STYLE_FILES = fs
-  .readdirSync(stylesDir)
-  .filter((file) => file.endsWith(".css"));
+function collectCssFiles(dir) {
+  const files = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...collectCssFiles(full));
+    else if (entry.name.endsWith(".css")) files.push(full);
+  }
+  return files;
+}
 
-const THEATER_FILES = [
-  "theater-base.css",
-  "theater-hide-header.css",
-  "theater-header-blur.css",
-  "theater-hover-comments.css",
-  "theater-comments-right.css",
-];
-
-const FEED_FILES = [
-  "feed-layout-compact.css",
-  "feed-layout-columns-auto.css",
-];
+const STYLE_FILES = collectCssFiles(stylesDir);
 
 function read(file) {
   return fs.readFileSync(path.join(root, file), "utf8");
+}
+
+function style(site, file) {
+  return `styles/${site}/${file}`;
 }
 
 test("manifest is valid Chrome MV3", () => {
@@ -41,71 +49,56 @@ test("manifest is valid Chrome MV3", () => {
   assert.equal(manifest.name, "ChroMods");
   assert.ok(manifest.content_scripts?.[0]?.js?.includes("scripts/content-script.js"));
   assert.ok(manifest.content_scripts?.[0]?.js?.includes("scripts/sites.js"));
+  assert.ok(manifest.web_accessible_resources?.[0]?.resources?.includes("styles/*/*.css"));
   assert.ok(manifest.action?.default_popup);
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtube.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("github.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("google.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("duckduckgo.com")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("x.com")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("twitter.com")));
   for (const file of ["icons/icon.svg", "icons/icon16.png", "icons/icon48.png", "icons/icon128.png"]) {
     assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
 });
 
 test("all stylesheet modules exist", () => {
-  for (const file of [...THEATER_FILES, ...FEED_FILES]) {
-    assert.ok(fs.existsSync(path.join(stylesDir, file)), `missing ${file}`);
+  const js = read("scripts/content-script.js");
+  const paths = [...js.matchAll(/"(styles\/[^"]+\.css)"/g)].map((m) => m[1]);
+  assert.ok(paths.length > 40, `expected many style paths, got ${paths.length}`);
+  for (const file of paths) {
+    assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
-  assert.ok(fs.existsSync(path.join(stylesDir, "immersive-search.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "compact-sidebar.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-no-tab-text.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-glass-effect.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-immersive-search.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-hover.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-no-footer.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-border-mods.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-remove-borders.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-repo-sidebar-hover.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-hide-toolbar-separator.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-timeline-badge.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "gh-chip-margin.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "g-search-zoom.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "g-glass-effect.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "g-overlay-fix.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "g-shadows-borders.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "g-hover.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-immersive-search.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-immersive-popup.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-glass-effect.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-animations.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-misc.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-no-learn-more.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-hidden-promo.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-no-share-feedback.css")));
-  assert.ok(fs.existsSync(path.join(stylesDir, "ddg-no-footer.css")));
+  for (const site of SITE_STYLE_DIRS) {
+    assert.ok(fs.existsSync(path.join(stylesDir, site)), `missing styles/${site}/`);
+  }
+  const rootCss = fs.readdirSync(stylesDir).filter((file) => file.endsWith(".css"));
+  assert.deepEqual(rootCss, [], "CSS files should live in site folders, not styles/");
   assert.doesNotMatch(
-    fs.readdirSync(stylesDir).join("\n"),
-    /theater-glass|theater-translucent|theater-solid|gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header/
+    STYLE_FILES.map((file) => path.basename(file)).join("\n"),
+    /theater-glass|theater-translucent|theater-solid|gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twtr-transparency/
   );
 });
 
 test("CSS files avoid Firefox-only syntax", () => {
   for (const file of STYLE_FILES) {
-    const css = fs.readFileSync(path.join(stylesDir, file), "utf8");
+    const css = fs.readFileSync(file, "utf8");
+    const rel = path.relative(root, file);
     for (const rule of FORBIDDEN_PATTERNS) {
-      assert.doesNotMatch(css, rule.pattern, `${file} contains ${rule.name}`);
+      assert.doesNotMatch(css, rule.pattern, `${rel} contains ${rule.name}`);
     }
   }
 });
 
 test("theater hover comments uses solid opaque background", () => {
-  const css = read("styles/theater-hover-comments.css");
+  const css = read(style("youtube", "theater-hover-comments.css"));
   assert.match(css, /background:\s*#0f0f0f/);
   assert.match(css, /background:\s*#ffffff/);
   assert.doesNotMatch(css, /backdrop-filter/);
 });
 
 test("immersive search hides voice search and blurs page content on focus", () => {
-  const css = read("styles/immersive-search.css");
+  const css = read(style("youtube", "immersive-search.css"));
   assert.match(css, /#voice-search-button/);
   assert.match(css, /ytSearchboxComponentVoiceSearchButton/);
   assert.match(css, /#content:has\(\.ytSearchboxComponentInputBoxHasFocus\) #page-manager/);
@@ -123,13 +116,13 @@ test("immersive search hides voice search and blurs page content on focus", () =
 });
 
 test("theater hide header extends hover reveal zone", () => {
-  const css = read("styles/theater-hide-header.css");
+  const css = read(style("youtube", "theater-hide-header.css"));
   assert.match(css, /padding-bottom:\s*24px/);
   assert.match(css, /focus-within/);
 });
 
 test("theater layout follows zen view height and resets control bounds on exit", () => {
-  const css = read("styles/theater-base.css");
+  const css = read(style("youtube", "theater-base.css"));
   assert.match(css, /ytd-watch-flexy\[theater\].*#full-bleed-container/);
   assert.match(css, /height:\s*100vh/);
   assert.match(css, /#page-manager/);
@@ -143,20 +136,20 @@ test("theater layout follows zen view height and resets control bounds on exit",
 });
 
 test("theater header blur matches player blur frosted glass", () => {
-  const css = read("styles/theater-header-blur.css");
+  const css = read(style("youtube", "theater-header-blur.css"));
   assert.match(css, /backdrop-filter:\s*blur\(5px\)/);
   assert.match(css, /background-color:\s*#0001/);
   assert.match(css, /#background\.ytd-masthead/);
 });
 
 test("immersive search includes transform fallbacks for scale", () => {
-  const css = read("styles/immersive-search.css");
+  const css = read(style("youtube", "immersive-search.css"));
   assert.match(css, /scale:\s*1\.05/);
   assert.match(css, /scale:\s*1\.1/);
 });
 
 test("github no tab text hides repo tab labels until hover", () => {
-  const css = read("styles/gh-no-tab-text.css");
+  const css = read(style("github", "gh-no-tab-text.css"));
   assert.match(css, /nav\[aria-label="Repository"\] > ul > li > a span\[data-component="text"\]/);
   assert.match(css, /nav\[aria-label="Repository"\] > ul > li > a:hover span\[data-component="text"\]/);
   assert.match(css, /width:\s*0em/);
@@ -167,39 +160,39 @@ test("github no tab text hides repo tab labels until hover", () => {
 });
 
 test("github glass and layout mods skip page transparency", () => {
-  const glass = read("styles/gh-glass-effect.css");
+  const glass = read(style("github", "gh-glass-effect.css"));
   assert.match(glass, /light-dark\(#fff8, #0005\)/);
   assert.match(glass, /box-shadow:/);
   assert.match(glass, /\.CommentBox-container/);
   assert.doesNotMatch(glass, /html\s*,\s*body/);
 
-  const borders = read("styles/gh-border-mods.css");
+  const borders = read(style("github", "gh-border-mods.css"));
   assert.match(borders, /border:\s*none/);
   assert.match(borders, /border-radius:\s*0\.5em/);
   assert.doesNotMatch(borders, /background:\s*none/);
   assert.doesNotMatch(borders, /background-color:\s*transparent/);
 
-  const hover = read("styles/gh-hover.css");
+  const hover = read(style("github", "gh-hover.css"));
   assert.match(hover, /\.feed-left-sidebar:hover/);
   assert.match(hover, /\.feed-right-column:hover/);
   assert.doesNotMatch(hover, /&\s*[:{]/);
 
-  const sidebar = read("styles/gh-repo-sidebar-hover.css");
+  const sidebar = read(style("github", "gh-repo-sidebar-hover.css"));
   assert.match(sidebar, /\.Layout-sidebar:hover \.BorderGrid-cell/);
   assert.doesNotMatch(sidebar, /&\s*[:{]/);
 
-  const search = read("styles/gh-immersive-search.css");
+  const search = read(style("github", "gh-immersive-search.css"));
   assert.match(search, /header > \.search-expanded/);
   assert.match(search, /filter:\s*blur\(20px\)/);
   assert.match(search, /transform:\s*scale\(1\.05\)/);
 
-  const timeline = read("styles/gh-timeline-badge.css");
+  const timeline = read(style("github", "gh-timeline-badge.css"));
   assert.match(timeline, /\.TimelineItem-badge/);
   assert.doesNotMatch(timeline, /&\s*[:{]/);
 });
 
 test("google search mods skip page transparency", () => {
-  const zoom = read("styles/g-search-zoom.css");
+  const zoom = read(style("google", "g-search-zoom.css"));
   assert.match(zoom, /body:has\(\.A8SBwf\.emcav\) #main/);
   assert.match(zoom, /filter:\s*blur\(20px\)/);
   assert.match(zoom, /transform:\s*scale\(0\.98\)/);
@@ -208,31 +201,31 @@ test("google search mods skip page transparency", () => {
   assert.doesNotMatch(zoom, /&\s*[:{]/);
   assert.doesNotMatch(zoom, /html\s*,\s*body/);
 
-  const glass = read("styles/g-glass-effect.css");
+  const glass = read(style("google", "g-glass-effect.css"));
   assert.match(glass, /div\.RNNXgb/);
   assert.match(glass, /box-shadow:/);
   assert.match(glass, /#rcnt \.hdzaWe/);
   assert.doesNotMatch(glass, /html\s*,\s*body/);
   assert.doesNotMatch(glass, /--darkreader-background-ffffff:\s*transparent/);
 
-  const overlay = read("styles/g-overlay-fix.css");
+  const overlay = read(style("google", "g-overlay-fix.css"));
   assert.match(overlay, /#liveresults-sports-immersive__match-fullpage/);
   assert.match(overlay, /var\(--EpFNW\)/);
   assert.doesNotMatch(overlay, /background-color:\s*#00000000/);
 
-  const chrome = read("styles/g-shadows-borders.css");
+  const chrome = read(style("google", "g-shadows-borders.css"));
   assert.match(chrome, /#sfooter/);
   assert.match(chrome, /box-shadow:\s*none/);
   assert.doesNotMatch(chrome, /background:\s*none/);
 
-  const hover = read("styles/g-hover.css");
+  const hover = read(style("google", "g-hover.css"));
   assert.match(hover, /\.rfiSsc:hover/);
   assert.match(hover, /opacity:\s*0/);
   assert.doesNotMatch(hover, /&\s*[:{]/);
 });
 
 test("duckduckgo mods skip page and header transparency", () => {
-  const search = read("styles/ddg-immersive-search.css");
+  const search = read(style("duckduckgo", "ddg-immersive-search.css"));
   assert.match(search, /#searchbox_input:focus/);
   assert.match(search, /\[data-testid="searchbox-form"\]:focus-within/);
   assert.match(search, /#react-search-form:focus-within/);
@@ -243,7 +236,7 @@ test("duckduckgo mods skip page and header transparency", () => {
   assert.doesNotMatch(search, /&\s*[:{]/);
   assert.doesNotMatch(search, /html\s*,\s*body/);
 
-  const popup = read("styles/ddg-immersive-popup.css");
+  const popup = read(style("duckduckgo", "ddg-immersive-popup.css"));
   assert.match(popup, /body:has\(\.modal\.is-showing\) \.site-wrapper/);
   assert.match(popup, /filter:\s*blur\(20px\)/);
   assert.match(popup, /-webkit-backdrop-filter:\s*blur\(20px\)/);
@@ -251,32 +244,126 @@ test("duckduckgo mods skip page and header transparency", () => {
   assert.doesNotMatch(popup, /#header_wrapper \{\s*position:\s*relative/);
   assert.doesNotMatch(popup, /#searchbox_homepage > \.searchbox_hasQuery/);
 
-  const glass = read("styles/ddg-glass-effect.css");
+  const glass = read(style("duckduckgo", "ddg-glass-effect.css"));
   assert.match(glass, /hsla\(0, 0%, 100%, 0\.08\)/);
   assert.match(glass, /\.searchbox_combobox__P9Gnn/);
   assert.doesNotMatch(glass, /--theme-bg-home:\s*transparent/);
 
-  const animations = read("styles/ddg-animations.css");
+  const animations = read(style("duckduckgo", "ddg-animations.css"));
   assert.match(animations, /transition-property:\s*filter/);
   assert.match(animations, /cubic-bezier\(0\.85, 0, 0\.15, 1\)/);
 
-  const misc = read("styles/ddg-misc.css");
+  const misc = read(style("duckduckgo", "ddg-misc.css"));
   assert.match(misc, /nav::before/);
   assert.match(misc, /\.js-ask-ai-chat-wrapper > form::after/);
 
-  const learn = read("styles/ddg-no-learn-more.css");
+  const learn = read(style("duckduckgo", "ddg-no-learn-more.css"));
   assert.match(learn, /#features/);
   assert.match(learn, /\.homepage-cta-section_scrollCta__Wmixn/);
 
-  const promo = read("styles/ddg-hidden-promo.css");
+  const promo = read(style("duckduckgo", "ddg-hidden-promo.css"));
   assert.match(promo, /\.desktop-homepage_heroContent__4HUFA/);
 
-  const feedback = read("styles/ddg-no-share-feedback.css");
+  const feedback = read(style("duckduckgo", "ddg-no-share-feedback.css"));
   assert.match(feedback, /\.TccjmKV6RraCaCw5L9gd/);
 
-  const footer = read("styles/ddg-no-footer.css");
+  const footer = read(style("duckduckgo", "ddg-no-footer.css"));
   assert.match(footer, /\.footer/);
   assert.doesNotMatch(footer, /background-color:\s*transparent/);
+});
+
+test("gmail mods skip page transparency and nested ampersands", () => {
+  const borders = read(style("gmail", "gmail-no-borders.css"));
+  assert.match(borders, /border:\s*none/);
+  assert.match(borders, /\.aAU/);
+  assert.doesNotMatch(borders, /background:\s*none/);
+  assert.doesNotMatch(borders, /background-color:\s*transparent/);
+  assert.doesNotMatch(borders, /&\s*[:{]/);
+
+  const hidden = read(style("gmail", "gmail-hidden.css"));
+  assert.match(hidden, /div\.apa\.nH\.oy8Mbf/);
+  assert.match(hidden, /\.adC/);
+  assert.doesNotMatch(hidden, /\[jsname="h50Ewe"\]/);
+  assert.doesNotMatch(hidden, /&\s*[:{]/);
+
+  const preview = read(style("gmail", "gmail-preview.css"));
+  assert.match(preview, /--gm3-sys-color-on-surface/);
+  assert.match(preview, /\.adn/);
+  assert.doesNotMatch(preview, /\.a3s/);
+  assert.doesNotMatch(preview, /\.ii\.gt/);
+  assert.doesNotMatch(preview, /&\s*[:{]/);
+  assert.doesNotMatch(preview, /html\s*,\s*body/);
+
+  const glass = read(style("gmail", "gmail-glass.css"));
+  assert.match(glass, /\[role="main"\]/);
+  assert.match(glass, /--gm3-sys-color-surface-container-low/);
+  assert.match(glass, /box-shadow:/);
+  assert.doesNotMatch(glass, /rgba\(255,\s*255,\s*255/);
+  assert.doesNotMatch(glass, /light-dark\(/);
+  assert.doesNotMatch(glass, /html\s*,\s*body/);
+
+  const rounded = read(style("gmail", "gmail-rounded-corners.css"));
+  assert.match(rounded, /\[role="main"\]/);
+  assert.match(rounded, /\.AO/);
+  assert.match(rounded, /border-radius:\s*8px/);
+
+  const loading = read(style("gmail", "gmail-flashbangless-loading.css"));
+  assert.match(loading, /#loading \.la-e/);
+  assert.match(loading, /filter:\s*blur\(20px\)/);
+  assert.match(loading, /backdrop-filter:\s*blur\(5px\)/);
+  assert.doesNotMatch(loading, /--darkreader-background-ffffff/);
+  assert.doesNotMatch(loading, /brightness\(0\) invert\(1\)/);
+  assert.doesNotMatch(loading, /html\s*,\s*body/);
+});
+
+test("gemini mods skip page transparency and nested ampersands", () => {
+  const input = read(style("gemini", "gemini-better-text-input.css"));
+  assert.match(input, /input-area-v2/);
+  assert.match(input, /--bard-color-new-conversation-button/);
+  assert.match(input, /!important/);
+  assert.doesNotMatch(input, /ng-tns-c/);
+
+  const other = read(style("gemini", "gemini-other-changes.css"));
+  assert.match(other, /hallucination-disclaimer/);
+  assert.match(other, /--bard-color-neutral-96/);
+  assert.doesNotMatch(other, /html\s*,\s*body/);
+  assert.doesNotMatch(other, /--gem-sys-color--surface:\s*#00000000/);
+
+  const hover = read(style("gemini", "gemini-hover.css"));
+  assert.match(hover, /bard-sidenav:hover/);
+  assert.match(hover, /mat-sidenav:hover/);
+  assert.match(hover, /top-bar-actions:hover/);
+  assert.match(hover, /opacity:\s*0\.01/);
+  assert.doesNotMatch(hover, /&\s*[:{]/);
+
+  const glass = read(style("gemini", "gemini-input-code.css"));
+  assert.match(glass, /\.code-block/);
+  assert.match(glass, /--gem-sys-color--surface-container-high/);
+  assert.doesNotMatch(glass, /light-dark\(#fff8/);
+  assert.doesNotMatch(glass, /&\s*[:{]/);
+});
+
+test("x mods skip page transparency and nested ampersands", () => {
+  const overlay = read(style("x", "x-overlay-fix.css"));
+  assert.match(overlay, /\[data-testid="Dropdown"\]/);
+  assert.match(overlay, /\[role="dialog"\]/);
+  assert.match(overlay, /Canvas/);
+  assert.doesNotMatch(overlay, /html\s*,\s*body/);
+  assert.doesNotMatch(overlay, /background-color:\s*transparent/);
+
+  const layout = read(style("x", "x-layout-fixes.css"));
+  assert.match(layout, /\[data-testid="primaryColumn"\]/);
+  assert.match(layout, /top:\s*-50px/);
+
+  const hover = read(style("x", "x-hover.css"));
+  assert.match(hover, /header\[role="banner"\]:hover/);
+  assert.match(hover, /\[data-testid="sidebarColumn"\]:hover/);
+  assert.doesNotMatch(hover, /&\s*[:{]/);
+
+  const thanks = read(style("x", "x-no-thanks.css"));
+  assert.match(thanks, /Subscribe to Premium/);
+  assert.match(thanks, /super-upsell-UpsellCardRenderProperties/);
+  assert.match(thanks, /premium/);
 });
 
 test("popup assets exist and reference each other", () => {
@@ -323,7 +410,13 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /"ddg-glass-effect"/);
   assert.match(js, /FEATURE_SITE/);
   assert.match(js, /getCurrentSiteId/);
-  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header/);
+  assert.match(js, /"gmail-glass"/);
+  assert.match(js, /gmail-glass\.css/);
+  assert.match(js, /"gemini-input-code"/);
+  assert.match(js, /gemini-input-code\.css/);
+  assert.match(js, /"x-overlay-fix"/);
+  assert.match(js, /x-overlay-fix\.css/);
+  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency/);
   assert.match(js, /chroModsSettings/);
   assert.match(js, /chromods-styles/);
   assert.doesNotMatch(
@@ -373,15 +466,21 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /site:\s*"github"/);
   assert.match(js, /site:\s*"google"/);
   assert.match(js, /site:\s*"duckduckgo"/);
+  assert.match(js, /site:\s*"gmail"/);
+  assert.match(js, /site:\s*"gemini"/);
+  assert.match(js, /site:\s*"x"/);
+  assert.match(js, /gmail-glass/);
+  assert.match(js, /gemini-input-code/);
+  assert.match(js, /x-overlay-fix/);
   assert.match(js, /feature\.site\s*\?\?=\s*"youtube"/);
   assert.doesNotMatch(
     js,
-    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency/
+    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency|gmail-transparency|gemini-transparency|x-transparency/
   );
   assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
 });
 
-test("hostname matching maps YouTube, GitHub, Google, and DuckDuckGo URLs", () => {
+test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, and X URLs", () => {
   const api = new Function(`${read("scripts/sites.js")}; return { matchSiteFromUrl };`)();
   assert.equal(api.matchSiteFromUrl("https://www.youtube.com/watch?v=x")?.id, "youtube");
   assert.equal(api.matchSiteFromUrl("https://music.youtube.com/")?.id, "youtube");
@@ -392,26 +491,36 @@ test("hostname matching maps YouTube, GitHub, Google, and DuckDuckGo URLs", () =
   assert.equal(api.matchSiteFromUrl("https://images.google.com/")?.id, "google");
   assert.equal(api.matchSiteFromUrl("https://google.co.uk/")?.id, "google");
   assert.equal(api.matchSiteFromUrl("https://www.google.com.au/search")?.id, "google");
-  assert.equal(api.matchSiteFromUrl("https://mail.google.com/"), null);
+  assert.equal(api.matchSiteFromUrl("https://mail.google.com/")?.id, "gmail");
+  assert.equal(api.matchSiteFromUrl("https://gemini.google.com/")?.id, "gemini");
   assert.equal(api.matchSiteFromUrl("https://docs.google.com/"), null);
   assert.equal(api.matchSiteFromUrl("https://duckduckgo.com/?q=x")?.id, "duckduckgo");
   assert.equal(api.matchSiteFromUrl("https://start.duckduckgo.com/")?.id, "duckduckgo");
   assert.equal(api.matchSiteFromUrl("https://lite.duckduckgo.com/lite/")?.id, "duckduckgo");
+  assert.equal(api.matchSiteFromUrl("https://x.com/home")?.id, "x");
+  assert.equal(api.matchSiteFromUrl("https://twitter.com/home")?.id, "x");
   assert.equal(api.matchSiteFromUrl("https://www.twitch.tv/foo"), null);
   assert.equal(api.matchSiteFromUrl("https://example.com/"), null);
 });
 
-test("site registry detects YouTube, GitHub, Google, and DuckDuckGo hosts", () => {
+test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, and X hosts", () => {
   const js = read("scripts/sites.js");
   assert.match(js, /id:\s*"youtube"/);
   assert.match(js, /id:\s*"github"/);
   assert.match(js, /id:\s*"google"/);
+  assert.match(js, /id:\s*"gmail"/);
+  assert.match(js, /id:\s*"gemini"/);
   assert.match(js, /id:\s*"duckduckgo"/);
+  assert.match(js, /id:\s*"x"/);
   assert.doesNotMatch(js, /id:\s*"twitch"/);
   assert.match(js, /youtube\.com/);
   assert.match(js, /github\.com/);
   assert.match(js, /google\.com/);
+  assert.match(js, /mail\.google\.com/);
+  assert.match(js, /gemini\.google\.com/);
   assert.match(js, /duckduckgo\.com/);
+  assert.match(js, /x\.com/);
+  assert.match(js, /twitter\.com/);
   assert.match(js, /matchSiteFromUrl/);
   assert.match(js, /matchSiteFromHostname/);
   assert.match(js, /hostnamePattern/);
@@ -426,6 +535,13 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /site-github/);
   assert.match(js, /site-google/);
   assert.match(js, /site-duckduckgo/);
+  assert.match(js, /site-gmail/);
+  assert.match(js, /site-gemini/);
+  assert.match(js, /site-x/);
+  assert.match(js, /#C5221F/);
+  assert.match(js, /#FC413D/);
+  assert.match(js, /#00B95C/);
+  assert.doesNotMatch(js, /M11\.04 19\.32Q12 21\.51 12 24/);
   assert.match(js, /#DE5833/);
   assert.match(js, /#FDD20A/);
   assert.match(js, /#65BC46/);
@@ -452,7 +568,7 @@ test("popup CSS uses forced dark theme", () => {
 
 test("README lists every live site and is generated from metadata", () => {
   const readme = read("README.md");
-  const sites = ["youtube", "github", "google", "duckduckgo"];
+  const sites = ["youtube", "github", "google", "gmail", "gemini", "duckduckgo", "x"];
   for (const site of sites) {
     assert.match(readme, new RegExp(`docs/sites/${site}\\.svg`));
     assert.ok(fs.existsSync(path.join(root, "docs/sites", `${site}.svg`)));

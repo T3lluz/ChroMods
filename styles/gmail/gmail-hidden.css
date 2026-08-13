@@ -1,0 +1,6 @@
+/* gmail-hidden — hide leftover promo chrome and the thread extras column */
+div.apa.nH.oy8Mbf,
+.nH.adC,
+.adC {
+  display: none !important;
+}

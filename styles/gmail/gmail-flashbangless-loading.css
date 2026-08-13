@@ -1,0 +1,64 @@
+/* gmail-flashbangless loading — blur while Gmail loads; frost compose chrome */
+#loading,
+.Ap,
+.aoI,
+.aoP .Ar,
+.aC2,
+.aC3,
+.HM .ahe::after,
+.Am,
+.nr,
+.gA .aGb,
+.gA .agP,
+.gA .agh {
+  background-color: transparent;
+}
+
+#loading .la-e {
+  display: none !important;
+}
+
+.tVu25,
+.nH.bkK,
+[role="main"] {
+  transition: filter 0.75s ease-in-out !important;
+}
+
+body:not(:has(#loading[style="display: none;"])):has(#loading) .tVu25,
+body:not(:has(#loading[style="display: none;"])):has(#loading) [role="main"] {
+  filter: blur(20px) !important;
+}
+
+.gA .IG,
+.gA .aDj,
+.gA .GQ {
+  background-color: light-dark(rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.3)) !important;
+}
+
+.gA .J-Z,
+.btC,
+.aDh {
+  backdrop-filter: blur(5px) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.4)) !important;
+}
+
+.amr .ams,
+.jWOS7-JX-I,
+.gA .afV {
+  background-color: light-dark(rgba(255, 255, 255, 0.5), rgba(0, 0, 0, 0.5)) !important;
+  color: light-dark(#1f1f1f, #fff) !important;
+  border: none !important;
+}
+
+.jWOS7-JX-I::before {
+  border: none !important;
+}
+
+.gA .J-Z-M-I,
+.hP {
+  color: var(--gm3-sys-color-on-surface, light-dark(#1f1f1f, #fff)) !important;
+}
+
+.btDi4d.tyMQmc {
+  box-shadow: none !important;
+}

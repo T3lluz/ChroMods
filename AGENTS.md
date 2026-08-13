@@ -1,6 +1,6 @@
 # Agent notes
 
-This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, GitHub, Google Search, and DuckDuckGo, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
+This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, and X, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
 
 ## Upstream sources
 
@@ -41,7 +41,7 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
 ## How to import a mod
 
 1. Fetch the current upstream CSS/JS for that feature.
-2. Split it into a focused file under `styles/` (or JS in `scripts/` if behavior cannot be CSS).
+2. Split it into a focused file under `styles/<site>/` (or JS in `scripts/` if behavior cannot be CSS).
 3. **Chromium-adapt** — do not paste Firefox/Zen CSS verbatim:
    - Flatten nested `&` selectors (this repo forbids them; see `tests/css-compat.test.js`).
    - Drop `@-moz-document` and Firefox-only `scrollbar-width`.
@@ -49,13 +49,13 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
    - Use `html[dark]` instead of `prefers-color-scheme` when YouTube already exposes a dark attribute.
    - Skip Zen **page/browser transparency** (`yt-Transparency`, transparent video/header backgrounds). Chromium cannot expose the browser chrome backdrop; this project already excludes that on purpose.
 4. Wire the feature:
-   - `styles/<id>.css`
+   - `styles/<site>/<id>.css`
    - `FEATURES` (or theater/feed parts) in `scripts/content-script.js`
    - matching defaults in `scripts/background.js` and `scripts/popup.js`
    - `FEATURE_META` entry (title, description, category, `defaultEnabled`, and `site` — defaults to `youtube`)
    - If it is a new website, add it to `SITE_META` in `scripts/sites.js` (id, title, hostnames, icon) and a matching icon in `scripts/icons.js`
    - Add a site icon at `docs/sites/<id>.svg` (plain brand mark, same as the popup)
-   - `web_accessible_resources` already covers `styles/*.css`
+   - `web_accessible_resources` already covers `styles/*/*.css`
 5. Add/adjust a test in `tests/css-compat.test.js` for the new module.
 6. Keep MIT attribution; CSS is derived from my-internet.
 7. Regenerate the README from live metadata: `npm run readme` (`scripts/generate-readme.mjs` reads `FEATURE_META`, `SITE_META`, and `manifest.json`).
@@ -67,6 +67,12 @@ Theater, immersive search, feed layout, compact/clean/hide side guide, hide filt
 GitHub: immersive search, hover sidebars, no tab text, repo sidebar hover, hide footer, hide toolbar separator, glass effect, softer borders, remove button borders, timeline badges, chip spacing.
 
 Google Search: immersive search zoom, glass search bar, solid overlays, softer chrome, hover filter chips. Skip `google-transparency`.
+
+Gmail: no borders, hide extras, preview restyle, glass inbox, rounded corners, soft loading. Skip `gmail-transparency` and Dark Reader.
+
+Gemini: clean composer, cleaner chat, hover chrome, glass input/code. Skip `gemini-transparency`.
+
+X: solid overlays, sticky header, hover sidebars, hide Premium. Applies to `x.com` and `twitter.com`. Skip `x-transparency` / `twtr-transparency`.
 
 DuckDuckGo: immersive search, immersive popups, glass surfaces, animations, clean decorations, hide Learn more, hide homepage hero, hide feedback, hide footer. Skip `ddg-Transparency` and `ddg-Transparent Header`.
 

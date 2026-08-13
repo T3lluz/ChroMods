@@ -1,0 +1,23 @@
+/* gmail-preview — card-style conversation chrome; leave the email HTML body alone */
+.adn {
+  background-color: var(
+    --gm3-sys-color-surface-container,
+    var(--gm3-sys-color-surface)
+  ) !important;
+  color: var(--gm3-sys-color-on-surface, var(--gm3-sys-color-on-background, inherit)) !important;
+  border-radius: 12px !important;
+}
+
+.gs .gE,
+.ha,
+.hP,
+.iv .gD,
+.oL span {
+  background: transparent !important;
+  color: var(--gm3-sys-color-on-surface, var(--gm3-sys-color-on-background, inherit)) !important;
+}
+
+.zA .y6,
+.zA .y2 {
+  color: var(--gm3-sys-color-on-surface-variant, var(--gm3-sys-color-on-background, inherit)) !important;
+}

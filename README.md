@@ -3,9 +3,9 @@
 <div align="center">
   <img src="icons/icon.svg" width="72" height="72" alt="ChroMods" />
   <h1>ChroMods</h1>
-  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, and DuckDuckGo.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
+  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, and X.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
   <p>
-    <img alt="Version" src="https://img.shields.io/badge/v1.4.0-111111?label=version" />
+    <img alt="Version" src="https://img.shields.io/badge/v1.5.0-111111?label=version" />
     <img alt="Manifest V3" src="https://img.shields.io/badge/MV3-4285F4?logo=googlechrome&logoColor=white" />
     <img alt="License" src="https://img.shields.io/badge/license-MIT-3a3a48" />
   </p>
@@ -18,7 +18,10 @@ The popup detects the active tab and shows that site's mods first.
 | <img src="docs/sites/youtube.svg" width="20" height="20" alt="" /> | [YouTube](#youtube) | 15 | youtube.com |
 | <img src="docs/sites/github.svg" width="20" height="20" alt="" /> | [GitHub](#github) | 11 | github.com |
 | <img src="docs/sites/google.svg" width="20" height="20" alt="" /> | [Google](#google) | 5 | google.com and country search TLDs |
+| <img src="docs/sites/gmail.svg" width="20" height="20" alt="" /> | [Gmail](#gmail) | 6 | mail.google.com |
+| <img src="docs/sites/gemini.svg" width="20" height="20" alt="" /> | [Gemini](#gemini) | 4 | gemini.google.com |
 | <img src="docs/sites/duckduckgo.svg" width="20" height="20" alt="" /> | [DuckDuckGo](#duckduckgo) | 9 | duckduckgo.com |
+| <img src="docs/sites/x.svg" width="20" height="20" alt="" /> | [X](#x) | 4 | x.com, twitter.com |
 
 ## Features
 
@@ -70,6 +73,26 @@ The popup detects the active tab and shows that site's mods first.
 
 Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 
+### <img src="docs/sites/gmail.svg" width="22" height="22" alt="" /> Gmail
+
+| Mod | What it does | Default |
+|-----|--------------|---------|
+| **No borders** | Drop borders and shadows from Gmail chrome. | On |
+| **Hide extras** | Hide leftover promo chrome and the thread extras column. | On |
+| **Preview restyle** | Card-style conversation chrome; leaves the email body alone. | Off |
+| **Glass inbox** | Inset glass on the main mail pane using Gmail surface colors. | On |
+| **Rounded corners** | Round the list and thread containers. | On |
+| **Soft loading** | Blur the inbox while Gmail loads and frost compose chrome. | On |
+
+### <img src="docs/sites/gemini.svg" width="22" height="22" alt="" /> Gemini
+
+| Mod | What it does | Default |
+|-----|--------------|---------|
+| **Clean composer** | Drop the composer border and use a matching fill. | On |
+| **Cleaner chat** | Hide the disclaimer, add composer space, and solid overlay cards. | On |
+| **Hover chrome** | Hide the conversation sidebar and top actions until hover. | Off |
+| **Glass input** | Frosted glass on the composer and code blocks. | On |
+
 ### <img src="docs/sites/duckduckgo.svg" width="22" height="22" alt="" /> DuckDuckGo
 
 | Mod | What it does | Default |
@@ -84,10 +107,19 @@ Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 | **Smooth blur** | Ease the immersive blur in and out. | On |
 | **Clean decorations** | Remove leftover nav and chat form overlays. | On |
 
+### <img src="docs/sites/x.svg" width="22" height="22" alt="" /> X
+
+| Mod | What it does | Default |
+|-----|--------------|---------|
+| **Solid overlays** | Keep menus and dialogs readable. | On |
+| **Sticky header** | Keep the timeline header offset while scrolling. | On |
+| **Hover sidebars** | Hide the left and right rails until you hover them. | Off |
+| **Hide Premium** | Remove Premium subscribe, footer, and upsell cards. | On |
+
 ## Install
 
 1. Clone this repo → `chrome://extensions` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open YouTube, GitHub, Google Search, or DuckDuckGo tabs
+2. Reload any open YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, or X tabs
 
 ## Dev
 
