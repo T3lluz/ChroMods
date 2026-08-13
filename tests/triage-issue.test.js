@@ -150,7 +150,10 @@ test("cloud agent prompt asks for a PR that closes the issue", () => {
   assert.match(prompt, /Fixes #1/);
   assert.match(prompt, /twitch\.tv/);
   assert.match(prompt, /Do not push to main/);
-  assert.match(prompt, /manifest\.json/);
+  assert.match(prompt, /npm run readme/);
+  assert.match(prompt, /Do not hand-edit README\.md/);
+  assert.match(prompt, /Do NOT drop an entire/);
+  assert.match(prompt, /FULL upstream file/);
 });
 
 test("music.youtube.com is a new site even though it suffixes youtube.com", async () => {

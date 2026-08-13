@@ -47,7 +47,7 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
    - Drop `@-moz-document` and Firefox-only `scrollbar-width`.
    - Prefer `ytd-watch-flexy[theater]` / `[fullscreen]` over Zen's `[data-title-no-tooltip="…"]` button-title selectors.
    - Use `html[dark]` instead of `prefers-color-scheme` when YouTube already exposes a dark attribute.
-   - Skip Zen **page/browser transparency** (`yt-Transparency`, transparent video/header backgrounds). Chromium cannot expose the browser chrome backdrop; this project already excludes that on purpose.
+   - Skip Zen **page/browser transparency** (`yt-Transparency`, transparent video/header backgrounds). Chromium cannot expose the browser chrome backdrop; this project already excludes that on purpose. Drop only transparent page-background *rules*. If a `/* …transparency */` block also has layout, radius, or hide-element CSS, keep those (flatten nested `&` selectors).
 4. Wire the feature:
    - `styles/<site>/<id>.css`
    - `FEATURES` (or theater/feed parts) in `scripts/content-script.js`
@@ -59,7 +59,7 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
    - `web_accessible_resources` already covers `styles/*/*.css`
 5. Add/adjust a test in `tests/css-compat.test.js` for the new module.
 6. Keep MIT attribution; CSS is derived from my-internet.
-7. Regenerate the README from live metadata: `npm run readme` (`scripts/generate-readme.mjs` reads `FEATURE_META`, `SITE_META`, and `manifest.json`).
+7. Regenerate the README from live metadata: `npm run readme` (`scripts/generate-readme.mjs` reads `FEATURE_META`, `SITE_META`, and `manifest.json`). Do not hand-edit `README.md`. The generator builds the site tagline, table, sections, and install line from `SITE_META`.
 
 ## Already ported (do not duplicate)
 
@@ -85,7 +85,7 @@ Upstream features **not** ported yet (candidates): `yt-early New To You chip`, `
 
 `.github/workflows/issue-triage.yml` runs on new GitHub issues (and on `workflow_dispatch`). It classifies `[STYLE] host` requests:
 
-- **Simple:** upstream CSS exists in my-internet and is not transparency-only, and the host is not already an exact `SITE_META` hostname. A Cursor Cloud Agent is launched with `autoCreatePR` — it must open a PR, never push to `main`.
+- **Simple:** upstream CSS exists in my-internet and is not transparency-only, and the host is not already an exact `SITE_META` hostname. A Cursor Cloud Agent is launched with `autoCreatePR` — it must open a PR, never push to `main`. The agent must run `npm run readme` (no hand-edited README), skip transparent page-background *rules* (not entire mixed comment blocks), and fail the PR if `npm test` fails.
 - **Complex:** anything else (bugs, no upstream CSS, JS/player work). Label `NeedsAttention`.
 
 Requires repo secret `CURSOR_API_KEY` from the Cursor dashboard. Idempotency label: `auto-pr`.

@@ -3,7 +3,7 @@
 <div align="center">
   <img src="icons/icon.svg" width="72" height="72" alt="ChroMods" />
   <h1>ChroMods</h1>
-  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, and Twitch.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
+  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, and Twitch.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
   <p>
     <img alt="Version" src="https://img.shields.io/badge/v1.5.0-111111?label=version" />
     <img alt="Manifest V3" src="https://img.shields.io/badge/MV3-4285F4?logo=googlechrome&logoColor=white" />
@@ -126,7 +126,7 @@ Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 ## Install
 
 1. Clone this repo → `chrome://extensions` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, or Twitch tabs
+2. Reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, and Twitch tabs
 
 ## Dev
 
