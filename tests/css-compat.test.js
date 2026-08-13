@@ -45,12 +45,23 @@ function style(site, file) {
 
 test("manifest is valid Chrome MV3", () => {
   const manifest = JSON.parse(read("manifest.json"));
+  const contentJs = (manifest.content_scripts || []).flatMap((entry) => entry.js || []);
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "ChroMods");
-  assert.ok(manifest.content_scripts?.[0]?.js?.includes("scripts/content-script.js"));
-  assert.ok(manifest.content_scripts?.[0]?.js?.includes("scripts/sites.js"));
+  assert.ok(contentJs.includes("scripts/content-script.js"));
+  assert.ok(contentJs.includes("scripts/sites.js"));
+  assert.ok(contentJs.includes("scripts/vendor/darkreader.js"));
+  assert.ok(contentJs.includes("scripts/dark-mode.js"));
+  assert.ok(contentJs.includes("scripts/dark-proxy.js"));
+  assert.ok(contentJs.includes("scripts/dark-chrome-guard.js"));
+  const darkProxy = (manifest.content_scripts || []).find((entry) =>
+    (entry.js || []).includes("scripts/dark-proxy.js")
+  );
+  assert.equal(darkProxy?.world, "MAIN");
   assert.ok(manifest.web_accessible_resources?.[0]?.resources?.includes("styles/*/*.css"));
   assert.ok(manifest.action?.default_popup);
+  assert.ok(manifest.permissions.includes("scripting"));
+  assert.ok(manifest.host_permissions.includes("<all_urls>"));
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtube.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("github.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("google.com")));
@@ -374,6 +385,9 @@ test("popup assets exist and reference each other", () => {
   assert.match(html, /id="site-rail"/);
   assert.match(html, /id="current-pane"/);
   assert.match(html, /id="other-sites-list"/);
+  assert.match(html, /id="theme-toggle"/);
+  assert.match(html, /\.\.\/scripts\/dark-sites\.js/);
+  assert.match(html, /\.\.\/scripts\/style-request\.js/);
   assert.match(html, /header-frost/);
   assert.match(html, /header-glass/);
   assert.match(html, /header-fade/);
@@ -430,7 +444,7 @@ test("background only seeds install defaults", () => {
   const js = read("scripts/background.js");
   assert.match(js, /chrome\.runtime\.onInstalled/);
   assert.match(js, /chrome\.storage\.sync\.set/);
-  assert.doesNotMatch(js, /chrome\.tabs|sendMessage|broadcastSettings/);
+  assert.doesNotMatch(js, /chrome\.tabs|broadcastSettings/);
 });
 
 test("popup applies toggles through storage without page messaging", () => {
@@ -439,9 +453,12 @@ test("popup applies toggles through storage without page messaging", () => {
   assert.match(js, /updateMasterState/);
   assert.match(js, /lastFocusedWindow/);
   assert.match(js, /scrollToSite/);
+  assert.match(js, /CHROMODS_DARK_PING/);
+  assert.match(js, /CHROMODS_DARK_WIPE/);
+  assert.match(js, /captureVisibleTab/);
   assert.doesNotMatch(
     js,
-    /sendMessage|notifyAllYouTubeTabs|showPageToast|showToast|youtube-theming-toast|chromods-toast/
+    /notifyAllYouTubeTabs|showPageToast|showToast|youtube-theming-toast|chromods-toast/
   );
 });
 
@@ -564,6 +581,75 @@ test("popup CSS uses forced dark theme", () => {
   assert.match(css, /color-scheme:\s*dark/);
   assert.doesNotMatch(css, /prefers-color-scheme:\s*light/);
   assert.doesNotMatch(css, /\.feature-card:hover/);
+  assert.match(css, /\.theme-toggle/);
+  assert.match(css, /\.theme-rays/);
+  assert.match(css, /\.theme-cut/);
+});
+
+test("popup uses aligned feature toggles and a compact style request", () => {
+  const css = read("popup/popup.css");
+  const popup = read("scripts/popup.js");
+  const request = read("scripts/style-request.js");
+
+  assert.match(css, /\.feature-header\s*\{[^}]*grid-template-areas:/s);
+  assert.match(css, /"title switch"/);
+  assert.match(css, /\.heading-actions/);
+  assert.match(css, /\.unsupported-bar/);
+  assert.match(css, /\.unsupported-tag/);
+  assert.match(css, /\.request-style-btn/);
+  assert.match(css, /\.switch-check/);
+  assert.match(css, /--knob-on/);
+  assert.doesNotMatch(css, /\.empty-current/);
+
+  assert.match(popup, /renderUnsupportedBar/);
+  assert.match(popup, /openStyleRequest/);
+  assert.match(popup, /chromodsFindExistingStyleRequest/);
+  assert.match(popup, /Request styling/);
+  assert.match(popup, /function renderSwitch/);
+  assert.match(popup, /switch-check/);
+  assert.doesNotMatch(popup, /No supported site in this tab/);
+  assert.match(popup, /collapsedOtherSites\.add\(site\.id\)/);
+  assert.match(popup, /renderOtherSitePanel\(site,\s*false\)/);
+
+  assert.match(request, /T3lluz\/ChroMods|owner:\s*"T3lluz"/);
+  assert.match(request, /\[STYLE\]/);
+  assert.match(request, /api\.github\.com\/search\/issues/);
+});
+
+test("global dark mode uses Dark Reader and remembers per host", () => {
+  const html = read("popup/popup.html");
+  const popup = read("scripts/popup.js");
+  const darkMode = read("scripts/dark-mode.js");
+  const darkSites = read("scripts/dark-sites.js");
+  const background = read("scripts/background.js");
+  const vendor = read("scripts/vendor/darkreader.js");
+  const proxy = read("scripts/dark-proxy.js");
+
+  assert.match(html, /id="theme-toggle"/);
+  assert.match(html, /scripts\/dark-sites\.js/);
+  assert.match(popup, /chromodsSetDarkSite/);
+  assert.match(popup, /ensureDarkModeScript/);
+  assert.match(popup, /world:\s*"MAIN"/);
+  assert.match(darkSites, /chroModsDarkMode/);
+  assert.match(darkSites, /chromodsDarkHostFromUrl/);
+  assert.match(darkSites, /chromods-dark-wipe/);
+  assert.match(darkMode, /DarkReader\.enable/);
+  assert.match(darkMode, /__chromodsDarkEnabled/);
+  assert.match(darkMode, /darkreader--fallback/);
+  assert.match(darkMode, /CHROMODS_DARK_WIPE/);
+  assert.match(darkMode, /wipeFromScreenshot/);
+  assert.match(darkMode, /--chromods-wipe-r/);
+  assert.match(darkMode, /radial-gradient/);
+  assert.doesNotMatch(darkMode, /startViewTransition/);
+  assert.doesNotMatch(darkMode, /::view-transition/);
+  assert.match(darkMode, /CHROMODS_DARK_FETCH/);
+  assert.match(background, /chromods-dark-fetch/);
+  assert.doesNotMatch(background, /registerContentScripts/);
+  assert.match(proxy, /function injectProxy/);
+  assert.match(proxy, /__darkreader__cleanUp/);
+  assert.match(vendor, /Dark Reader v4\./);
+  assert.match(vendor, /darkreader\.org/);
+  assert.doesNotMatch(darkMode, /chrome\.debugger/);
 });
 
 test("README lists every live site and is generated from metadata", () => {

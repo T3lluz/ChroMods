@@ -91,3 +91,31 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ [SETTINGS_KEY]: DEFAULT_SETTINGS });
   });
 });
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (!message || message.type !== "chromods-dark-fetch") return;
+  const url = String(message.url || "");
+  if (!/^https?:\/\//i.test(url)) {
+    sendResponse({ ok: false, error: "invalid url" });
+    return;
+  }
+
+  fetch(url)
+    .then(async (response) => {
+      const body = await response.text();
+      const headers = {};
+      response.headers.forEach((value, name) => {
+        headers[name] = value;
+      });
+      sendResponse({
+        ok: true,
+        status: response.status,
+        body,
+        headers,
+      });
+    })
+    .catch((error) => {
+      sendResponse({ ok: false, error: String(error && error.message ? error.message : error) });
+    });
+  return true;
+});

@@ -15,6 +15,15 @@ function getExtensionIdFromUrl(url) {
   return match?.[1] ?? null;
 }
 
+async function expandAllSitePanels(page) {
+  const chips = page.locator(".site-chip");
+  const count = await chips.count();
+  for (let i = 0; i < count; i++) {
+    await chips.nth(i).click();
+  }
+  await page.waitForSelector(".feature-card", { timeout: 10000 });
+}
+
 function getExtensionIdFromPreferences(userDataDir) {
   const preferencesPath = path.join(userDataDir, "Default", "Preferences");
   if (!fs.existsSync(preferencesPath)) return null;
@@ -70,7 +79,13 @@ async function run() {
       waitUntil: "networkidle",
     });
 
-    await popupPage.waitForSelector(".feature-card", { timeout: 10000 });
+    await popupPage.waitForSelector(".site-panel-other", { timeout: 10000 });
+    assert.equal(
+      await popupPage.locator(".site-accordion-toggle[aria-expanded='true']").count(),
+      0,
+      "Site dropdowns should start closed on an unsupported tab"
+    );
+    await expandAllSitePanels(popupPage);
 
     await popupPage.evaluate(async () => {
       const defaults = {
@@ -93,14 +108,15 @@ async function run() {
       await chrome.storage.sync.set({ chroModsSettings: defaults });
     });
     await popupPage.reload({ waitUntil: "networkidle" });
-    await popupPage.waitForSelector(".feature-card", { timeout: 10000 });
+    await popupPage.waitForSelector(".site-panel-other", { timeout: 10000 });
+    await expandAllSitePanels(popupPage);
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 40, "Expected YouTube, GitHub, Google, and DuckDuckGo non-transparency mods");
+    assert.equal(featureCards, 54, "Expected every non-transparency mod across all sites");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /ChroMods/);
-    assert.equal(await popupPage.locator(".site-chip").count(), 4, "Expected YouTube, GitHub, Google, and DuckDuckGo site chips");
+    assert.equal(await popupPage.locator(".site-chip").count(), 7, "Expected a chip for every supported site");
     assert.match(await popupPage.locator("#other-sites-title").textContent() ?? "", /Sites/);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-no-tab-text"]').count(), 1);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-glass-effect"]').count(), 1);
@@ -235,6 +251,7 @@ async function run() {
 
     const popupPage2 = await context.newPage();
     await popupPage2.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await expandAllSitePanels(popupPage2);
 
     await popupPage2
       .locator('.feature-card[data-feature="compact-sidebar"] label.switch')

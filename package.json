@@ -5,10 +5,14 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/extension.e2e.mjs",
-    "readme": "node scripts/generate-readme.mjs"
+    "readme": "node scripts/generate-readme.mjs",
+    "vendor:darkreader": "cp node_modules/darkreader/darkreader.js scripts/vendor/darkreader.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "playwright": "^1.52.0"
+  },
+  "dependencies": {
+    "darkreader": "^4.9.128"
   }
 }

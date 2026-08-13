@@ -481,9 +481,9 @@ const siteRail = document.getElementById("site-rail");
 const currentPane = document.getElementById("current-pane");
 const otherSitesList = document.getElementById("other-sites-list");
 const otherSitesTitle = document.getElementById("other-sites-title");
-const subtitleEl = document.getElementById("subtitle");
 const reloadBtn = document.getElementById("reload");
 const versionPill = document.getElementById("version-pill");
+const themeToggle = document.getElementById("theme-toggle");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let currentSite = null;
@@ -619,6 +619,21 @@ function isSubsettingActive(sub, featureSettings) {
   return featureSettings[sub.dependsOn] !== false;
 }
 
+function renderSwitch({ ariaLabel, checked = false, disabled = false, className = "", inputAttrs = "" }) {
+  return `
+    <label class="switch${className ? ` ${className}` : ""}" aria-label="${ariaLabel}">
+      <input type="checkbox" ${inputAttrs} ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} />
+      <span class="slider">
+        <span class="knob">
+          <svg class="switch-check" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M2.1 6.2 4.8 8.8 9.9 3.2" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </span>
+    </label>
+  `;
+}
+
 function renderSubsettings(feature, featureSettings) {
   if (!feature.subsettings?.length) return "";
 
@@ -658,10 +673,13 @@ function renderSubsettings(feature, featureSettings) {
             <span class="subsetting-title">${sub.title}</span>
             <span class="subsetting-desc">${sub.description}</span>
           </div>
-          <label class="switch switch-sm" aria-label="${sub.title}">
-            <input type="checkbox" data-subsetting="${sub.id}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} />
-            <span class="slider"></span>
-          </label>
+          ${renderSwitch({
+            ariaLabel: sub.title,
+            checked,
+            disabled,
+            className: "switch-sm",
+            inputAttrs: `data-subsetting="${sub.id}"`,
+          })}
         </div>
       `;
     })
@@ -719,14 +737,14 @@ function renderFeatureCard(feature) {
 
   card.innerHTML = `
     <div class="feature-header">
-      <div class="feature-info">
-        <h4>${feature.title}</h4>
-        <p>${feature.description}</p>
-      </div>
-      <label class="switch" aria-label="${feature.title}">
-        <input type="checkbox" data-feature="${feature.id}" ${enabled ? "checked" : ""} ${siteEnabled ? "" : "disabled"} />
-        <span class="slider"></span>
-      </label>
+      <h4 class="feature-title">${feature.title}</h4>
+      ${renderSwitch({
+        ariaLabel: feature.title,
+        checked: enabled,
+        disabled: !siteEnabled,
+        inputAttrs: `data-feature="${feature.id}"`,
+      })}
+      <p class="feature-desc">${feature.description}</p>
     </div>
     ${renderSubsettings(feature, featureSettings)}
   `;
@@ -853,24 +871,69 @@ function renderEnableSwitch(site) {
   const idAttr = site.id === "youtube" ? ` id="master-toggle"` : "";
   const countId = site.id === "youtube" ? ` id="feature-count"` : "";
   return `
-    <span class="feature-count" data-site-count="${site.id}"${countId}>${siteCountLabel(site.id)}</span>
-    <label class="switch" aria-label="Enable ${site.title}">
-      <input type="checkbox" data-site-enable="${site.id}"${idAttr} ${isSiteEnabled(site.id) ? "checked" : ""} />
-      <span class="slider"></span>
-    </label>
+    <div class="heading-actions">
+      <span class="feature-count" data-site-count="${site.id}"${countId}>${siteCountLabel(site.id)}</span>
+      ${renderSwitch({
+        ariaLabel: `Enable ${site.title}`,
+        checked: isSiteEnabled(site.id),
+        inputAttrs: `data-site-enable="${site.id}"${idAttr}`,
+      })}
+    </div>
   `;
+}
+
+function requestableHost() {
+  return chromodsRequestableHostFromUrl(activeTab?.url || "");
+}
+
+function renderUnsupportedBar() {
+  const host = requestableHost();
+  if (!host) {
+    return `
+      <div class="unsupported-bar">
+        <span class="unsupported-tag">No mods for this tab</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="unsupported-bar">
+      <span class="unsupported-tag">No mods for this site</span>
+      <span class="unsupported-host" title="${host}">${host}</span>
+      <button id="request-style" class="request-style-btn" type="button">Request styling</button>
+    </div>
+  `;
+}
+
+async function openStyleRequest() {
+  const host = requestableHost();
+  if (!host) return;
+
+  const button = document.getElementById("request-style");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Checking…";
+  }
+
+  const pageUrl = activeTab?.url || "";
+  let dest = chromodsStyleRequestIssueUrl(host, pageUrl);
+  try {
+    const existing = await chromodsFindExistingStyleRequest(host);
+    if (existing?.htmlUrl) dest = existing.htmlUrl;
+  } catch {
+    /* fall through to a new issue */
+  }
+
+  await chrome.tabs.create({ url: dest });
+  window.close();
 }
 
 function renderCurrentPane() {
   currentPane.innerHTML = "";
 
   if (!currentSite) {
-    currentPane.innerHTML = `
-      <div class="empty-current card">
-        <h2>No supported site in this tab</h2>
-        <p>Open YouTube, GitHub, Google, or DuckDuckGo to edit that site's mods, or expand a site below.</p>
-      </div>
-    `;
+    currentPane.innerHTML = renderUnsupportedBar();
+    currentPane.querySelector("#request-style")?.addEventListener("click", openStyleRequest);
     return;
   }
 
@@ -888,7 +951,7 @@ function renderCurrentPane() {
       ${
         featuresForSite(currentSite.id).length
           ? renderEnableSwitch(currentSite)
-          : `<span class="feature-count" data-site-count="${currentSite.id}">${siteCountLabel(currentSite.id)}</span>`
+          : `<div class="heading-actions"><span class="feature-count" data-site-count="${currentSite.id}">${siteCountLabel(currentSite.id)}</span></div>`
       }
     </div>
     <div class="features-list" id="features-list"></div>
@@ -917,15 +980,18 @@ function renderOtherSitePanel(site, expanded) {
         </div>
         <span class="category-chevron" aria-hidden="true"></span>
       </button>
-      <span class="feature-count" data-site-count="${site.id}"${site.id === "youtube" && !currentSite ? ` id="feature-count"` : ""}>${siteCountLabel(site.id)}</span>
-      ${
-        features.length
-          ? `<label class="switch switch-sm" aria-label="Enable ${site.title}">
-        <input type="checkbox" data-site-enable="${site.id}"${site.id === "youtube" && !currentSite ? ` id="master-toggle"` : ""} ${isSiteEnabled(site.id) ? "checked" : ""} />
-        <span class="slider"></span>
-      </label>`
-          : ""
-      }
+      <div class="heading-actions">
+        <span class="feature-count" data-site-count="${site.id}"${site.id === "youtube" && !currentSite ? ` id="feature-count"` : ""}>${siteCountLabel(site.id)}</span>
+        ${
+          features.length
+            ? renderSwitch({
+                ariaLabel: `Enable ${site.title}`,
+                checked: isSiteEnabled(site.id),
+                inputAttrs: `data-site-enable="${site.id}"${site.id === "youtube" && !currentSite ? ` id="master-toggle"` : ""}`,
+              })
+            : ""
+        }
+      </div>
     </div>
     <div class="category-expansion${expanded ? " is-open" : ""}">
       <div class="category-expansion-inner">
@@ -969,10 +1035,8 @@ function renderOtherSites() {
 
   const others = SITE_META.filter((site) => site.id !== currentSite?.id);
   for (const site of others) {
-    const hasMods = featuresForSite(site.id).length > 0;
-    const expanded = !currentSite && hasMods && !collapsedOtherSites.has(site.id);
-    if (currentSite) collapsedOtherSites.add(site.id);
-    otherSitesList.appendChild(renderOtherSitePanel(site, expanded));
+    collapsedOtherSites.add(site.id);
+    otherSitesList.appendChild(renderOtherSitePanel(site, false));
   }
 }
 
@@ -1052,26 +1116,143 @@ function updateReloadButton() {
   reloadBtn.title = canReload ? `Reload ${currentSite.title}` : "Open a supported site to reload it";
 }
 
+function setThemeTogglePressed(enabled) {
+  themeToggle.setAttribute("aria-pressed", String(enabled));
+  themeToggle.classList.toggle("is-dark", enabled);
+}
+
+async function updateThemeToggle() {
+  const host = chromodsDarkHostFromUrl(activeTab?.url || "");
+  if (!host || !activeTab?.id) {
+    setThemeTogglePressed(false);
+    themeToggle.disabled = true;
+    themeToggle.title = "Dark mode is unavailable on this page";
+    themeToggle.setAttribute("aria-label", "Force dark mode");
+    return;
+  }
+
+  const sites = await chromodsGetDarkSites();
+  const enabled = chromodsIsDarkHostEnabled(sites, host);
+  themeToggle.disabled = false;
+  setThemeTogglePressed(enabled);
+  themeToggle.title = enabled
+    ? `Dark mode on for ${host} — click for light`
+    : `Force dark mode on ${host}`;
+  themeToggle.setAttribute(
+    "aria-label",
+    enabled ? `Turn off dark mode for ${host}` : `Force dark mode on ${host}`
+  );
+}
+
+async function ensureDarkModeScript(tabId) {
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: CHROMODS_DARK_PING });
+    return true;
+  } catch {
+    const isolatedFiles = [
+      "scripts/dark-chrome-guard.js",
+      "scripts/vendor/darkreader.js",
+      "scripts/dark-sites.js",
+      "scripts/dark-mode.js",
+    ];
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: ["scripts/dark-proxy.js"],
+        world: "MAIN",
+        injectImmediately: true,
+      });
+    } catch {
+      /* MAIN-world inject can fail on some child frames */
+    }
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: isolatedFiles,
+        injectImmediately: true,
+      });
+    } catch {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: isolatedFiles,
+          injectImmediately: true,
+        });
+      } catch {
+        return false;
+      }
+    }
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: CHROMODS_DARK_PING });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+async function captureVisibleTab(tab) {
+  if (!tab?.windowId) return null;
+  try {
+    return await chrome.tabs.captureVisibleTab(tab.windowId, {
+      format: "jpeg",
+      quality: 70,
+    });
+  } catch {
+    return null;
+  }
+}
+
 function bindControls() {
   reloadBtn.addEventListener("click", async () => {
     if (!activeTab?.id || !currentSite) return;
     await chrome.tabs.reload(activeTab.id);
     window.close();
   });
+
+  themeToggle.addEventListener("click", async () => {
+    const host = chromodsDarkHostFromUrl(activeTab?.url || "");
+    if (!host || !activeTab?.id || themeToggle.disabled) return;
+
+    const next = themeToggle.getAttribute("aria-pressed") !== "true";
+    setThemeTogglePressed(next);
+    themeToggle.disabled = true;
+
+    try {
+      const [injected, screenshot] = await Promise.all([
+        ensureDarkModeScript(activeTab.id),
+        captureVisibleTab(activeTab),
+      ]);
+      if (!injected) {
+        setThemeTogglePressed(!next);
+        themeToggle.title = "Can't inject dark mode on this page";
+        return;
+      }
+      if (screenshot) {
+        try {
+          await chrome.tabs.sendMessage(activeTab.id, {
+            type: CHROMODS_DARK_WIPE,
+            enabled: next,
+            screenshot,
+          });
+        } catch {
+          /* storage apply below still runs */
+        }
+      }
+      await chromodsSetDarkSite(host, next);
+    } finally {
+      await updateThemeToggle();
+    }
+  });
 }
 
 function renderPopup() {
-  if (currentSite) {
-    subtitleEl.textContent = `${currentSite.title} · on this page`;
-  } else {
-    subtitleEl.textContent = "Chromium theming mods";
-  }
-
   renderSiteRail();
   renderCurrentPane();
   renderOtherSites();
   updateReloadButton();
   updateFeatureCount();
+  updateThemeToggle();
 }
 
 async function init() {

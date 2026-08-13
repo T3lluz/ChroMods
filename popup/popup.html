@@ -20,11 +20,39 @@
             <img src="../icons/icon48.png" alt="" class="logo-img" width="32" height="32" />
             <div class="title-wrap">
               <h1 class="app-title">ChroMods</h1>
-              <p class="subtitle" id="subtitle">Chromium theming mods</p>
+              <span class="version-pill" id="version-pill">v1.0.0</span>
             </div>
           </div>
           <div class="header-actions">
-            <span class="version-pill" id="version-pill">v1.0.0</span>
+            <button
+              id="theme-toggle"
+              class="theme-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-label="Force dark mode"
+              title="Force dark mode on this site"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <defs>
+                  <mask id="chromods-moon-cut">
+                    <rect width="24" height="24" fill="white" />
+                    <circle class="theme-cut" cx="12" cy="12" r="6" fill="black" />
+                  </mask>
+                </defs>
+                <circle class="theme-core" cx="12" cy="12" r="6" mask="url(#chromods-moon-cut)" />
+                <g class="theme-rays">
+                  <line x1="12" y1="1.75" x2="12" y2="3.75" />
+                  <line x1="12" y1="20.25" x2="12" y2="22.25" />
+                  <line x1="1.75" y1="12" x2="3.75" y2="12" />
+                  <line x1="20.25" y1="12" x2="22.25" y2="12" />
+                  <line x1="4.35" y1="4.35" x2="5.75" y2="5.75" />
+                  <line x1="18.25" y1="18.25" x2="19.65" y2="19.65" />
+                  <line x1="18.25" y1="5.75" x2="19.65" y2="4.35" />
+                  <line x1="4.35" y1="19.65" x2="5.75" y2="18.25" />
+                </g>
+              </svg>
+            </button>
             <button id="reload" class="reload-btn" type="button" title="Reload this page">
               Reload page
             </button>
@@ -48,6 +76,8 @@
     </div>
     <script src="../scripts/sites.js"></script>
     <script src="../scripts/icons.js"></script>
+    <script src="../scripts/dark-sites.js"></script>
+    <script src="../scripts/style-request.js"></script>
     <script src="../scripts/popup.js"></script>
   </body>
 </html>

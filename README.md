@@ -11,7 +11,7 @@
   </p>
 </div>
 
-The popup detects the active tab and shows that site's mods first.
+The popup detects the active tab and shows that site's mods first. A moon/sun toggle in the header can force dark mode on **any website** (Dark Reader engine), remembered per hostname. Unsupported sites get a compact tag and a **Request styling** action that opens a GitHub issue (or an existing one) on this repo.
 
 | | Site | Mods | Hosts |
 | :---: | --- | ---: | --- |
@@ -134,4 +134,4 @@ Chromium only. Zen browser-window transparency is excluded because Chromium cann
 
 ## License
 
-MIT — CSS derived from [my-internet](https://github.com/sameerasw/my-internet) (MIT)
+MIT — CSS derived from [my-internet](https://github.com/sameerasw/my-internet) (MIT). Dark mode engine from [Dark Reader](https://github.com/darkreader/darkreader) (MIT).

@@ -9,11 +9,12 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "background": {
     "service_worker": "scripts/background.js"
   },
   "host_permissions": [
+    "<all_urls>",
     "*://*.youtube.com/*",
     "*://youtube.com/*",
     "*://*.github.com/*",
@@ -96,6 +97,24 @@
     }
   },
   "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["scripts/dark-proxy.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": [
+        "scripts/dark-chrome-guard.js",
+        "scripts/vendor/darkreader.js",
+        "scripts/dark-sites.js",
+        "scripts/dark-mode.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
     {
       "matches": [
         "*://*.youtube.com/*",
