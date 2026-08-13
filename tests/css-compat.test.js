@@ -16,6 +16,7 @@ const SITE_STYLE_DIRS = [
   "duckduckgo",
   "x",
   "twitch",
+  "chatgpt",
 ];
 
 const FORBIDDEN_PATTERNS = [
@@ -71,6 +72,7 @@ test("manifest is valid Chrome MV3", () => {
   assert.ok(manifest.host_permissions.some((p) => p.includes("x.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("twitter.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("twitch.tv")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("chatgpt.com")));
   for (const file of ["icons/icon.svg", "icons/icon16.png", "icons/icon48.png", "icons/icon128.png"]) {
     assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
@@ -90,7 +92,7 @@ test("all stylesheet modules exist", () => {
   assert.deepEqual(rootCss, [], "CSS files should live in site folders, not styles/");
   assert.doesNotMatch(
     STYLE_FILES.map((file) => path.basename(file)).join("\n"),
-    /theater-glass|theater-translucent|theater-solid|gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twtr-transparency/
+    /theater-glass|theater-translucent|theater-solid|gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twtr-transparency|cgpt-transparency/
   );
 });
 
@@ -392,6 +394,98 @@ test("twitch mods skip page transparency and nested ampersands", () => {
   assert.doesNotMatch(footer, /persistent-player--theatre/);
 });
 
+test("chatgpt mods skip page transparency and nested ampersands", () => {
+  const tokens = read(style("chatgpt", "cgpt-tokens.css"));
+  assert.match(tokens, /--cgpt-sidebar-glass/);
+  assert.match(tokens, /--cgpt-glass-panel-strong/);
+  assert.doesNotMatch(tokens, /--main-surface-primary:\s*transparent/);
+  assert.doesNotMatch(tokens, /--main-surface-background:\s*transparent/);
+  assert.doesNotMatch(tokens, /html\s*,\s*body/);
+  assert.doesNotMatch(tokens, /&\s*[:{]/);
+
+  const sidebar = read(style("chatgpt", "cgpt-sidebar.css"));
+  assert.match(sidebar, /#sidebar-header a\[aria-label="Home"\]/);
+  assert.match(sidebar, /var\(--cgpt-sidebar-glass\)/);
+  assert.match(sidebar, /tall:sticky/);
+  assert.doesNotMatch(sidebar, /html\s*,\s*body/);
+  assert.doesNotMatch(sidebar, /&\s*[:{]/);
+
+  const header = read(style("chatgpt", "cgpt-page-header.css"));
+  assert.match(header, /share-chat-button/);
+  assert.match(header, /conversation-options-button/);
+  assert.doesNotMatch(header, /html\s*,\s*body/);
+  assert.doesNotMatch(header, /#page-header,\s*#page-header\[data-fixed-header\]/);
+
+  const composer = read(style("chatgpt", "cgpt-composer.css"));
+  assert.match(composer, /data-composer-surface/);
+  assert.match(composer, /unified-composer/);
+  assert.doesNotMatch(composer, /html\s*,\s*body/);
+  assert.doesNotMatch(composer, /&\s*[:{]/);
+
+  const messages = read(style("chatgpt", "cgpt-messages.css"));
+  assert.match(messages, /user-message-bubble-color/);
+  assert.match(messages, /data-message-author-role="assistant"/);
+  assert.doesNotMatch(messages, /html\s*,\s*body/);
+
+  const code = read(style("chatgpt", "cgpt-code.css"));
+  assert.match(code, /Copy code/);
+  assert.match(code, /bg-token-bg-elevated-secondary/);
+  assert.doesNotMatch(code, /&\s*[:{]/);
+
+  const flyout = read(style("chatgpt", "cgpt-flyout.css"));
+  assert.match(flyout, /stage-thread-flyout/);
+  assert.match(flyout, /Reasoning details/);
+
+  const popovers = read(style("chatgpt", "cgpt-popovers.css"));
+  assert.match(popovers, /\[role="dialog"\]/);
+  assert.match(popovers, /--cgpt-glass-menu/);
+
+  const pages = read(style("chatgpt", "cgpt-pages.css"));
+  assert.match(pages, /Search GPTs/);
+  assert.match(pages, /artifacts-surface-top-controls/);
+  assert.doesNotMatch(pages, /html\s*,\s*body/);
+
+  const decorative = read(style("chatgpt", "cgpt-decorative.css"));
+  assert.match(decorative, /body > picture/);
+  assert.match(decorative, /display:\s*none/);
+
+  const fallback = read(style("chatgpt", "cgpt-fallback.css"));
+  assert.match(fallback, /@supports not \(backdrop-filter/);
+  assert.doesNotMatch(fallback, /html\s*,\s*body/);
+
+  const motion = read(style("chatgpt", "cgpt-reduced-motion.css"));
+  assert.match(motion, /prefers-reduced-motion/);
+
+  const hint = read(style("chatgpt", "cgpt-hide-hint.css"));
+  assert.match(hint, /thread-disclaimer/);
+  assert.match(hint, /display:\s*none/);
+
+  for (const file of [
+    "cgpt-tokens.css",
+    "cgpt-sidebar.css",
+    "cgpt-page-header.css",
+    "cgpt-composer.css",
+    "cgpt-messages.css",
+    "cgpt-code.css",
+    "cgpt-flyout.css",
+    "cgpt-popovers.css",
+    "cgpt-pages.css",
+    "cgpt-decorative.css",
+    "cgpt-fallback.css",
+    "cgpt-reduced-motion.css",
+    "cgpt-hide-hint.css",
+  ]) {
+    const css = read(style("chatgpt", file));
+    assert.doesNotMatch(css, /&\s*[:{]/, `${file} has nested &`);
+    assert.doesNotMatch(css, /html\s*,\s*body/, `${file} targets html, body`);
+    assert.doesNotMatch(
+      css,
+      /(?:html|body|#main|#thread|#page-header)\s*,[\s\S]{0,200}background(?:-color)?:\s*transparent/,
+      `${file} has transparent page chrome`
+    );
+  }
+});
+
 test("popup assets exist and reference each other", () => {
   const html = read("popup/popup.html");
   assert.match(html, /popup\.css/);
@@ -456,7 +550,12 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /x-overlay-fix\.css/);
   assert.match(js, /"twitch-no-footer"/);
   assert.match(js, /twitch-no-footer\.css/);
-  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency/);
+  assert.match(js, /"cgpt-sidebar"/);
+  assert.match(js, /cgpt-sidebar\.css/);
+  assert.match(js, /"cgpt-composer"/);
+  assert.match(js, /cgpt-composer\.css/);
+  assert.match(js, /"cgpt-hide-hint"/);
+  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency|cgpt-transparency/);
   assert.match(js, /chroModsSettings/);
   assert.match(js, /chromods-styles/);
   assert.doesNotMatch(
@@ -533,19 +632,22 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /site:\s*"gemini"/);
   assert.match(js, /site:\s*"x"/);
   assert.match(js, /site:\s*"twitch"/);
+  assert.match(js, /site:\s*"chatgpt"/);
   assert.match(js, /gmail-glass/);
   assert.match(js, /gemini-input-code/);
   assert.match(js, /x-overlay-fix/);
   assert.match(js, /twitch-no-footer/);
+  assert.match(js, /cgpt-sidebar/);
+  assert.match(js, /cgpt-hide-hint/);
   assert.match(js, /feature\.site\s*\?\?=\s*"youtube"/);
   assert.doesNotMatch(
     js,
-    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency/
+    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency|cgpt-transparency/
   );
   assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
 });
 
-test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, and Twitch URLs", () => {
+test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT URLs", () => {
   const api = new Function(`${read("scripts/sites.js")}; return { matchSiteFromUrl };`)();
   assert.equal(api.matchSiteFromUrl("https://www.youtube.com/watch?v=x")?.id, "youtube");
   assert.equal(api.matchSiteFromUrl("https://music.youtube.com/")?.id, "youtube");
@@ -566,10 +668,12 @@ test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini,
   assert.equal(api.matchSiteFromUrl("https://twitter.com/home")?.id, "x");
   assert.equal(api.matchSiteFromUrl("https://www.twitch.tv/foo")?.id, "twitch");
   assert.equal(api.matchSiteFromUrl("https://twitch.tv/")?.id, "twitch");
+  assert.equal(api.matchSiteFromUrl("https://chatgpt.com/")?.id, "chatgpt");
+  assert.equal(api.matchSiteFromUrl("https://www.chatgpt.com/c/abc")?.id, "chatgpt");
   assert.equal(api.matchSiteFromUrl("https://example.com/"), null);
 });
 
-test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, and Twitch hosts", () => {
+test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT hosts", () => {
   const js = read("scripts/sites.js");
   assert.match(js, /id:\s*"youtube"/);
   assert.match(js, /id:\s*"github"/);
@@ -579,6 +683,7 @@ test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, 
   assert.match(js, /id:\s*"duckduckgo"/);
   assert.match(js, /id:\s*"x"/);
   assert.match(js, /id:\s*"twitch"/);
+  assert.match(js, /id:\s*"chatgpt"/);
   assert.match(js, /youtube\.com/);
   assert.match(js, /github\.com/);
   assert.match(js, /google\.com/);
@@ -588,6 +693,7 @@ test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, 
   assert.match(js, /x\.com/);
   assert.match(js, /twitter\.com/);
   assert.match(js, /twitch\.tv/);
+  assert.match(js, /chatgpt\.com/);
   assert.match(js, /matchSiteFromUrl/);
   assert.match(js, /matchSiteFromHostname/);
   assert.match(js, /hostnamePattern/);
@@ -613,6 +719,7 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /site-gemini/);
   assert.match(js, /site-x/);
   assert.match(js, /site-twitch/);
+  assert.match(js, /site-chatgpt/);
   assert.match(js, /#C5221F/);
   assert.match(js, /#FC413D/);
   assert.match(js, /#00B95C/);
@@ -621,6 +728,7 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /#FDD20A/);
   assert.match(js, /#65BC46/);
   assert.match(js, /#9146FF/);
+  assert.match(js, /#10A37F/);
   assert.match(css, /category-expansion/);
   assert.match(css, /feature-expansion/);
   assert.match(css, /site-rail/);

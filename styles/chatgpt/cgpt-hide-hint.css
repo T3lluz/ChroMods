@@ -1,0 +1,4 @@
+/* cgpt-hide-hint — hide the ChatGPT can make mistakes disclaimer */
+[data-testid="thread-disclaimer"] {
+  display: none !important;
+}

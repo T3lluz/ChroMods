@@ -1,0 +1,217 @@
+/* cgpt-sidebar — Sidebar glass; Stylus default is always-on, Tampermonkey can switch on scroll */
+.sticky.top-0.z-30,
+#stage-sidebar .sticky.top-0.z-30,
+#stage-slideover-sidebar .sticky.top-0.z-30 {
+  position: sticky !important;
+  z-index: 30 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin-inline: 0 !important;
+  width: 100% !important;
+}
+
+.sticky.top-0.z-30::before,
+.sticky.top-0.z-30::after,
+#stage-sidebar .sticky.top-0.z-30::before,
+#stage-sidebar .sticky.top-0.z-30::after,
+#stage-slideover-sidebar .sticky.top-0.z-30::before,
+#stage-slideover-sidebar .sticky.top-0.z-30::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* @Stylus-only default matches the New chat/Search chats glass darkness */
+#sidebar-header a[aria-label="Home"],
+#sidebar-header button[aria-label="Close sidebar"],
+#sidebar-header button[aria-label*="sidebar"],
+#page-header button[aria-label="Open sidebar"],
+#page-header button[aria-label="Close sidebar"],
+#page-header button[aria-label*="sidebar"],
+#page-header a[href="/"] {
+  background: var(--cgpt-sidebar-glass) !important;
+  background-color: var(--cgpt-sidebar-glass) !important;
+  background-image: none !important;
+
+  backdrop-filter: blur(40px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 12px !important;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+
+  color: var(--cgpt-glass-text-primary) !important;
+
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    backdrop-filter 180ms ease,
+    transform 140ms ease !important;
+}
+
+/* Tampermonkey mode before scroll: logo/sidebar buttons clean */
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #sidebar-header a[aria-label="Home"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #sidebar-header button[aria-label="Close sidebar"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #sidebar-header button[aria-label*="sidebar"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #page-header button[aria-label="Open sidebar"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #page-header button[aria-label="Close sidebar"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #page-header button[aria-label*="sidebar"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) #page-header a[href="/"] {
+  background: unset !important;
+  background-color: unset !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+/* Tampermonkey mode after scroll: logo/sidebar buttons match sidebar nav glass */
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #sidebar-header a[aria-label="Home"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #sidebar-header button[aria-label="Close sidebar"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #sidebar-header button[aria-label*="sidebar"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #page-header button[aria-label="Open sidebar"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #page-header button[aria-label="Close sidebar"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #page-header button[aria-label*="sidebar"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled #page-header a[href="/"] {
+  background: var(--cgpt-sidebar-glass) !important;
+  background-color: var(--cgpt-sidebar-glass) !important;
+  background-image: none !important;
+
+  backdrop-filter: blur(40px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 12px !important;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+
+  color: var(--cgpt-glass-text-primary) !important;
+}
+
+/* Hover */
+#sidebar-header a[aria-label="Home"]:hover,
+#sidebar-header button[aria-label="Close sidebar"]:hover,
+#sidebar-header button[aria-label*="sidebar"]:hover,
+#page-header button[aria-label="Open sidebar"]:hover,
+#page-header button[aria-label="Close sidebar"]:hover,
+#page-header button[aria-label*="sidebar"]:hover,
+#page-header a[href="/"]:hover {
+  background: light-dark(rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1)) !important;
+  border-color: var(--cgpt-border-strong) !important;
+}
+
+#sidebar-header a[aria-label="Home"]:active,
+#sidebar-header button[aria-label="Close sidebar"]:active,
+#sidebar-header button[aria-label*="sidebar"]:active,
+#page-header button[aria-label="Open sidebar"]:active,
+#page-header button[aria-label="Close sidebar"]:active,
+#page-header button[aria-label*="sidebar"]:active,
+#page-header a[href="/"]:active {
+  transform: translateY(1px) !important;
+}
+
+/* Stylus-only default: New chat/Search block glass ON */
+div[class*="tall:sticky"][class*="top-header-height"],
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] {
+  position: sticky !important;
+  z-index: 20 !important;
+  background: var(--cgpt-sidebar-glass) !important;
+  background-color: var(--cgpt-sidebar-glass) !important;
+  background-image: none !important;
+  backdrop-filter: blur(40px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  margin-top: 0.25rem !important;
+  margin-inline: 0.35rem !important;
+  width: calc(100% - 0.7rem) !important;
+  padding-bottom: 0.3rem !important;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    backdrop-filter 180ms ease !important;
+}
+
+/* Tampermonkey mode before scroll: New chat/Search block clean */
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) div[class*="tall:sticky"][class*="top-header-height"],
+html.cgpt-sidebar-scroll-js:not(.cgpt-sidebar-scrolled) div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] {
+  background: unset !important;
+  background-color: unset !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+/* Tampermonkey mode after scroll: New chat/Search block glass ON */
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled div[class*="tall:sticky"][class*="top-header-height"],
+html.cgpt-sidebar-scroll-js.cgpt-sidebar-scrolled div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] {
+  background: var(--cgpt-sidebar-glass) !important;
+  background-color: var(--cgpt-sidebar-glass) !important;
+  background-image: none !important;
+  backdrop-filter: blur(40px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1)) !important;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+div[class*="tall:sticky"][class*="top-header-height"]::before,
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"]::before,
+div[class*="tall:sticky"][class*="top-header-height"]::after,
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"]::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+div[class*="tall:sticky"][class*="top-header-height"] > div[aria-hidden="true"],
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] > div[aria-hidden="true"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
+
+div[class*="tall:sticky"][class*="top-header-height"] > ul,
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] > ul {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+div[class*="tall:sticky"][class*="top-header-height"] [data-sidebar-item],
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] [data-sidebar-item] {
+  border-radius: 10px !important;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease !important;
+}
+
+div[class*="tall:sticky"][class*="top-header-height"] [data-sidebar-item]:hover,
+div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"] [data-sidebar-item]:hover {
+  background: var(--cgpt-hover) !important;
+  background-color: var(--cgpt-hover) !important;
+  box-shadow: inset 0 0 0 1px var(--cgpt-border) !important;
+}

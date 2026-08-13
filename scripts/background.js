@@ -58,6 +58,18 @@ const DEFAULT_SETTINGS = {
     "x-hover": false,
     "x-no-thanks": true,
     "twitch-no-footer": true,
+    "cgpt-sidebar": true,
+    "cgpt-page-header": true,
+    "cgpt-composer": true,
+    "cgpt-messages": true,
+    "cgpt-code": true,
+    "cgpt-flyout": true,
+    "cgpt-popovers": true,
+    "cgpt-pages": true,
+    "cgpt-decorative": true,
+    "cgpt-fallback": true,
+    "cgpt-reduced-motion": true,
+    "cgpt-hide-hint": true,
   },
   subsettings: {
     theater: {
@@ -79,6 +91,7 @@ const DEFAULT_SETTINGS = {
     duckduckgo: { enabled: true },
     x: { enabled: true },
     twitch: { enabled: true },
+    chatgpt: { enabled: true },
   },
 };
 

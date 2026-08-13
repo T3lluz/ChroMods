@@ -1,0 +1,33 @@
+/* cgpt-popovers — strong glass on menus, dialogs, tooltips, and composer dropdowns */
+[role="tooltip"],
+[class="tooltip"],
+[data-radix-popper-content-wrapper] > div,
+[role="menu"],
+[role="dialog"],
+[role="alertdialog"],
+form[data-type="unified-composer"] [role="listbox"],
+form[data-type="unified-composer"] ul,
+[data-radix-popper-content-wrapper] div[class*="bg-token-"],
+div[class*="popover"][class*="bg-token-"] {
+  --main-surface-primary: var(--cgpt-glass-menu) !important;
+  background: var(--cgpt-glass-menu) !important;
+  background-color: var(--cgpt-glass-menu) !important;
+  background-image: none !important;
+  backdrop-filter: blur(var(--cgpt-blur-strong)) saturate(122%) !important;
+  -webkit-backdrop-filter: blur(var(--cgpt-blur-strong)) saturate(122%) !important;
+  border: 1px solid var(--cgpt-border-strong) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--cgpt-shadow) !important;
+  color: var(--cgpt-glass-text-primary) !important;
+}
+
+#modal-settings > div::before {
+  background-color: light-dark(rgba(255, 255, 255, 0.28), rgba(0, 0, 0, 0.45)) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+form[data-type="unified-composer"] [role="listbox"] input,
+form[data-type="unified-composer"] [role="listbox"] div {
+  color: var(--cgpt-glass-text-primary) !important;
+}

@@ -51,6 +51,12 @@ const SITE_META = [
     hostnames: ["twitch.tv"],
     icon: "site-twitch",
   },
+  {
+    id: "chatgpt",
+    title: "ChatGPT",
+    hostnames: ["chatgpt.com"],
+    icon: "site-chatgpt",
+  },
 ];
 
 const SITE_BY_ID = Object.fromEntries(SITE_META.map((site) => [site.id, site]));

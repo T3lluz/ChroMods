@@ -1,0 +1,22 @@
+/* cgpt-reduced-motion — reduce transitions when the user prefers less motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto !important;
+  }
+
+  .sticky.top-0.z-30,
+  div[class*="tall:sticky"][class*="top-header-height"],
+  div[class*="pt-(--sidebar-section-first-margin-top)"][class*="tall:sticky"],
+  #sidebar-header a[aria-label="Home"],
+  #sidebar-header button[aria-label="Close sidebar"],
+  #sidebar-header button[aria-label*="sidebar"],
+  #page-header button[aria-label="Open sidebar"],
+  #page-header button[aria-label="Close sidebar"],
+  #page-header button[aria-label*="sidebar"],
+  #page-header a[href="/"],
+  #page-header [data-testid="share-chat-button"],
+  #page-header [data-testid="conversation-options-button"] {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}

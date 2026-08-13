@@ -13,6 +13,7 @@ const SITE_COPY = {
   duckduckgo: { hosts: "duckduckgo.com" },
   x: { hosts: "x.com, twitter.com" },
   twitch: { hosts: "twitch.tv" },
+  chatgpt: { hosts: "chatgpt.com" },
 };
 
 function extractConstArray(source, name) {

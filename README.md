@@ -3,7 +3,7 @@
 <div align="center">
   <img src="icons/icon.svg" width="72" height="72" alt="ChroMods" />
   <h1>ChroMods</h1>
-  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, and Twitch.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
+  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
   <p>
     <img alt="Version" src="https://img.shields.io/badge/v1.5.0-111111?label=version" />
     <img alt="Manifest V3" src="https://img.shields.io/badge/MV3-4285F4?logo=googlechrome&logoColor=white" />
@@ -23,6 +23,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | <img src="docs/sites/duckduckgo.svg" width="20" height="20" alt="" /> | [DuckDuckGo](#duckduckgo) | 9 | duckduckgo.com |
 | <img src="docs/sites/x.svg" width="20" height="20" alt="" /> | [X](#x) | 4 | x.com, twitter.com |
 | <img src="docs/sites/twitch.svg" width="20" height="20" alt="" /> | [Twitch](#twitch) | 1 | twitch.tv |
+| <img src="docs/sites/chatgpt.svg" width="20" height="20" alt="" /> | [ChatGPT](#chatgpt) | 12 | chatgpt.com |
 
 ## Features
 
@@ -123,10 +124,27 @@ Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 |-----|--------------|---------|
 | **Hide footer** | Hide Twitch's page footer. | On |
 
+### <img src="docs/sites/chatgpt.svg" width="22" height="22" alt="" /> ChatGPT
+
+| Mod | What it does | Default |
+|-----|--------------|---------|
+| **Sidebar glass** | Frosted glass on the sidebar header, New chat, and Search chats. | On |
+| **Header actions** | Frosted share and conversation buttons in the chat header. | On |
+| **Glass composer** | Frosted glass composer with clearer text and pills. | On |
+| **Message bubbles** | Style chat turns as readable glass bubbles. | On |
+| **Code panels** | Frosted panels for code blocks and copy buttons. | On |
+| **Flyout glass** | Glass styling for reasoning and stage thread flyouts. | On |
+| **Popover glass** | Strong glass on menus, dialogs, tooltips, and composer dropdowns. | On |
+| **Library surfaces** | Fix Library, Apps, GPTs, and search surfaces. | On |
+| **Softer splash** | Soften splash artwork and hide a floating upgrade badge. | On |
+| **Solid fallback** | Use semi-solid surfaces when backdrop-filter is not supported. | On |
+| **Reduced motion** | Reduce transitions when the user prefers less motion. | On |
+| **Hide hint** | Hide the ChatGPT can make mistakes disclaimer. | On |
+
 ## Install
 
 1. Clone this repo → `chrome://extensions` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, and Twitch tabs
+2. Reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT tabs
 
 ## Dev
 

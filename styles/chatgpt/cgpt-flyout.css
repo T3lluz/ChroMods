@@ -1,0 +1,23 @@
+/* cgpt-flyout — glass reasoning and stage thread flyouts */
+[data-testid="stage-thread-flyout"],
+[data-stage-thread-flyout="true"] {
+  background: var(--cgpt-glass-weak) !important;
+  background-color: var(--cgpt-glass-weak) !important;
+  backdrop-filter: blur(24px) saturate(118%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(118%) !important;
+  border-left: 1px solid var(--cgpt-border) !important;
+  box-shadow: -14px 0 42px rgba(0, 0, 0, 0.1) !important;
+  will-change: backdrop-filter !important;
+}
+
+[data-testid="stage-thread-flyout"] > div,
+[data-testid="stage-thread-flyout"] .flex.h-full.flex-col,
+[data-testid="screen-threadFlyOut"],
+section[aria-label="Reasoning details"],
+section[aria-label="Reasoning details"] > div {
+  box-shadow: none !important;
+}
+
+section[aria-label="Reasoning details"] [class*="border-"] {
+  border-color: var(--cgpt-border) !important;
+}

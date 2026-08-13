@@ -1,0 +1,83 @@
+/* cgpt-composer — frosted glass composer without page-chrome transparency */
+#thread-bottom-container::before,
+#thread-bottom-container::after,
+#thread-bottom::before,
+#thread-bottom::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+}
+
+#thread-bottom-container {
+  background: linear-gradient(to top, light-dark(rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.34)), transparent) !important;
+}
+
+#thread-bottom-container [data-composer-surface="true"],
+form[data-type="unified-composer"] [data-composer-surface="true"] {
+  background:
+    linear-gradient(to bottom, light-dark(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.045)), light-dark(rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.1))), var(--cgpt-glass-panel-strong) !important;
+  background-color: var(--cgpt-glass-panel-strong) !important;
+  backdrop-filter: blur(100px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(100px) saturate(120%) !important;
+  border: 1px solid light-dark(rgba(15, 23, 42, 0.13), rgba(255, 255, 255, 0.16)) !important;
+  border-radius: 28px !important;
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035) !important;
+}
+
+.wcDTda_prosemirror-parent,
+.vertical-scroll-fade-mask {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+form[data-type="unified-composer"] textarea,
+form[data-type="unified-composer"] [contenteditable="true"],
+form[data-type="unified-composer"] [role="textbox"],
+#prompt-textarea,
+.wcDTda_fallbackTextarea,
+[data-composer-surface="true"] .ProseMirror,
+[data-composer-surface="true"] #prompt-textarea,
+[data-composer-surface="true"] textarea,
+[data-composer-surface="true"] [role="textbox"],
+[data-composer-surface="true"] [contenteditable="true"] {
+  color: var(--cgpt-glass-text-primary) !important;
+  caret-color: light-dark(#0f172a, #ffffff) !important;
+}
+
+[data-composer-surface="true"] .ProseMirror p.placeholder::before,
+[data-composer-surface="true"] .ProseMirror [data-placeholder]::before {
+  color: light-dark(rgba(15, 23, 42, 0.55), rgba(248, 250, 252, 0.48)) !important;
+}
+
+form[data-type="unified-composer"] .composer-btn,
+form[data-type="unified-composer"] .__composer-pill,
+form[data-type="unified-composer"] .__composer-pill-remove,
+#composer-plus-btn,
+[data-composer-surface="true"] .composer-btn,
+[data-composer-surface="true"] .__composer-pill,
+[data-composer-surface="true"] .__composer-pill-remove,
+[data-composer-surface="true"] #composer-plus-btn {
+  background: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.075)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.075)) !important;
+  border: 1px solid light-dark(rgba(15, 23, 42, 0.1), rgba(255, 255, 255, 0.13)) !important;
+  color: var(--cgpt-glass-text-primary) !important;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease !important;
+}
+
+form[data-type="unified-composer"] .composer-btn:hover,
+form[data-type="unified-composer"] .__composer-pill:hover,
+[data-composer-surface="true"] .composer-btn:hover,
+[data-composer-surface="true"] .__composer-pill:hover,
+[data-composer-surface="true"] #composer-plus-btn:hover {
+  background: light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.13)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.13)) !important;
+}
+
+form[data-type="unified-composer"] .composer-submit-button-color {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
