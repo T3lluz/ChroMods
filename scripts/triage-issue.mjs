@@ -234,7 +234,7 @@ export async function classifyIssue(
     upstreamUrl: upstream.url,
     portableFeatures: features.map((feature) => feature.id),
     label: LABEL_AUTO_PR,
-    comment: `Queued a Cursor Cloud Agent to port **${host}** from \`${upstream.file}\`. It will open a pull request if the port succeeds — it will not push to \`main\`.`,
+    comment: `Queued a Cursor Cloud Agent to port **${host}** from \`${upstream.file}\`.`,
   };
 }
 
