@@ -454,6 +454,13 @@ const FEATURE_META = [
     title: "Hide Premium",
     description: "Remove Premium subscribe, footer, and upsell cards.",
   },
+  {
+    id: "twitch-no-footer",
+    site: "twitch",
+    category: "navigation",
+    title: "Hide footer",
+    description: "Hide Twitch's page footer.",
+  },
 ];
 
 for (const feature of FEATURE_META) {

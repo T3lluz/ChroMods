@@ -61,6 +61,7 @@
     "x-layout-fixes": ["styles/x/x-layout-fixes.css"],
     "x-hover": ["styles/x/x-hover.css"],
     "x-no-thanks": ["styles/x/x-no-thanks.css"],
+    "twitch-no-footer": ["styles/twitch/twitch-no-footer.css"],
   };
 
   const FEATURE_SITE = {
@@ -103,6 +104,7 @@
     "x-layout-fixes": "x",
     "x-hover": "x",
     "x-no-thanks": "x",
+    "twitch-no-footer": "twitch",
   };
 
   const FEED_PARTS = {
@@ -186,6 +188,7 @@
       "x-layout-fixes": true,
       "x-hover": false,
       "x-no-thanks": true,
+      "twitch-no-footer": true,
     },
     subsettings: {
       theater: { ...DEFAULT_THEATER },
@@ -199,6 +202,7 @@
       gemini: { enabled: true },
       duckduckgo: { enabled: true },
       x: { enabled: true },
+      twitch: { enabled: true },
     },
   };
 
@@ -248,6 +252,7 @@
     if (id.startsWith("gemini-")) return "gemini";
     if (id.startsWith("g-")) return "google";
     if (id.startsWith("x-")) return "x";
+    if (id.startsWith("twitch-")) return "twitch";
     return "youtube";
   }
 

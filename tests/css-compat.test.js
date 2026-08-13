@@ -15,6 +15,7 @@ const SITE_STYLE_DIRS = [
   "gemini",
   "duckduckgo",
   "x",
+  "twitch",
 ];
 
 const FORBIDDEN_PATTERNS = [
@@ -69,6 +70,7 @@ test("manifest is valid Chrome MV3", () => {
   assert.ok(manifest.host_permissions.some((p) => p.includes("duckduckgo.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("x.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("twitter.com")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("twitch.tv")));
   for (const file of ["icons/icon.svg", "icons/icon16.png", "icons/icon48.png", "icons/icon128.png"]) {
     assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
@@ -378,6 +380,18 @@ test("x mods skip page transparency and nested ampersands", () => {
   assert.match(thanks, /premium/);
 });
 
+test("twitch mods skip page transparency and nested ampersands", () => {
+  const footer = read(style("twitch", "twitch-no-footer.css"));
+  assert.match(footer, /footer/);
+  assert.match(footer, /display:\s*none/);
+  assert.match(footer, /\.channel-root__info/);
+  assert.doesNotMatch(footer, /background-color:\s*transparent/);
+  assert.doesNotMatch(footer, /background:\s*none/);
+  assert.doesNotMatch(footer, /&\s*[:{]/);
+  assert.doesNotMatch(footer, /html\s*,\s*body/);
+  assert.doesNotMatch(footer, /persistent-player--theatre/);
+});
+
 test("popup assets exist and reference each other", () => {
   const html = read("popup/popup.html");
   assert.match(html, /popup\.css/);
@@ -440,7 +454,9 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /gemini-input-code\.css/);
   assert.match(js, /"x-overlay-fix"/);
   assert.match(js, /x-overlay-fix\.css/);
-  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency/);
+  assert.match(js, /"twitch-no-footer"/);
+  assert.match(js, /twitch-no-footer\.css/);
+  assert.doesNotMatch(js, /gh-transparency|gh-transparent-lists|gh-overlay-fixes|g-transparency|ddg-transparency|ddg-transparent-header|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency/);
   assert.match(js, /chroModsSettings/);
   assert.match(js, /chromods-styles/);
   assert.doesNotMatch(
@@ -516,18 +532,20 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /site:\s*"gmail"/);
   assert.match(js, /site:\s*"gemini"/);
   assert.match(js, /site:\s*"x"/);
+  assert.match(js, /site:\s*"twitch"/);
   assert.match(js, /gmail-glass/);
   assert.match(js, /gemini-input-code/);
   assert.match(js, /x-overlay-fix/);
+  assert.match(js, /twitch-no-footer/);
   assert.match(js, /feature\.site\s*\?\?=\s*"youtube"/);
   assert.doesNotMatch(
     js,
-    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency|gmail-transparency|gemini-transparency|x-transparency/
+    /new-to-you-first|transparent-header|transparent-player|viewstats-theme|timed-comments-theme|gh-transparency|gh-transparent-lists|g-transparency|ddg-transparency|gmail-transparency|gemini-transparency|x-transparency|twitch-transparency/
   );
   assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
 });
 
-test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, and X URLs", () => {
+test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, and Twitch URLs", () => {
   const api = new Function(`${read("scripts/sites.js")}; return { matchSiteFromUrl };`)();
   assert.equal(api.matchSiteFromUrl("https://www.youtube.com/watch?v=x")?.id, "youtube");
   assert.equal(api.matchSiteFromUrl("https://music.youtube.com/")?.id, "youtube");
@@ -546,11 +564,12 @@ test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini,
   assert.equal(api.matchSiteFromUrl("https://lite.duckduckgo.com/lite/")?.id, "duckduckgo");
   assert.equal(api.matchSiteFromUrl("https://x.com/home")?.id, "x");
   assert.equal(api.matchSiteFromUrl("https://twitter.com/home")?.id, "x");
-  assert.equal(api.matchSiteFromUrl("https://www.twitch.tv/foo"), null);
+  assert.equal(api.matchSiteFromUrl("https://www.twitch.tv/foo")?.id, "twitch");
+  assert.equal(api.matchSiteFromUrl("https://twitch.tv/")?.id, "twitch");
   assert.equal(api.matchSiteFromUrl("https://example.com/"), null);
 });
 
-test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, and X hosts", () => {
+test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, and Twitch hosts", () => {
   const js = read("scripts/sites.js");
   assert.match(js, /id:\s*"youtube"/);
   assert.match(js, /id:\s*"github"/);
@@ -559,7 +578,7 @@ test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, 
   assert.match(js, /id:\s*"gemini"/);
   assert.match(js, /id:\s*"duckduckgo"/);
   assert.match(js, /id:\s*"x"/);
-  assert.doesNotMatch(js, /id:\s*"twitch"/);
+  assert.match(js, /id:\s*"twitch"/);
   assert.match(js, /youtube\.com/);
   assert.match(js, /github\.com/);
   assert.match(js, /google\.com/);
@@ -568,6 +587,7 @@ test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, 
   assert.match(js, /duckduckgo\.com/);
   assert.match(js, /x\.com/);
   assert.match(js, /twitter\.com/);
+  assert.match(js, /twitch\.tv/);
   assert.match(js, /matchSiteFromUrl/);
   assert.match(js, /matchSiteFromHostname/);
   assert.match(js, /hostnamePattern/);
@@ -592,6 +612,7 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /site-gmail/);
   assert.match(js, /site-gemini/);
   assert.match(js, /site-x/);
+  assert.match(js, /site-twitch/);
   assert.match(js, /#C5221F/);
   assert.match(js, /#FC413D/);
   assert.match(js, /#00B95C/);
@@ -599,7 +620,7 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /#DE5833/);
   assert.match(js, /#FDD20A/);
   assert.match(js, /#65BC46/);
-  assert.doesNotMatch(js, /site-twitch/);
+  assert.match(js, /#9146FF/);
   assert.match(css, /category-expansion/);
   assert.match(css, /feature-expansion/);
   assert.match(css, /site-rail/);
@@ -742,7 +763,7 @@ test("global dark mode uses Dark Reader and remembers per host", () => {
 
 test("README lists every live site and is generated from metadata", () => {
   const readme = read("README.md");
-  const sites = ["youtube", "github", "google", "gmail", "gemini", "duckduckgo", "x"];
+  const sites = ["youtube", "github", "google", "gmail", "gemini", "duckduckgo", "x", "twitch"];
   for (const site of sites) {
     assert.match(readme, new RegExp(`docs/sites/${site}\\.svg`));
     assert.ok(fs.existsSync(path.join(root, "docs/sites", `${site}.svg`)));

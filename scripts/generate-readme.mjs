@@ -12,6 +12,7 @@ const SITE_COPY = {
   gemini: { hosts: "gemini.google.com" },
   duckduckgo: { hosts: "duckduckgo.com" },
   x: { hosts: "x.com, twitter.com" },
+  twitch: { hosts: "twitch.tv" },
 };
 
 function extractConstArray(source, name) {
@@ -82,7 +83,7 @@ function buildReadme({ version, sites, features }) {
 <div align="center">
   <img src="icons/icon.svg" width="72" height="72" alt="ChroMods" />
   <h1>ChroMods</h1>
-  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, and X.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
+  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, and Twitch.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
   <p>
     <img alt="Version" src="https://img.shields.io/badge/v${version}-111111?label=version" />
     <img alt="Manifest V3" src="https://img.shields.io/badge/MV3-4285F4?logo=googlechrome&logoColor=white" />
@@ -103,7 +104,7 @@ ${siteSections}
 ## Install
 
 1. Clone this repo → \`chrome://extensions\` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, or X tabs
+2. Reload any open YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, or Twitch tabs
 
 ## Dev
 

@@ -57,6 +57,7 @@ const DEFAULT_SETTINGS = {
     "x-layout-fixes": true,
     "x-hover": false,
     "x-no-thanks": true,
+    "twitch-no-footer": true,
   },
   subsettings: {
     theater: {
@@ -77,6 +78,7 @@ const DEFAULT_SETTINGS = {
     gemini: { enabled: true },
     duckduckgo: { enabled: true },
     x: { enabled: true },
+    twitch: { enabled: true },
   },
 };
 

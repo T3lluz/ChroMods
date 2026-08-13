@@ -45,6 +45,12 @@ const SITE_META = [
     hostnames: ["x.com", "twitter.com"],
     icon: "site-x",
   },
+  {
+    id: "twitch",
+    title: "Twitch",
+    hostnames: ["twitch.tv"],
+    icon: "site-twitch",
+  },
 ];
 
 const SITE_BY_ID = Object.fromEntries(SITE_META.map((site) => [site.id, site]));
