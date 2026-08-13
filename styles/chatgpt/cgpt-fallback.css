@@ -1,0 +1,13 @@
+/* cgpt-fallback — semi-solid surfaces when backdrop-filter is not supported */
+@supports not (backdrop-filter: blur(1px)) {
+  #stage-slideover-sidebar,
+  form[data-type="unified-composer"] [data-composer-surface="true"],
+  .user-message-bubble-color,
+  [data-message-author-role="assistant"] .markdown,
+  [role="tooltip"],
+  [role="menu"],
+  [role="dialog"] {
+    background: light-dark(#ffffffe8, #121212e8) !important;
+    background-color: light-dark(#ffffffe8, #121212e8) !important;
+  }
+}

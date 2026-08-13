@@ -1,0 +1,102 @@
+/* cgpt-pages — Library, Apps, GPTs, and search surfaces */
+[data-testid="artifacts-surface-top-controls"] button.btn,
+[data-testid="artifacts-surface-top-controls"] .btn-ghost {
+  color: var(--cgpt-glass-text-primary) !important;
+  background-image: none !important;
+  border-color: var(--cgpt-border) !important;
+  box-shadow: none !important;
+}
+
+[data-testid="artifacts-surface-top-controls"] button[aria-current="page"],
+[data-testid="artifacts-surface-top-controls"] .btn-primary-inverse,
+[data-testid="artifacts-surface-top-controls"] .bg-token-bg-tertiary,
+.screen-arch button,
+.screen-arch .btn-ghost,
+#main button.btn-primary,
+main button.btn-primary,
+#main button.btn-secondary,
+main button.btn-secondary,
+#main .btn-secondary,
+main .btn-secondary {
+  color: var(--cgpt-glass-text-primary) !important;
+  background: light-dark(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.085)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.085)) !important;
+  background-image: none !important;
+  backdrop-filter: blur(16px) saturate(116%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(116%) !important;
+  border: 1px solid var(--cgpt-border-strong) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-testid="artifacts-surface-top-controls"] .btn-ghost:hover,
+[data-testid="artifacts-surface-top-controls"] button[aria-label]:hover,
+.screen-arch button:hover,
+.screen-arch .btn-ghost:hover,
+#main button.btn-primary:hover,
+main button.btn-primary:hover,
+#main button.btn-secondary:hover,
+main button.btn-secondary:hover {
+  background: var(--cgpt-hover) !important;
+  background-color: var(--cgpt-hover) !important;
+  border-color: var(--cgpt-border-strong) !important;
+  color: var(--cgpt-glass-text-primary) !important;
+}
+
+#main input[type="search"],
+main input[type="search"],
+input[aria-label="Search GPTs"][role="combobox"] {
+  color: var(--cgpt-glass-text-primary) !important;
+  background: light-dark(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.07)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.07)) !important;
+  background-image: none !important;
+  backdrop-filter: blur(18px) saturate(118%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(118%) !important;
+  border: 1px solid var(--cgpt-border-strong) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+#main input[type="search"]::placeholder,
+input[aria-label="Search GPTs"][role="combobox"]::placeholder {
+  color: var(--cgpt-glass-text-muted) !important;
+}
+
+.no-scrollbar.flex[class*="scroll-m-5"][class*="gap-1"] {
+  position: relative !important;
+  z-index: 2 !important;
+  background: light-dark(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.035)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.035)) !important;
+  background-image: none !important;
+  backdrop-filter: blur(16px) saturate(114%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(114%) !important;
+  border: 1px solid var(--cgpt-border) !important;
+  border-radius: 999px !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  gap: 0.35rem !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  padding: 0.35rem !important;
+}
+
+.no-scrollbar.flex[class*="scroll-m-5"][class*="gap-1"] > div {
+  color: var(--cgpt-glass-text-secondary) !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.no-scrollbar.flex[class*="scroll-m-5"][class*="gap-1"] > div.bg-token-bg-tertiary,
+.no-scrollbar.flex[class*="scroll-m-5"][class*="gap-1"] > div[class*="border-token-text-primary"] {
+  color: var(--cgpt-glass-text-primary) !important;
+  background: light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.1)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.1)) !important;
+  border-color: var(--cgpt-border-strong) !important;
+}

@@ -1,0 +1,12 @@
+/* cgpt-decorative — soften splash artwork and hide a floating upgrade badge */
+body > picture {
+  opacity: 0.65 !important;
+  mask-image: radial-gradient(circle, #000 25%, transparent 85%) !important;
+  mask-repeat: no-repeat !important;
+  mask-size: cover !important;
+  pointer-events: none !important;
+}
+
+button.flex.h-6.w-6.items-center.justify-center.rounded-full.border.border-token-border-light {
+  display: none !important;
+}

@@ -1,0 +1,44 @@
+/* cgpt-messages — chat turns as readable glass bubbles */
+.user-message-bubble-color,
+.bg-token-message-surface {
+  background: light-dark(rgba(255, 255, 255, 0.45), rgba(20, 20, 20, 0.4)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.45), rgba(20, 20, 20, 0.4)) !important;
+  backdrop-filter: blur(14px) saturate(112%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(112%) !important;
+  border: 1px solid var(--cgpt-border) !important;
+  border-radius: 1.375rem 1.375rem 0.25rem 1.375rem !important;
+  box-shadow: var(--cgpt-shadow-soft) !important;
+}
+
+[data-message-author-role="user"] .group\/message-image {
+  background: light-dark(rgba(255, 255, 255, 0.3), rgba(20, 20, 20, 0.3)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.3), rgba(20, 20, 20, 0.3)) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: 1.75rem !important;
+}
+
+[data-message-author-role="assistant"] .markdown {
+  width: fit-content !important;
+  max-width: min(100%, 980px) !important;
+  padding: 0.85rem 1rem !important;
+  border-radius: 1.375rem 1.375rem 1.375rem 0.25rem !important;
+  background: light-dark(rgba(255, 255, 255, 0.35), rgba(15, 15, 15, 0.3)) !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.35), rgba(15, 15, 15, 0.3)) !important;
+  backdrop-filter: blur(12px) saturate(110%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(110%) !important;
+  border: 1px solid var(--cgpt-border) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-message-author-role="assistant"] .markdown > *:first-child {
+  margin-top: 0 !important;
+}
+
+[data-message-author-role="assistant"] .markdown > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+.group\/conversation-turn > div > div.justify-start {
+  opacity: 0 !important;
+}

@@ -62,6 +62,18 @@
     "x-hover": ["styles/x/x-hover.css"],
     "x-no-thanks": ["styles/x/x-no-thanks.css"],
     "twitch-no-footer": ["styles/twitch/twitch-no-footer.css"],
+    "cgpt-sidebar": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-sidebar.css"],
+    "cgpt-page-header": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-page-header.css"],
+    "cgpt-composer": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-composer.css"],
+    "cgpt-messages": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-messages.css"],
+    "cgpt-code": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-code.css"],
+    "cgpt-flyout": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-flyout.css"],
+    "cgpt-popovers": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-popovers.css"],
+    "cgpt-pages": ["styles/chatgpt/cgpt-tokens.css", "styles/chatgpt/cgpt-pages.css"],
+    "cgpt-decorative": ["styles/chatgpt/cgpt-decorative.css"],
+    "cgpt-fallback": ["styles/chatgpt/cgpt-fallback.css"],
+    "cgpt-reduced-motion": ["styles/chatgpt/cgpt-reduced-motion.css"],
+    "cgpt-hide-hint": ["styles/chatgpt/cgpt-hide-hint.css"],
   };
 
   const FEATURE_SITE = {
@@ -105,6 +117,18 @@
     "x-hover": "x",
     "x-no-thanks": "x",
     "twitch-no-footer": "twitch",
+    "cgpt-sidebar": "chatgpt",
+    "cgpt-page-header": "chatgpt",
+    "cgpt-composer": "chatgpt",
+    "cgpt-messages": "chatgpt",
+    "cgpt-code": "chatgpt",
+    "cgpt-flyout": "chatgpt",
+    "cgpt-popovers": "chatgpt",
+    "cgpt-pages": "chatgpt",
+    "cgpt-decorative": "chatgpt",
+    "cgpt-fallback": "chatgpt",
+    "cgpt-reduced-motion": "chatgpt",
+    "cgpt-hide-hint": "chatgpt",
   };
 
   const FEED_PARTS = {
@@ -189,6 +213,18 @@
       "x-hover": false,
       "x-no-thanks": true,
       "twitch-no-footer": true,
+      "cgpt-sidebar": true,
+      "cgpt-page-header": true,
+      "cgpt-composer": true,
+      "cgpt-messages": true,
+      "cgpt-code": true,
+      "cgpt-flyout": true,
+      "cgpt-popovers": true,
+      "cgpt-pages": true,
+      "cgpt-decorative": true,
+      "cgpt-fallback": true,
+      "cgpt-reduced-motion": true,
+      "cgpt-hide-hint": true,
     },
     subsettings: {
       theater: { ...DEFAULT_THEATER },
@@ -203,6 +239,7 @@
       duckduckgo: { enabled: true },
       x: { enabled: true },
       twitch: { enabled: true },
+      chatgpt: { enabled: true },
     },
   };
 
@@ -253,6 +290,7 @@
     if (id.startsWith("g-")) return "google";
     if (id.startsWith("x-")) return "x";
     if (id.startsWith("twitch-")) return "twitch";
+    if (id.startsWith("cgpt-")) return "chatgpt";
     return "youtube";
   }
 

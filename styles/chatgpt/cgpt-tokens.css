@@ -1,0 +1,22 @@
+/* cgpt-tokens — glass variables kept from upstream (page-surface transparency dropped) */
+:root {
+  color-scheme: light dark !important;
+  --cgpt-glass-text-primary: light-dark(#0f172a, #f8fafc) !important;
+  --cgpt-glass-text-secondary: light-dark(#334155, #cbd5e1) !important;
+  --cgpt-glass-text-muted: light-dark(#64748b, #94a3b8) !important;
+  --cgpt-glass-weak: light-dark(rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.14)) !important;
+  --cgpt-glass-panel: light-dark(rgba(255, 255, 255, 0.45), rgba(15, 15, 18, 0.38)) !important;
+  --cgpt-glass-panel-strong: light-dark(rgba(255, 255, 255, 0.82), rgba(10, 10, 12, 0.82)) !important;
+  --cgpt-glass-menu: light-dark(rgba(255, 255, 255, 0.95), rgba(17, 17, 17, 0.93)) !important;
+  --cgpt-sidebar-glass: light-dark(rgba(235, 239, 246, 0.92), rgba(16, 16, 24, 0.92)) !important;
+  --cgpt-border: light-dark(rgba(15, 23, 42, 0.13), rgba(255, 255, 255, 0.13)) !important;
+  --cgpt-border-strong: light-dark(rgba(15, 23, 42, 0.18), rgba(255, 255, 255, 0.18)) !important;
+  --cgpt-hover: light-dark(rgba(15, 23, 42, 0.055), rgba(255, 255, 255, 0.07)) !important;
+  --cgpt-active: light-dark(rgba(15, 23, 42, 0.085), rgba(255, 255, 255, 0.12)) !important;
+  --cgpt-blur: 18px !important;
+  --cgpt-blur-strong: 30px !important;
+  --cgpt-radius: 16px !important;
+  --cgpt-radius-lg: 24px !important;
+  --cgpt-shadow: 0 16px 42px rgba(0, 0, 0, 0.19), inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+  --cgpt-shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.14) !important;
+}
