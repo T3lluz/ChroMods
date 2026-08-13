@@ -1,6 +1,6 @@
 # Agent notes
 
-This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, and X, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
+This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, and Twitch, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
 
 ## Upstream sources
 
@@ -76,6 +76,8 @@ Gemini: clean composer, cleaner chat, hover chrome, glass input/code. Skip `gemi
 X: solid overlays, sticky header, hover sidebars, hide Premium. Applies to `x.com` and `twitter.com`. Skip `x-transparency` / `twtr-transparency`.
 
 DuckDuckGo: immersive search, immersive popups, glass surfaces, animations, clean decorations, hide Learn more, hide homepage hero, hide feedback, hide footer. Skip `ddg-Transparency` and `ddg-Transparent Header`.
+
+Twitch: hide footer. Skip `twitch-transparency`.
 
 Upstream features **not** ported yet (candidates): `yt-early New To You chip`, `yt-Keep player shadow`, `yt-Addon : Viewstats`, `yt-Addon : timed comments`, YouTube Music (`music.youtube.com.css`), Studio (`studio.youtube.com.css`). Transparency variants stay excluded.
 

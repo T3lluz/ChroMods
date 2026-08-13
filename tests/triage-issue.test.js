@@ -59,26 +59,33 @@ test("already-ported hosts are skipped", async () => {
   );
   assert.equal(result.verdict, "skip");
   assert.equal(result.reason, "already-ported");
+
+  const twitch = await classifyIssue(
+    { title: "[STYLE] twitch.tv", body: "Please add styling for twitch.tv." },
+    { root, fetchImpl: mockFetch({}) }
+  );
+  assert.equal(twitch.verdict, "skip");
+  assert.equal(twitch.reason, "already-ported");
 });
 
 test("style requests with upstream CSS are simple ports", async () => {
   const result = await classifyIssue(
     {
-      title: "[STYLE] twitch.tv",
-      body: "Please add styling for **twitch.tv**.\n\n**URL:** https://www.twitch.tv/",
+      title: "[STYLE] reddit.com",
+      body: "Please add styling for **reddit.com**.\n\n**URL:** https://www.reddit.com/",
     },
     {
       root,
       fetchImpl: mockFetch({
         "css-mapping.json": "{}",
-        "websites/twitch.tv.css": TWITCH_CSS,
+        "websites/reddit.com.css": TWITCH_CSS.replaceAll("twitch", "reddit"),
       }),
     }
   );
   assert.equal(result.verdict, "simple");
-  assert.equal(result.host, "twitch.tv");
-  assert.equal(result.upstreamFile, "websites/twitch.tv.css");
-  assert.deepEqual(result.portableFeatures, ["twitch-no footer"]);
+  assert.equal(result.host, "reddit.com");
+  assert.equal(result.upstreamFile, "websites/reddit.com.css");
+  assert.deepEqual(result.portableFeatures, ["reddit-no footer"]);
   assert.equal(result.label, "auto-pr");
 });
 

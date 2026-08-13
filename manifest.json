@@ -3,7 +3,7 @@
   "name": "ChroMods",
   "short_name": "ChroMods",
   "version": "1.5.0",
-  "description": "Chromium theming mods for websites — currently YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, and X.",
+  "description": "Chromium theming mods for websites — currently YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, and Twitch.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -86,7 +86,9 @@
     "*://*.x.com/*",
     "*://x.com/*",
     "*://*.twitter.com/*",
-    "*://twitter.com/*"
+    "*://twitter.com/*",
+    "*://*.twitch.tv/*",
+    "*://twitch.tv/*"
   ],
   "commands": {
     "toggle-dark": {
@@ -206,7 +208,9 @@
         "*://*.x.com/*",
         "*://x.com/*",
         "*://*.twitter.com/*",
-        "*://twitter.com/*"
+        "*://twitter.com/*",
+        "*://*.twitch.tv/*",
+        "*://twitch.tv/*"
       ],
       "js": ["scripts/sites.js", "scripts/content-script.js"],
       "run_at": "document_start",
@@ -288,7 +292,9 @@
         "*://*.x.com/*",
         "*://x.com/*",
         "*://*.twitter.com/*",
-        "*://twitter.com/*"
+        "*://twitter.com/*",
+        "*://*.twitch.tv/*",
+        "*://twitch.tv/*"
       ]
     }
   ]
