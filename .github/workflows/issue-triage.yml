@@ -1,0 +1,80 @@
+name: Issue triage
+
+on:
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to triage
+        required: true
+        type: string
+
+concurrency:
+  group: issue-triage-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Ensure labels
+        run: |
+          gh label create NeedsAttention --color B60205 --description "Needs a human — too complex for auto-port" --force
+          gh label create auto-pr --color 0E8A16 --description "Queued a Cloud Agent to open a PR" --force
+
+      - name: Fetch issue
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+        run: |
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> "$GITHUB_ENV"
+          gh issue view "$ISSUE_NUMBER" --json number,title,body,labels,url > issue.json
+
+      - name: Classify
+        id: triage
+        run: |
+          node scripts/triage-issue.mjs --issue-json issue.json --out triage.json
+          echo "verdict=$(jq -r .verdict triage.json)" >> "$GITHUB_OUTPUT"
+          echo "reason=$(jq -r .reason triage.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Comment and label
+        run: |
+          COMMENT=$(jq -r '.comment // empty' triage.json)
+          if [ -n "$COMMENT" ]; then
+            printf '%s\n' "$COMMENT" > comment.md
+            gh issue comment "$ISSUE_NUMBER" --body-file comment.md
+          fi
+          LABEL=$(jq -r '.label // empty' triage.json)
+          if [ -n "$LABEL" ]; then
+            gh issue edit "$ISSUE_NUMBER" --add-label "$LABEL"
+          fi
+
+      - name: Launch Cloud Agent
+        if: steps.triage.outputs.verdict == 'simple'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          CURSOR_STARTING_REF: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ -z "$CURSOR_API_KEY" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "This looks like a simple my-internet port, but \`CURSOR_API_KEY\` is not set on the repo, so I could not start a Cloud Agent. Add it under Settings → Secrets and variables → Actions, then re-run **Issue triage**."
+            gh issue edit "$ISSUE_NUMBER" --remove-label auto-pr --add-label NeedsAttention
+            exit 1
+          fi
+          node scripts/launch-cloud-agent.mjs triage.json > agent.json
+          jq -r '"Cloud Agent: " + .url' agent.json > agent-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file agent-comment.md

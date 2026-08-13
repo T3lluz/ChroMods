@@ -55,6 +55,7 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
    - `FEATURE_META` entry (title, description, category, `defaultEnabled`, and `site` — defaults to `youtube`)
    - If it is a new website, add it to `SITE_META` in `scripts/sites.js` (id, title, hostnames, icon) and a matching icon in `scripts/icons.js`
    - Add a site icon at `docs/sites/<id>.svg` (plain brand mark, same as the popup)
+   - Add the host to `manifest.json` theming `content_scripts` `matches` and `web_accessible_resources` matches
    - `web_accessible_resources` already covers `styles/*/*.css`
 5. Add/adjust a test in `tests/css-compat.test.js` for the new module.
 6. Keep MIT attribution; CSS is derived from my-internet.
@@ -77,3 +78,12 @@ X: solid overlays, sticky header, hover sidebars, hide Premium. Applies to `x.co
 DuckDuckGo: immersive search, immersive popups, glass surfaces, animations, clean decorations, hide Learn more, hide homepage hero, hide feedback, hide footer. Skip `ddg-Transparency` and `ddg-Transparent Header`.
 
 Upstream features **not** ported yet (candidates): `yt-early New To You chip`, `yt-Keep player shadow`, `yt-Addon : Viewstats`, `yt-Addon : timed comments`, YouTube Music (`music.youtube.com.css`), Studio (`studio.youtube.com.css`). Transparency variants stay excluded.
+
+## GitHub issue auto-port
+
+`.github/workflows/issue-triage.yml` runs on new GitHub issues (and on `workflow_dispatch`). It classifies `[STYLE] host` requests:
+
+- **Simple:** upstream CSS exists in my-internet and is not transparency-only, and the host is not already an exact `SITE_META` hostname. A Cursor Cloud Agent is launched with `autoCreatePR` — it must open a PR, never push to `main`.
+- **Complex:** anything else (bugs, no upstream CSS, JS/player work). Label `NeedsAttention`.
+
+Requires repo secret `CURSOR_API_KEY` from the Cursor dashboard. Idempotency label: `auto-pr`.
