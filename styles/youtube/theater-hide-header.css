@@ -1,5 +1,6 @@
 /* Theater hide header — Auto-hide top bar in theater mode, reveal on hover near top */
-body:has(ytd-watch-flexy[theater]:not([hidden])) #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)) {
+body:has(ytd-watch-flexy[theater]:not([hidden]):not([fullscreen]))
+  #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)) {
   top: -40px !important;
   opacity: 0 !important;
   padding-bottom: 24px !important;
@@ -10,8 +11,10 @@ body:has(ytd-watch-flexy[theater]:not([hidden])) #masthead-container:not(:has(.y
     opacity 0.2s ease !important;
 }
 
-body:has(ytd-watch-flexy[theater]:not([hidden])) #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)):hover,
-body:has(ytd-watch-flexy[theater]:not([hidden])) #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)):focus-within {
+body:has(ytd-watch-flexy[theater]:not([hidden]):not([fullscreen]))
+  #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)):hover,
+body:has(ytd-watch-flexy[theater]:not([hidden]):not([fullscreen]))
+  #masthead-container:not(:has(.ytSearchboxComponentInputBoxHasFocus)):focus-within {
   opacity: 1 !important;
   top: 0 !important;
 }

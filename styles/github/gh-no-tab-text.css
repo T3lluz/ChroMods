@@ -4,7 +4,9 @@ nav[aria-label="Repository"] > ul > li > a span[data-component="text"] {
   width: 0em !important;
   overflow: hidden !important;
   white-space: nowrap !important;
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+  transition:
+    width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2),
+    opacity 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
 }
 
 nav[aria-label="Repository"] > ul > li > a:hover span[data-component="text"] {
@@ -18,5 +20,5 @@ nav[aria-label="Repository"] > ul > li > a:hover span[data-component="text"] {
 
 .AppHeader-localBar .Counter {
   margin-left: 0px !important;
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+  transition: margin-left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
 }

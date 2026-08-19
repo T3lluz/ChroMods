@@ -100,9 +100,11 @@ const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY], (stored) => {
-    if (stored[SETTINGS_KEY]) return;
-    if (stored[LEGACY_SETTINGS_KEY]) {
-      chrome.storage.sync.set({ [SETTINGS_KEY]: stored[LEGACY_SETTINGS_KEY] });
+    if (chrome.runtime.lastError) return;
+    const data = stored || {};
+    if (data[SETTINGS_KEY]) return;
+    if (data[LEGACY_SETTINGS_KEY]) {
+      chrome.storage.sync.set({ [SETTINGS_KEY]: data[LEGACY_SETTINGS_KEY] });
       return;
     }
     chrome.storage.sync.set({ [SETTINGS_KEY]: DEFAULT_SETTINGS });

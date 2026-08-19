@@ -1,7 +1,19 @@
 /* yt-Immersive search — Zen Internet / my-internet (Chromium flatten) */
-#page-manager,
+/* Only the properties this mod animates. `transition: all` here also animates
+   every theater/layout change on #page-manager, which stalls those frames. */
+#page-manager {
+  transition:
+    filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+}
+
 yt-searchbox {
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  transition:
+    top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    max-width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
 }
 
 #masthead yt-searchbox button[aria-label="Search"] {
@@ -27,8 +39,7 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
   max-width: 600px !important;
   width: min(600px, 92vw) !important;
   overflow: visible !important;
-  transform: scale(1) !important;
-  scale: 1 !important;
+  transform: none !important;
   z-index: 2002 !important;
 }
 
@@ -38,7 +49,6 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) {
     max-width: 700px !important;
     width: min(700px, 92vw) !important;
     transform: scale(1.1) !important;
-    scale: 1.1 !important;
   }
 }
 
@@ -87,7 +97,7 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSug
   display: flex !important;
   align-items: center !important;
   height: 100vh !important;
-  width: 100vw !important;
+  width: 100% !important;
   left: 0 !important;
   top: 0 !important;
   position: fixed !important;
@@ -98,7 +108,6 @@ yt-searchbox:has(.ytSearchboxComponentInputBoxHasFocus) .ytSearchboxComponentSug
 #content:has(.ytSearchboxComponentInputBoxHasFocus) #page-manager {
   filter: blur(20px) !important;
   transform: scale(1.05) !important;
-  scale: 1.05 !important;
   pointer-events: none !important;
 }
 

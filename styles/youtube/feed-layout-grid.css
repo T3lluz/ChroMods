@@ -1,0 +1,42 @@
+/* yt-fix new feed layout — grid that follows the feed's real width
+
+   YouTube packs cards into ytd-rich-grid-row using its own column count.
+   Forcing --ytd-rich-grid-items-per-row only resizes cards inside those
+   rows, so a chosen count of 5 still sits in rows of 3 with huge gaps.
+   Flattening the row wrappers lets every card join one grid, auto-fill
+   sizes from the content box (not the window), and a fixed count is an
+   even split of that same box. */
+
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer {
+  display: grid !important;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, var(--chromods-feed-item-min-width, 360px)), 1fr)
+  ) !important;
+  column-gap: var(--ytd-rich-grid-item-margin, 16px) !important;
+  row-gap: 24px !important;
+  align-items: start !important;
+}
+
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-grid-row,
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-grid-row > #contents {
+  display: contents !important;
+}
+
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer,
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer,
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer,
+ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-continuation-item-renderer {
+  grid-column: 1 / -1 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+}

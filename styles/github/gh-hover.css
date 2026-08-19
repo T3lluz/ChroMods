@@ -2,10 +2,12 @@
 .feed-left-sidebar,
 .feed-right-column {
   opacity: 0 !important;
-  transition: all 0.3s ease-in-out !important;
+  transition: opacity 0.3s ease-in-out !important;
 }
 
 .feed-left-sidebar:hover,
-.feed-right-column:hover {
+.feed-left-sidebar:focus-within,
+.feed-right-column:hover,
+.feed-right-column:focus-within {
   opacity: 1 !important;
 }

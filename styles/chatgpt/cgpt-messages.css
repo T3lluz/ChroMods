@@ -42,3 +42,8 @@
 .group\/conversation-turn > div > div.justify-start {
   opacity: 0 !important;
 }
+
+.group\/conversation-turn:hover > div > div.justify-start,
+.group\/conversation-turn:focus-within > div > div.justify-start {
+  opacity: 1 !important;
+}

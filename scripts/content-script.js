@@ -133,7 +133,7 @@
 
   const FEED_PARTS = {
     compact: "styles/youtube/feed-layout-compact.css",
-    columnsAuto: "styles/youtube/feed-layout-columns-auto.css",
+    grid: "styles/youtube/feed-layout-grid.css",
   };
 
   const THEATER_PARTS = {
@@ -261,14 +261,20 @@
     if (features["hide-side-guide"]) features["compact-sidebar"] = false;
     if (features["movable-live-chat"]) features["overlay-live-chat"] = false;
 
+    const youtubeEnabled = stored.sites?.youtube?.enabled ?? stored.enabled ?? true;
+
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
-      enabled: stored.sites?.youtube?.enabled ?? stored.enabled ?? true,
+      enabled: youtubeEnabled,
       features,
       sites: {
         ...DEFAULT_SETTINGS.sites,
         ...(stored.sites || {}),
+        youtube: {
+          ...(stored.sites?.youtube || DEFAULT_SETTINGS.sites.youtube),
+          enabled: youtubeEnabled,
+        },
       },
       subsettings: {
         theater: migrateTheater(stored.subsettings?.theater),
@@ -352,7 +358,7 @@
     const url = chrome.runtime.getURL(path);
     const response = await fetch(url);
     const css = response.ok ? await response.text() : "";
-    cssCache.set(path, css);
+    if (response.ok) cssCache.set(path, css);
     return css;
   }
 
@@ -361,26 +367,21 @@
       return "";
     }
 
-    const count = Number(columns);
-    if (!Number.isFinite(count) || count < 1) {
+    const count = Math.round(Number(columns));
+    if (!Number.isFinite(count) || count < 3 || count > 6) {
       return "";
     }
 
-    return `ytd-rich-item-renderer[rendered-from-rich-grid] {
-  --ytd-rich-grid-items-per-row: ${count} !important;
+    return `ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer {
+  grid-template-columns: repeat(${count}, minmax(0, 1fr)) !important;
 }`;
   }
 
   async function loadFeedLayoutCss(feed = DEFAULT_FEED) {
-    const paths = [FEED_PARTS.compact];
-    const columns = feed.columns ?? "auto";
-
-    if (columns === "auto") {
-      paths.push(FEED_PARTS.columnsAuto);
-    }
-
-    const chunks = await Promise.all(paths.map(loadCssFile));
-    const columnOverride = getFeedColumnsCss(columns);
+    const chunks = await Promise.all(
+      [FEED_PARTS.compact, FEED_PARTS.grid].map(loadCssFile)
+    );
+    const columnOverride = getFeedColumnsCss(feed.columns ?? "auto");
 
     return [chunks.join("\n\n"), columnOverride].filter(Boolean).join("\n\n");
   }
@@ -423,20 +424,86 @@
     return chunks.join("\n\n");
   }
 
-  let theaterLayoutObserver = null;
+  /* Watch-state notifications.
+     Theater layout, movable chat, and the hover comments panel all need to know
+     when the player switches between default, theater, and fullscreen. Watching
+     childList mutations across the whole document costs a callback for every DOM
+     change YouTube makes — thousands of them during a theater transition — so
+     watch the two attributes that matter and re-check a few times after a
+     navigation, when YouTube builds the rest of the watch page. */
+  const WATCH_STATE_ATTRIBUTES = ["theater", "fullscreen"];
+  const WATCH_SETTLE_DELAYS = [300, 900, 2000];
+  const watchStateListeners = new Set();
+  let watchStateObserver = null;
+  let watchStateNotifyQueued = false;
+  let watchSettleTimers = [];
+
+  function notifyWatchStateListeners() {
+    watchStateNotifyQueued = false;
+    for (const listener of [...watchStateListeners]) listener();
+  }
+
+  function queueWatchStateNotify() {
+    if (watchStateNotifyQueued || !watchStateListeners.size) return;
+    watchStateNotifyQueued = true;
+    requestAnimationFrame(notifyWatchStateListeners);
+  }
+
+  function clearWatchSettleTimers() {
+    for (const timer of watchSettleTimers) clearTimeout(timer);
+    watchSettleTimers = [];
+  }
+
+  function scheduleWatchStateSettle() {
+    queueWatchStateNotify();
+    clearWatchSettleTimers();
+    watchSettleTimers = WATCH_SETTLE_DELAYS.map((delay) =>
+      setTimeout(queueWatchStateNotify, delay)
+    );
+  }
+
+  function startWatchStateObserver() {
+    if (watchStateObserver) return;
+    watchStateObserver = new MutationObserver(queueWatchStateNotify);
+    watchStateObserver.observe(document.documentElement, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: WATCH_STATE_ATTRIBUTES,
+    });
+    window.addEventListener("yt-navigate-finish", scheduleWatchStateSettle);
+    window.addEventListener("yt-page-data-updated", scheduleWatchStateSettle);
+  }
+
+  function stopWatchStateObserver() {
+    watchStateObserver?.disconnect();
+    watchStateObserver = null;
+    window.removeEventListener("yt-navigate-finish", scheduleWatchStateSettle);
+    window.removeEventListener("yt-page-data-updated", scheduleWatchStateSettle);
+    clearWatchSettleTimers();
+  }
+
+  function addWatchStateListener(listener) {
+    watchStateListeners.add(listener);
+    startWatchStateObserver();
+    scheduleWatchStateSettle();
+  }
+
+  function removeWatchStateListener(listener) {
+    watchStateListeners.delete(listener);
+    if (!watchStateListeners.size) stopWatchStateObserver();
+  }
+
   let theaterLayoutSyncEnabled = false;
   let theaterLayoutTarget = null;
   let theaterLayoutState = null;
-  let theaterLayoutCheckQueued = false;
 
   function signalPlayerResize() {
-    window.dispatchEvent(new Event("resize"));
+    // One dispatch per real state change: YouTube's resize handler re-measures
+    // the entire watch page, so repeats land as dropped frames mid-transition.
     requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
-    setTimeout(() => window.dispatchEvent(new Event("resize")), 220);
   }
 
-  function syncTheaterLayout({ forceResize = false } = {}) {
-    theaterLayoutCheckQueued = false;
+  function syncTheaterLayout() {
     const target = document.querySelector("ytd-watch-flexy");
     const isTheater = Boolean(target?.hasAttribute("theater"));
     const stateChanged =
@@ -445,79 +512,32 @@
     theaterLayoutTarget = target;
     theaterLayoutState = isTheater;
 
-    if (stateChanged || (forceResize && isTheater)) {
-      signalPlayerResize();
-    }
-  }
-
-  function queueTheaterLayoutCheck(options) {
-    if (theaterLayoutCheckQueued) return;
-    theaterLayoutCheckQueued = true;
-    requestAnimationFrame(() => syncTheaterLayout(options));
-  }
-
-  function handleTheaterLayoutMutations(mutations) {
-    for (const mutation of mutations) {
-      if (mutation.type === "attributes") {
-        queueTheaterLayoutCheck();
-        return;
-      }
-      const containsWatchPage = Array.from(mutation.addedNodes).some(
-        (node) =>
-          node.nodeType === Node.ELEMENT_NODE &&
-          (node.matches?.("ytd-watch-flexy") || node.querySelector?.("ytd-watch-flexy"))
-      );
-      if (containsWatchPage) {
-        queueTheaterLayoutCheck();
-        return;
-      }
-    }
-  }
-
-  function onTheaterNavigateFinish() {
-    if (!theaterLayoutSyncEnabled) return;
-    queueTheaterLayoutCheck({ forceResize: true });
+    if (stateChanged) signalPlayerResize();
   }
 
   function setTheaterLayoutSyncEnabled(enabled) {
-    if (enabled === theaterLayoutSyncEnabled) {
-      if (enabled) queueTheaterLayoutCheck({ forceResize: true });
-      return;
-    }
+    if (enabled === theaterLayoutSyncEnabled) return;
     theaterLayoutSyncEnabled = enabled;
 
     if (!enabled) {
-      theaterLayoutObserver?.disconnect();
-      theaterLayoutObserver = null;
-      window.removeEventListener("yt-navigate-finish", onTheaterNavigateFinish);
+      removeWatchStateListener(syncTheaterLayout);
       theaterLayoutTarget = null;
       theaterLayoutState = null;
       signalPlayerResize();
       return;
     }
 
-    if (!theaterLayoutObserver) {
-      theaterLayoutObserver = new MutationObserver(handleTheaterLayoutMutations);
-      theaterLayoutObserver.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["theater"],
-      });
-    }
-    window.addEventListener("yt-navigate-finish", onTheaterNavigateFinish);
-    queueTheaterLayoutCheck({ forceResize: true });
+    addWatchStateListener(syncTheaterLayout);
   }
 
   class MovableLiveChat {
     constructor() {
       this.enabled = false;
       this.chat = null;
-      this.observer = null;
       this.position = null;
       this.opacity = 1;
-      this.syncQueued = false;
-      this.onPageChange = () => this.scheduleSync();
+      this.listening = false;
+      this.onWatchStateChange = () => this.sync();
       this.onResize = () => this.constrainToViewport();
     }
 
@@ -543,25 +563,22 @@
       this.position = stored[LIVE_CHAT_POSITION_KEY] || stored[LEGACY_LIVE_CHAT_POSITION_KEY] || null;
       this.opacity = stored[LIVE_CHAT_OPACITY_KEY] ?? stored[LEGACY_LIVE_CHAT_OPACITY_KEY] ?? 1;
       this.injectStyles();
-      this.observer = new MutationObserver(() => this.scheduleSync());
-      this.observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["theater"],
-      });
-      window.addEventListener("yt-navigate-finish", this.onPageChange);
-      window.addEventListener("resize", this.onResize);
+      this.startListening();
       this.sync();
     }
 
-    scheduleSync() {
-      if (this.syncQueued || !this.enabled) return;
-      this.syncQueued = true;
-      requestAnimationFrame(() => {
-        this.syncQueued = false;
-        this.sync();
-      });
+    startListening() {
+      if (this.listening) return;
+      this.listening = true;
+      addWatchStateListener(this.onWatchStateChange);
+      window.addEventListener("resize", this.onResize);
+    }
+
+    stopListening() {
+      if (!this.listening) return;
+      this.listening = false;
+      removeWatchStateListener(this.onWatchStateChange);
+      window.removeEventListener("resize", this.onResize);
     }
 
     injectStyles() {
@@ -811,10 +828,7 @@
     }
 
     destroy() {
-      this.observer?.disconnect();
-      this.observer = null;
-      window.removeEventListener("yt-navigate-finish", this.onPageChange);
-      window.removeEventListener("resize", this.onResize);
+      this.stopListening();
       this.detachChat();
       document.getElementById(MOVABLE_CHAT_STYLE_ID)?.remove();
     }
@@ -835,9 +849,8 @@
       this.comments = null;
       this.watchFlexy = null;
       this.handle = null;
-      this.observer = null;
-      this.syncQueued = false;
-      this.onPageChange = () => this.scheduleSync();
+      this.listening = false;
+      this.onWatchStateChange = () => this.sync();
     }
 
     async setEnabled(enabled, options = {}) {
@@ -857,40 +870,32 @@
         return;
       }
 
+      this.enabled = true;
       const stored = await chrome.storage.local.get([
         THEATER_COMMENTS_WIDTH_KEY,
         LEGACY_THEATER_COMMENTS_WIDTH_KEY,
       ]);
-      this.enabled = true;
+      if (!this.enabled) return;
       this.widths = {
         left: null,
         right: null,
         ...(stored[LEGACY_THEATER_COMMENTS_WIDTH_KEY] || {}),
         ...(stored[THEATER_COMMENTS_WIDTH_KEY] || {}),
       };
-      this.ensureObserver();
+      this.startListening();
       this.sync();
     }
 
-    ensureObserver() {
-      if (this.observer) return;
-      this.observer = new MutationObserver(() => this.scheduleSync());
-      this.observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["theater"],
-      });
-      window.addEventListener("yt-navigate-finish", this.onPageChange);
+    startListening() {
+      if (this.listening) return;
+      this.listening = true;
+      addWatchStateListener(this.onWatchStateChange);
     }
 
-    scheduleSync() {
-      if (this.syncQueued) return;
-      this.syncQueued = true;
-      requestAnimationFrame(() => {
-        this.syncQueued = false;
-        this.sync();
-      });
+    stopListening() {
+      if (!this.listening) return;
+      this.listening = false;
+      removeWatchStateListener(this.onWatchStateChange);
     }
 
     getStoredWidth() {
@@ -1100,9 +1105,7 @@
     }
 
     destroy() {
-      this.observer?.disconnect();
-      this.observer = null;
-      window.removeEventListener("yt-navigate-finish", this.onPageChange);
+      this.stopListening();
       this.clearWidth();
       this.detachComments();
       this.watchFlexy = null;
@@ -1164,13 +1167,13 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
     if (changes[SETTINGS_KEY]) {
-      applySettings(mergeSettings(changes[SETTINGS_KEY].newValue));
+      applySettings(mergeSettings(changes[SETTINGS_KEY].newValue)).catch(() => {});
       return;
     }
     if (changes[LEGACY_SETTINGS_KEY]) {
-      applySettings(mergeSettings(changes[LEGACY_SETTINGS_KEY].newValue));
+      applySettings(mergeSettings(changes[LEGACY_SETTINGS_KEY].newValue)).catch(() => {});
     }
   });
 
-  init();
+  init().catch(() => {});
 })();

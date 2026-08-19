@@ -20,7 +20,9 @@
   footer,
   .footer
 ) {
-  transition: all 0.3s ease-in-out !important;
+  transition:
+    filter 0.3s ease-in-out,
+    transform 0.3s ease-in-out !important;
 }
 
 body:has(
@@ -95,7 +97,6 @@ body:has(
     footer,
     .footer
   ) {
-  scale: 0.98 !important;
   transform: scale(0.98) !important;
 }
 

@@ -1,11 +1,12 @@
 /* google-search zoom — blur and scale results when the search box is focused */
-#main {
-  transition: all 0.3s ease-in-out !important;
+body:has(#searchform) #main {
+  transition:
+    filter 0.3s ease-in-out,
+    transform 0.3s ease-in-out !important;
 }
 
-body:has(.A8SBwf.emcav) #main {
+body:has(#searchform):has(.A8SBwf.emcav) #main {
   filter: blur(20px) !important;
-  scale: 0.98 !important;
   transform: scale(0.98) !important;
 }
 
@@ -16,10 +17,10 @@ body:has(.A8SBwf.emcav) #main {
 
 /* @slow reveal search filters */
 .rfiSsc {
-  transition: all 1s ease-in-out !important;
+  transition: opacity 1s ease-in-out !important;
 }
 
 .rfiSsc.JiJthb {
-  transition: all 0s ease-in-out !important;
+  transition: none !important;
   opacity: 0 !important;
 }

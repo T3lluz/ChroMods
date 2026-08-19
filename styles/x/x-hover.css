@@ -8,8 +8,12 @@ div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd {
 }
 
 header[role="banner"]:hover,
+header[role="banner"]:focus-within,
 [data-testid="sidebarColumn"]:hover,
+[data-testid="sidebarColumn"]:focus-within,
 div.css-175oi2r.r-vacyoi.r-ttdzmv:hover,
-div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd:hover {
+div.css-175oi2r.r-vacyoi.r-ttdzmv:focus-within,
+div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd:hover,
+div.css-175oi2r.r-1pi2tsx.r-1wtj0ep.r-1rnoaur.r-o96wvk.r-is05cd:focus-within {
   opacity: 1 !important;
 }

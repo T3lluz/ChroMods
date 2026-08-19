@@ -19,7 +19,7 @@ pre.code-block,
   border-radius: 1em !important;
 }
 
-div:has(input-area-v2) button,
+div:has(> input-area-v2) > button,
 .input-area-container button {
   display: flex !important;
   justify-content: center !important;

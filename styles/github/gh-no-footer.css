@@ -1,5 +1,4 @@
 /* gh-no footer */
 footer:has(h2) {
-  opacity: 0 !important;
-  pointer-events: none !important;
+  display: none !important;
 }

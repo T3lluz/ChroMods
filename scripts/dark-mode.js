@@ -1,4 +1,6 @@
 (function () {
+  if (globalThis.__chromodsDarkReady) return;
+  globalThis.__chromodsDarkReady = true;
   const HINT_KEY = "__chromodsDarkEnabled";
   const FALLBACK_CLASS = "darkreader darkreader--fallback";
   const WIPE_ATTR = "data-chromods-theme-wipe";

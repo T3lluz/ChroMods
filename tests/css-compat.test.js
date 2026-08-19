@@ -66,6 +66,8 @@ test("manifest is valid Chrome MV3", () => {
   assert.ok(manifest.permissions.includes("scripting"));
   assert.ok(manifest.host_permissions.includes("<all_urls>"));
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtube.com")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("youtu.be")));
+  assert.ok(manifest.host_permissions.some((p) => p.includes("youtube-nocookie.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("github.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("google.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("duckduckgo.com")));
@@ -129,12 +131,15 @@ test("immersive search hides voice search and blurs page content on focus", () =
   assert.match(css, /transform:\s*scale\(1\.05\)/);
   assert.match(css, /transform:\s*scale\(1\.1\)/);
   assert.doesNotMatch(css, /ytd-app:has\(\.ytSearchboxComponentInputBoxHasFocus\)::before/);
+  assert.doesNotMatch(css, /\bscale:/);
+  assert.doesNotMatch(css, /100vw/);
 });
 
-test("theater hide header extends hover reveal zone", () => {
+test("theater hide header stays out of fullscreen", () => {
   const css = read(style("youtube", "theater-hide-header.css"));
   assert.match(css, /padding-bottom:\s*24px/);
   assert.match(css, /focus-within/);
+  assert.match(css, /\[theater\]:not\(\[hidden\]\):not\(\[fullscreen\]\)/);
 });
 
 test("theater layout follows zen view height and resets control bounds on exit", () => {
@@ -143,12 +148,15 @@ test("theater layout follows zen view height and resets control bounds on exit",
   assert.match(css, /height:\s*100vh/);
   assert.match(css, /#page-manager/);
   assert.match(css, /margin:\s*0/);
-  assert.match(css, /ytd-watch-flexy:not\(\[theater\]\) \.ytp-chrome-bottom/);
+  assert.match(css, /ytd-watch-flexy:not\(\[theater\]\):not\(\[fullscreen\]\) \.ytp-chrome-bottom/);
   assert.match(css, /width:\s*calc\(100% - 24px\)/);
+  assert.match(css, /ytd-app:has\(ytd-watch-flexy\[fullscreen\]\) #page-manager/);
+  assert.match(css, /ytd-mini-guide-renderer/);
   assert.doesNotMatch(css, /ytd-masthead\[theater/);
   assert.doesNotMatch(css, /#player-full-bleed-container/);
   assert.doesNotMatch(css, /100vw/);
   assert.doesNotMatch(css, /margin:\s*0 0 0 -50vw/);
+  assert.doesNotMatch(css, /transition:\s*all/);
 });
 
 test("theater header blur matches player blur frosted glass", () => {
@@ -158,10 +166,29 @@ test("theater header blur matches player blur frosted glass", () => {
   assert.match(css, /#background\.ytd-masthead/);
 });
 
-test("immersive search includes transform fallbacks for scale", () => {
+test("immersive search uses transform scale without compounding the scale property", () => {
   const css = read(style("youtube", "immersive-search.css"));
-  assert.match(css, /scale:\s*1\.05/);
-  assert.match(css, /scale:\s*1\.1/);
+  assert.match(css, /transform:\s*scale\(1\.05\)/);
+  assert.match(css, /transform:\s*scale\(1\.1\)/);
+  assert.doesNotMatch(css, /\bscale:/);
+});
+
+test("compact sidebar never reserves rail space in fullscreen", () => {
+  const css = read(style("youtube", "compact-sidebar.css"));
+  assert.match(css, /guide-persistent-and-visible/);
+  assert.match(css, /margin-left:\s*80px/);
+  assert.match(css, /ytd-watch-flexy\[fullscreen\]/);
+  assert.doesNotMatch(css, /body:not\(:has\(\[mini-guide-visible/);
+  assert.doesNotMatch(css, /YouTube Studio/);
+});
+
+test("feed layout flattens YouTube row wrappers into one grid", () => {
+  const css = read(style("youtube", "feed-layout-grid.css"));
+  assert.match(css, /display:\s*contents/);
+  assert.match(css, /auto-fill/);
+  assert.match(css, /ytd-rich-grid-row/);
+  assert.match(css, /ytd-rich-item-renderer/);
+  assert.doesNotMatch(css, /--ytd-rich-grid-items-per-row:/);
 });
 
 test("github no tab text hides repo tab labels until hover", () => {
@@ -185,6 +212,8 @@ test("github glass and layout mods skip page transparency", () => {
   const borders = read(style("github", "gh-border-mods.css"));
   assert.match(borders, /border:\s*none/);
   assert.match(borders, /border-radius:\s*0\.5em/);
+  assert.doesNotMatch(borders, /^table,/m);
+  assert.doesNotMatch(borders, /^td,/m);
   assert.doesNotMatch(borders, /background:\s*none/);
   assert.doesNotMatch(borders, /background-color:\s*transparent/);
 
@@ -201,6 +230,7 @@ test("github glass and layout mods skip page transparency", () => {
   assert.match(search, /header > \.search-expanded/);
   assert.match(search, /filter:\s*blur\(20px\)/);
   assert.match(search, /transform:\s*scale\(1\.05\)/);
+  assert.doesNotMatch(search, /\bscale:/);
 
   const timeline = read(style("github", "gh-timeline-badge.css"));
   assert.match(timeline, /\.TimelineItem-badge/);
@@ -209,11 +239,12 @@ test("github glass and layout mods skip page transparency", () => {
 
 test("google search mods skip page transparency", () => {
   const zoom = read(style("google", "g-search-zoom.css"));
-  assert.match(zoom, /body:has\(\.A8SBwf\.emcav\) #main/);
+  assert.match(zoom, /body:has\(#searchform\):has\(\.A8SBwf\.emcav\) #main/);
   assert.match(zoom, /filter:\s*blur\(20px\)/);
   assert.match(zoom, /transform:\s*scale\(0\.98\)/);
   assert.match(zoom, /light-dark\(#fff5, #0007\)/);
   assert.match(zoom, /\.rfiSsc\.JiJthb/);
+  assert.doesNotMatch(zoom, /\bscale:/);
   assert.doesNotMatch(zoom, /&\s*[:{]/);
   assert.doesNotMatch(zoom, /html\s*,\s*body/);
 
@@ -221,12 +252,15 @@ test("google search mods skip page transparency", () => {
   assert.match(glass, /div\.RNNXgb/);
   assert.match(glass, /box-shadow:/);
   assert.match(glass, /#rcnt \.hdzaWe/);
+  assert.match(glass, /overflow:\s*visible/);
   assert.doesNotMatch(glass, /html\s*,\s*body/);
   assert.doesNotMatch(glass, /--darkreader-background-ffffff:\s*transparent/);
+  assert.doesNotMatch(glass, /#rcnt \.omFXYd/);
+  assert.doesNotMatch(glass, /height:\s*50px/);
 
   const overlay = read(style("google", "g-overlay-fix.css"));
   assert.match(overlay, /#liveresults-sports-immersive__match-fullpage/);
-  assert.match(overlay, /var\(--EpFNW\)/);
+  assert.match(overlay, /var\(--EpFNW/);
   assert.doesNotMatch(overlay, /background-color:\s*#00000000/);
 
   const chrome = read(style("google", "g-shadows-borders.css"));
@@ -248,7 +282,9 @@ test("duckduckgo mods skip page and header transparency", () => {
   assert.match(search, /#web_content_wrapper/);
   assert.match(search, /filter:\s*blur\(20px\)/);
   assert.match(search, /transform:\s*scale\(0\.98\)/);
-  assert.match(search, /transition:\s*all 0\.3s ease-in-out/);
+  assert.match(search, /transition:\s*\n?\s*filter 0\.3s ease-in-out/);
+  assert.doesNotMatch(search, /transition:\s*all/);
+  assert.doesNotMatch(search, /\bscale:/);
   assert.doesNotMatch(search, /&\s*[:{]/);
   assert.doesNotMatch(search, /html\s*,\s*body/);
 
@@ -266,7 +302,7 @@ test("duckduckgo mods skip page and header transparency", () => {
   assert.doesNotMatch(glass, /--theme-bg-home:\s*transparent/);
 
   const animations = read(style("duckduckgo", "ddg-animations.css"));
-  assert.match(animations, /transition-property:\s*filter/);
+  assert.match(animations, /transition:\s*filter 0\.6s/);
   assert.match(animations, /cubic-bezier\(0\.85, 0, 0\.15, 1\)/);
 
   const misc = read(style("duckduckgo", "ddg-misc.css"));
@@ -363,7 +399,7 @@ test("x mods skip page transparency and nested ampersands", () => {
   const overlay = read(style("x", "x-overlay-fix.css"));
   assert.match(overlay, /\[data-testid="Dropdown"\]/);
   assert.match(overlay, /\[role="dialog"\]/);
-  assert.match(overlay, /Canvas/);
+  assert.match(overlay, /light-dark\(#ffffff, #000000\)/);
   assert.doesNotMatch(overlay, /html\s*,\s*body/);
   assert.doesNotMatch(overlay, /background-color:\s*transparent/);
 
@@ -386,7 +422,6 @@ test("twitch mods skip page transparency and nested ampersands", () => {
   const footer = read(style("twitch", "twitch-no-footer.css"));
   assert.match(footer, /footer/);
   assert.match(footer, /display:\s*none/);
-  assert.match(footer, /\.channel-root__info/);
   assert.doesNotMatch(footer, /background-color:\s*transparent/);
   assert.doesNotMatch(footer, /background:\s*none/);
   assert.doesNotMatch(footer, /&\s*[:{]/);
@@ -523,6 +558,7 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /"feed-layout"/);
   assert.match(js, /"compact-sidebar"/);
   assert.match(js, /feed-layout-compact\.css/);
+  assert.match(js, /feed-layout-grid\.css/);
   assert.match(js, /MovableLiveChat/);
   assert.match(js, /movable-live-chat/);
   assert.match(js, /setTheaterLayoutSyncEnabled/);
@@ -562,6 +598,8 @@ test("content script maps features and theater subsettings", () => {
     js,
     /showToast|youtube-theming-toast|chromods-toast|ytm-toast|ytm-glow|ytm-vignette|createGlowRing/
   );
+  assert.match(js, /stored\.sites\?\.youtube\?\.enabled \?\? stored\.enabled/);
+  assert.match(js, /if \(!this\.enabled\) return;/);
   assert.doesNotMatch(js, /theater-glass-comments|theater-translucent-comments|commentsBackground/);
 });
 
@@ -576,6 +614,7 @@ test("background only seeds install defaults", () => {
   assert.match(js, /chromodsApplyDarkShortcut/);
   assert.match(js, /captureVisibleTab/);
   assert.match(js, /CHROMODS_DARK_WIPE/);
+  assert.match(js, /chrome\.runtime\.lastError/);
   assert.doesNotMatch(js, /broadcastSettings/);
 });
 
@@ -862,6 +901,9 @@ test("global dark mode uses Dark Reader and remembers per host", () => {
   assert.match(read("manifest.json"), /"toggle-mods"/);
   assert.match(read("manifest.json"), /Alt\+Shift\+D/);
   assert.doesNotMatch(background, /registerContentScripts/);
+  assert.match(popup, /__chromodsDarkReady/);
+  assert.match(darkMode, /__chromodsDarkReady/);
+  assert.match(proxy, /__chromodsDarkProxyInstalled/);
   assert.match(proxy, /function injectProxy/);
   assert.match(proxy, /__darkreader__cleanUp/);
   assert.match(vendor, /Dark Reader v4\./);

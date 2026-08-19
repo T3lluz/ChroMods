@@ -77,7 +77,7 @@ const FEATURE_META = [
     id: "feed-layout",
     category: "feed",
     title: "Feed layout fix",
-    description: "Restore a denser home feed grid and compact video cards.",
+    description: "Denser home feed that follows the feed width, or a fixed column count.",
     subsettings: FEED_SUBSETTINGS,
     subsettingsKey: "feed",
   },
@@ -1263,6 +1263,24 @@ async function ensureDarkModeScript(tabId) {
     await chrome.tabs.sendMessage(tabId, { type: CHROMODS_DARK_PING });
     return true;
   } catch {
+    let already = false;
+    try {
+      const [probe] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => Boolean(globalThis.__chromodsDarkReady),
+      });
+      already = Boolean(probe?.result);
+    } catch {
+      /* restricted pages reject executeScript */
+    }
+    if (already) {
+      try {
+        await chrome.tabs.sendMessage(tabId, { type: CHROMODS_DARK_PING });
+        return true;
+      } catch {
+        return false;
+      }
+    }
     const isolatedFiles = [
       "scripts/dark-chrome-guard.js",
       "scripts/vendor/darkreader.js",

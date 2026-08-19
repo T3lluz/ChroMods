@@ -1,62 +1,57 @@
 /* yt-mini guide — Minimal icon-only sidebar similar to tablet view */
-body:not(:has([mini-guide-visible=""])) #endpoint.ytd-guide-entry-renderer yt-formatted-string,
-body:not(:has([mini-guide-visible=""])) h3.ytd-guide-section-renderer,
-body:not(:has([mini-guide-visible=""])) #newness-dot,
-body:not(:has([mini-guide-visible=""])) tp-yt-paper-item:not(:hover) yt-icon.guide-entry-badge {
-  display: none !important;
+
+/* Docked expanded guide only. Watch pages use the mini guide, and
+   fullscreen must never keep an 80px page offset. */
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) {
+  --ytd-persistent-guide-width: 80px !important;
+  --app-drawer-width: 80px !important;
 }
 
-body:not(:has([mini-guide-visible=""])) #endpoint.ytd-guide-entry-renderer,
-body:not(:has([mini-guide-visible=""])) ytd-guide-entry-renderer,
-body:not(:has([mini-guide-visible=""])) ytd-guide-collapsible-section-entry-renderer,
-body:not(:has([mini-guide-visible=""])) .ytd-guide-section-renderer,
-body:not(:has([mini-guide-visible=""])) ytd-guide-section-renderer,
-body:not(:has([mini-guide-visible=""])) ytd-guide-renderer > #sections,
-body:not(:has([mini-guide-visible=""])) ytd-guide-renderer,
-body:not(:has([mini-guide-visible=""])) #guide-inner-content,
-body:not(:has([mini-guide-visible=""])) #guide-content,
-body:not(:has([mini-guide-visible=""])) #guide-wrapper,
-body:not(:has([mini-guide-visible=""])) tp-yt-app-drawer,
-body:not(:has([mini-guide-visible=""])) #tabsContent,
-body:not(:has([mini-guide-visible=""])) yt-tab-group-shape,
-body:not(:has([mini-guide-visible=""])) yt-tab-group-shape > [role="tablist"] {
-  width: fit-content !important;
-}
-
-body:not(:has([mini-guide-visible=""])) tp-yt-paper-item {
-  padding: 2px 10px !important;
-}
-
-body:not(:has([mini-guide-visible=""])) yt-icon.ytd-guide-entry-renderer,
-body:not(:has([mini-guide-visible=""])) yt-img-shadow.ytd-guide-entry-renderer {
-  margin: 0 !important;
-}
-
-body:not(:has([mini-guide-visible=""])) tp-yt-paper-tabs {
-  margin: auto 0 !important;
-}
-
-body:not(:has([mini-guide-visible=""])):not(:has(ytd-watch-flexy[theater]:not([hidden]))) #page-manager {
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #page-manager {
   margin-left: 80px !important;
 }
 
-body:not(:has([mini-guide-visible=""])) #tabsContainer.tp-yt-paper-tabs {
-  display: flex;
-  justify-content: center;
-  justify-items: center;
-}
-
-body:not(:has([mini-guide-visible=""])) ytd-app:not([guide-persistent-and-visible=""]) tp-yt-app-drawer > #contentContainer {
-  background: transparent !important;
-}
-
-/* yt-clean side guide — Remove Studio, Sports, Settings and footer */
-ytd-guide-section-renderer:has([title="YouTube Studio"], [title="Sport"], [title="Settings"]),
-ytd-guide-renderer #footer {
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #endpoint.ytd-guide-entry-renderer yt-formatted-string,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) h3.ytd-guide-section-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #newness-dot,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-signin-promo-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) tp-yt-paper-item:not(:hover) yt-icon.guide-entry-badge {
   display: none !important;
 }
 
-ytd-guide-section-renderer,
-ytd-guide-collapsible-section-entry-renderer {
-  border: none !important;
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) tp-yt-app-drawer > #contentContainer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #guide-wrapper,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #guide-content,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #guide-inner-content,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-renderer > #sections,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-section-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-collapsible-section-entry-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) ytd-guide-entry-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #endpoint.ytd-guide-entry-renderer {
+  width: 80px !important;
+  min-width: 0 !important;
+  max-width: 80px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) tp-yt-paper-item {
+  padding: 2px 10px !important;
+  justify-content: center !important;
+}
+
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) yt-icon.ytd-guide-entry-renderer,
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) yt-img-shadow.ytd-guide-entry-renderer {
+  margin: 0 !important;
+}
+
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) tp-yt-paper-tabs {
+  margin: auto 0 !important;
+}
+
+ytd-app[guide-persistent-and-visible]:not([mini-guide-visible]):not(:has(ytd-watch-flexy[fullscreen])) #tabsContainer.tp-yt-paper-tabs {
+  display: flex !important;
+  justify-content: center !important;
+  justify-items: center !important;
 }

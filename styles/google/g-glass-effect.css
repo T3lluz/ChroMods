@@ -12,7 +12,7 @@ div.RNNXgb,
     rgba(0, 0, 0, 0.09) 0px 16px 8px,
     rgba(0, 0, 0, 0.09) 0px 32px 16px;
   transition: background-color 0.5s ease-in-out !important;
-  background-color: var(--uv-styles-color-footer, var(--EpFNW)) !important;
+  background-color: var(--uv-styles-color-footer, var(--EpFNW, Canvas)) !important;
 }
 
 .dG2XIf.ouUsKb {
@@ -28,25 +28,28 @@ div.RNNXgb,
   transition: background-color 0.5s ease-in-out !important;
 }
 
-/* @AI overview glow */
+/* AI Overview: rounding only. Do not clip, fade, or hide the expander —
+   those are what crop the panel once Google expands it. */
+#rcnt .RDmXvc,
+#rcnt .hdzaWe,
+#rcnt .vzEsdb,
+#rcnt .Fgyi2e.rZj61.caNvfd {
+  overflow: visible !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  border-radius: 1em !important;
+}
+
 #rcnt .RDmXvc {
   border-radius: 0 0 1em 1em !important;
 }
 
 #rcnt .hdzaWe {
-  border-radius: 1em !important;
-  overflow: hidden !important;
   transition: background-color 0.5s ease-in-out !important;
-  background-color: color-mix(in srgb, var(--EpFNW) 50%, transparent) !important;
-  outline: color-mix(in srgb, var(--EpFNW) 50%, transparent) 8px solid;
 }
 
 #rcnt .lACQkd > [aria-label="Show more AI Overview"] {
   margin: auto !important;
-}
-
-#rcnt .omFXYd {
-  display: none !important;
 }
 
 #rcnt .h7Tj7e {
@@ -54,26 +57,14 @@ div.RNNXgb,
   outline-color: transparent !important;
 }
 
-h1 + [role="navigation"].GG4mbd {
-  margin: auto 1em !important;
-}
-
-.vzEsdb {
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%) !important;
-  mask-repeat: no-repeat !important;
-  mask-size: cover !important;
-  border-radius: 1em !important;
-}
-
-.exZRme {
+#rcnt .exZRme {
   border-color: transparent !important;
 }
 
-.Fgyi2e.rZj61.caNvfd {
+#rcnt .F9Idpe {
   border-radius: 1em !important;
 }
 
-.F9Idpe {
-  border-radius: 1em !important;
-  height: 50px !important;
+h1 + [role="navigation"].GG4mbd {
+  margin: auto 1em !important;
 }

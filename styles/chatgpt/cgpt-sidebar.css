@@ -1,5 +1,4 @@
 /* cgpt-sidebar — Sidebar glass; Stylus default is always-on, Tampermonkey can switch on scroll */
-.sticky.top-0.z-30,
 #stage-sidebar .sticky.top-0.z-30,
 #stage-slideover-sidebar .sticky.top-0.z-30 {
   position: sticky !important;
@@ -10,8 +9,6 @@
   width: 100% !important;
 }
 
-.sticky.top-0.z-30::before,
-.sticky.top-0.z-30::after,
 #stage-sidebar .sticky.top-0.z-30::before,
 #stage-sidebar .sticky.top-0.z-30::after,
 #stage-slideover-sidebar .sticky.top-0.z-30::before,

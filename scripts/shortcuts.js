@@ -170,11 +170,14 @@ async function chromodsToggleModsForUrl(url) {
   const SETTINGS_KEY = "chroModsSettings";
   const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
   const stored = await chrome.storage.sync.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY]);
-  const settings = {
-    ...(stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY] ?? {}),
-  };
+  const settings = stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY] ?? {};
   const sites = { ...(settings.sites || {}) };
-  const enabled = sites[site.id]?.enabled !== false;
+  const enabled =
+    typeof sites[site.id]?.enabled === "boolean"
+      ? sites[site.id].enabled
+      : site.id === "youtube"
+        ? settings.enabled !== false
+        : true;
   sites[site.id] = { ...(sites[site.id] || {}), enabled: !enabled };
   settings.sites = sites;
   if (site.id === "youtube") settings.enabled = !enabled;

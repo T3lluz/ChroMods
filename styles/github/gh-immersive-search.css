@@ -1,10 +1,11 @@
 /* immersive search — blur and zoom the page when header search expands */
 .application-main {
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  transition:
+    filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35),
+    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
 }
 
 body:has(header > .search-expanded) .application-main {
   filter: blur(20px) !important;
-  scale: 1.05 !important;
   transform: scale(1.05) !important;
 }

@@ -4,6 +4,8 @@
  * this file is injected as an extension content script instead.
  */
 (function () {
+  if (globalThis.__chromodsDarkProxyInstalled) return;
+  globalThis.__chromodsDarkProxyInstalled = true;
 function injectProxy(
     enableStyleSheetsProxy,
     enableCustomElementRegistryProxy

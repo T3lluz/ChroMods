@@ -24,8 +24,8 @@
   transition: filter 0.75s ease-in-out !important;
 }
 
-body:not(:has(#loading[style="display: none;"])):has(#loading) .tVu25,
-body:not(:has(#loading[style="display: none;"])):has(#loading) [role="main"] {
+body:has(#loading:not([hidden]):not([style*="display: none"]):not([style*="display:none"])) .tVu25,
+body:has(#loading:not([hidden]):not([style*="display: none"]):not([style*="display:none"])) .nH.bkK {
   filter: blur(20px) !important;
 }
 

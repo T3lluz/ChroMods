@@ -14,11 +14,9 @@ header > .header_headerContent__LYxh6,
 #features,
 .minimal-homepage_minimalContentWrap__YnOEL,
 .center_intrinsic__Gt_PZ {
-  transition-property: filter !important;
-  transition: 0.6s cubic-bezier(0.85, 0, 0.15, 1) !important;
+  transition: filter 0.6s cubic-bezier(0.85, 0, 0.15, 1) !important;
 }
 
 article[data-testid="result"] > .OHr0VX9IuNcv6iakvT6A.IBL7rESCoklmJ_3nDLDz > div {
-  transition-property: transform !important;
-  transition: 0.6s cubic-bezier(0.85, 0, 0.15, 1) !important;
+  transition: transform 0.6s cubic-bezier(0.85, 0, 0.15, 1) !important;
 }

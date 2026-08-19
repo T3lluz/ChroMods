@@ -32,7 +32,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | Mod | What it does | Default |
 |-----|--------------|---------|
 | **Immersive search** | Smooth blur and zoom effect when focusing the search bar. | On |
-| **Feed layout fix** | Restore a denser home feed grid and compact video cards. | On |
+| **Feed layout fix** | Denser home feed that follows the feed width, or a fixed column count. | On |
 | **Hide filter chips** | Remove the category chip bar and header row on the home feed. | On |
 | **Thumbnail hover** | Enlarge inline video previews after hovering a thumbnail. | Off |
 | **Hide distractions** | Remove Shorts shelves, merch shelves, and legacy annotations. | Off |

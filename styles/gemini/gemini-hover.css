@@ -11,11 +11,18 @@ top-bar-actions {
 }
 
 bard-sidenav:hover,
+bard-sidenav:focus-within,
 mat-sidenav:hover,
+mat-sidenav:focus-within,
 .mat-drawer:not(.mat-sidenav-content):not(mat-sidenav-content):hover,
+.mat-drawer:not(.mat-sidenav-content):not(mat-sidenav-content):focus-within,
 .mat-sidenav:hover,
+.mat-sidenav:focus-within,
 .side-nav-menu-button:hover,
+.side-nav-menu-button:focus-within,
 .boqOnegoogleliteOgbOneGoogleBar:hover,
-top-bar-actions:hover {
+.boqOnegoogleliteOgbOneGoogleBar:focus-within,
+top-bar-actions:hover,
+top-bar-actions:focus-within {
   opacity: 1 !important;
 }

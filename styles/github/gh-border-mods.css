@@ -1,8 +1,5 @@
-/* gh-border mods — round headers and drop table/cell borders (no transparent fills) */
-table,
-.eIKYQa,
-div.border-bottom,
-td {
+/* gh-border mods — round headers; keep table cell borders on markdown and diffs */
+.eIKYQa {
   border: none !important;
 }
 

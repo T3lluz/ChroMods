@@ -7,24 +7,14 @@ ytd-watch-flexy[theater]:not([fullscreen]) #full-bleed-container {
   top: 0 !important;
 }
 
-ytd-watch-flexy[theater]:not([fullscreen]) #masthead-container,
-ytd-watch-flexy[theater]:not([fullscreen]) #columns #secondary {
-  transition: all 0.3s ease-in-out 0.5s !important;
-}
-
-ytd-app:has(ytd-watch-flexy[theater]:not([hidden])),
-body:has(ytd-watch-flexy[theater]:not([hidden])) {
+ytd-app:has(ytd-watch-flexy[theater]:not([hidden]):not([fullscreen])) {
   --ytd-toolbar-height: 0px !important;
 }
 
-ytd-app:has(ytd-watch-flexy[theater]:not([hidden])) #page-manager,
-body:has(ytd-watch-flexy[theater]:not([hidden])) #page-manager {
+ytd-app:has(ytd-watch-flexy[theater]:not([hidden]):not([fullscreen])) #page-manager {
   margin: 0 !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  transform: none !important;
-  filter: none !important;
-  scale: none !important;
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) #panels-full-bleed-container {
@@ -32,13 +22,33 @@ ytd-watch-flexy[theater]:not([fullscreen]) #panels-full-bleed-container {
   min-width: 0 !important;
 }
 
-/* Bound YouTube's inline control measurements immediately after leaving theater. */
-ytd-watch-flexy:not([theater]) #movie_player,
-ytd-watch-flexy:not([theater]) .html5-video-player {
+/* Fullscreen must ignore the mini-guide rail and any leftover page offset. */
+ytd-app:has(ytd-watch-flexy[fullscreen]) {
+  --ytd-toolbar-height: 0px !important;
+  --ytd-mini-guide-width: 0px !important;
+  --ytd-persistent-guide-width: 0px !important;
+}
+
+ytd-app:has(ytd-watch-flexy[fullscreen]) #page-manager {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+ytd-app:has(ytd-watch-flexy[fullscreen]) ytd-mini-guide-renderer,
+ytd-app:has(ytd-watch-flexy[fullscreen]) tp-yt-app-drawer:not([opened]) {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Bound YouTube's inline control measurements after leaving theater.
+   Skip fullscreen: those overrides leave a gap beside the player. */
+ytd-watch-flexy:not([theater]):not([fullscreen]) #movie_player,
+ytd-watch-flexy:not([theater]):not([fullscreen]) .html5-video-player {
   max-width: 100% !important;
 }
 
-ytd-watch-flexy:not([theater]) .ytp-chrome-bottom {
+ytd-watch-flexy:not([theater]):not([fullscreen]) .ytp-chrome-bottom {
   left: 12px !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;

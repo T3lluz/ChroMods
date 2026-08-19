@@ -1,5 +1,4 @@
 /* x-layout fixes — sticky timeline header offset */
-.r-1gn8etr,
 [data-testid="primaryColumn"] > div > div:first-child,
 [aria-label="Home timeline"] > div:first-child,
 [data-testid="ScrollSnap-SwipeableList"] > div:first-child {

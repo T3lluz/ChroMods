@@ -7,7 +7,8 @@ ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments {
 }
 
 ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:hover,
-ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:focus-within {
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments:focus-within,
+ytd-watch-flexy[theater]:not([fullscreen]) ytd-comments.ytm-comments-interacting {
   left: auto !important;
   right: 0 !important;
   transform: translate(0, -50%) !important;

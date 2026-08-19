@@ -112,11 +112,11 @@ async function run() {
     await expandAllSitePanels(popupPage);
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 54, "Expected every non-transparency mod across all sites");
+    assert.equal(featureCards, 67, "Expected every non-transparency mod across all sites");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /ChroMods/);
-    assert.equal(await popupPage.locator(".site-chip").count(), 7, "Expected a chip for every supported site");
+    assert.equal(await popupPage.locator(".site-chip").count(), 9, "Expected a chip for every supported site");
     assert.match(await popupPage.locator("#other-sites-title").textContent() ?? "", /Sites/);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-no-tab-text"]').count(), 1);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-glass-effect"]').count(), 1);
@@ -307,7 +307,7 @@ async function run() {
     await popupPage2.locator('.feature-card[data-feature="feed-layout"] select[data-subsetting="columns"]').selectOption("5");
     await ytPage.waitForFunction(() => {
       const css = document.getElementById("chromods-styles")?.textContent ?? "";
-      return css.includes("--ytd-rich-grid-items-per-row: 5");
+      return /repeat\(5/.test(css);
     }, { timeout: 10000 });
 
     results.push({ name: "Feed column count subsetting updates live CSS", status: "pass" });
