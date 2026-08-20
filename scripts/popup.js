@@ -14,6 +14,11 @@ const DEFAULT_MOVABLE_LIVE_CHAT = {
   background: "solid",
 };
 
+const DEFAULT_TWITCH_MOVABLE_LIVE_CHAT = {
+  chatOnly: true,
+  background: "solid",
+};
+
 const THEATER_SUBSETTINGS = [
   {
     id: "hideHeader",
@@ -72,7 +77,7 @@ const MOVABLE_LIVE_CHAT_SUBSETTINGS = [
   {
     id: "background",
     title: "Background",
-    description: "How opaque the floating chat panel looks over the video.",
+    description: "How opaque the chat background is over the video. Text stays solid.",
     type: "select",
     options: [
       { value: "solid", label: "Solid" },
@@ -489,6 +494,16 @@ const FEATURE_META = [
     description: "Hide Twitch's page footer.",
   },
   {
+    id: "twitch-movable-live-chat",
+    site: "twitch",
+    category: "live",
+    title: "Movable live chat",
+    description: "Drag and resize theater chat; chrome stays hidden until hover.",
+    defaultEnabled: false,
+    subsettings: MOVABLE_LIVE_CHAT_SUBSETTINGS,
+    subsettingsKey: "twitchMovableLiveChat",
+  },
+  {
     id: "cgpt-sidebar",
     site: "chatgpt",
     category: "navigation",
@@ -592,6 +607,7 @@ const DEFAULT_SETTINGS = {
     theater: { ...DEFAULT_THEATER },
     feed: { ...DEFAULT_FEED },
     movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
+    twitchMovableLiveChat: { ...DEFAULT_TWITCH_MOVABLE_LIVE_CHAT },
   },
 };
 
@@ -654,8 +670,8 @@ function migrateTheater(theater = {}) {
   return migrated;
 }
 
-function migrateMovableLiveChat(movable = {}) {
-  const migrated = { ...DEFAULT_MOVABLE_LIVE_CHAT };
+function migrateMovableLiveChat(movable = {}, defaults = DEFAULT_MOVABLE_LIVE_CHAT) {
+  const migrated = { ...defaults };
   if ("chatOnly" in movable) migrated.chatOnly = Boolean(movable.chatOnly);
   if (["solid", "soft", "translucent"].includes(movable.background)) {
     migrated.background = movable.background;
@@ -680,6 +696,12 @@ function getFeatureSubsettings(feature) {
   }
   if (key === "movableLiveChat") {
     return migrateMovableLiveChat(settings.subsettings?.movableLiveChat);
+  }
+  if (key === "twitchMovableLiveChat") {
+    return migrateMovableLiveChat(
+      settings.subsettings?.twitchMovableLiveChat,
+      DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
+    );
   }
 
   return {
@@ -706,6 +728,10 @@ async function loadSettings() {
       },
       movableLiveChat: migrateMovableLiveChat(
         storedSettings?.subsettings?.movableLiveChat
+      ),
+      twitchMovableLiveChat: migrateMovableLiveChat(
+        storedSettings?.subsettings?.twitchMovableLiveChat,
+        DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
       ),
     },
   };

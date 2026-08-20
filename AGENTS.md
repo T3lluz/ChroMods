@@ -77,7 +77,7 @@ X: solid overlays, sticky header, hover sidebars, hide Premium. Applies to `x.co
 
 DuckDuckGo: immersive search, immersive popups, glass surfaces, animations, clean decorations, hide Learn more, hide homepage hero, hide feedback, hide footer. Skip `ddg-Transparency` and `ddg-Transparent Header`.
 
-Twitch: hide footer. Skip `twitch-transparency`.
+Twitch: hide footer, movable live chat. Skip `twitch-transparency`.
 
 ChatGPT: sidebar glass, header actions, composer, message bubbles, code panels, flyouts, popovers, library surfaces, decorative splash, fallback, reduced motion, hide hint. Skip `cgpt-transparency`.
 

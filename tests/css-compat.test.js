@@ -597,6 +597,15 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /x-overlay-fix\.css/);
   assert.match(js, /"twitch-no-footer"/);
   assert.match(js, /twitch-no-footer\.css/);
+  assert.match(js, /MovableTwitchLiveChat/);
+  assert.match(js, /twitch-movable-live-chat/);
+  assert.match(js, /ttv-movable-chat/);
+  assert.match(js, /twitchMovableLiveChat/);
+  assert.match(js, /channel-root__right-column/);
+  assert.match(js, /right-column--theatre/);
+  assert.match(js, /stream-chat-header/);
+  assert.match(js, /ttv-chat-resize-handle/);
+  assert.match(js, /DEFAULT_TWITCH_MOVABLE_LIVE_CHAT/);
   assert.match(js, /"cgpt-sidebar"/);
   assert.match(js, /cgpt-sidebar\.css/);
   assert.match(js, /"cgpt-composer"/);
@@ -693,6 +702,8 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /gemini-input-code/);
   assert.match(js, /x-overlay-fix/);
   assert.match(js, /twitch-no-footer/);
+  assert.match(js, /twitch-movable-live-chat/);
+  assert.match(js, /twitchMovableLiveChat/);
   assert.match(js, /cgpt-sidebar/);
   assert.match(js, /cgpt-hide-hint/);
   assert.match(js, /feature\.site\s*\?\?=\s*"youtube"/);

@@ -7,12 +7,20 @@
   const LIVE_CHAT_OPACITY_KEY = "chroModsLiveChatOpacity";
   const LIVE_CHAT_COMPACT_KEY = "chroModsLiveChatCompact";
   const LIVE_CHAT_OPACITY_MIGRATED_KEY = "chroModsLiveChatOpacityMigrated";
+  const LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY = "chroModsLiveChatOpacityTranslucentV2";
   const LEGACY_LIVE_CHAT_POSITION_KEY = "youtubeThemingLiveChatPosition";
   const LEGACY_LIVE_CHAT_OPACITY_KEY = "youtubeThemingLiveChatOpacity";
   const MOVABLE_CHAT_STYLE_ID = "chromods-movable-chat-styles";
+  const TWITCH_MOVABLE_CHAT_STYLE_ID = "chromods-twitch-movable-chat-styles";
+  const TWITCH_LIVE_CHAT_POSITION_KEY = "chroModsTwitchLiveChatPosition";
+  const TWITCH_LIVE_CHAT_OPACITY_KEY = "chroModsTwitchLiveChatOpacity";
+  const TWITCH_LIVE_CHAT_COMPACT_KEY = "chroModsTwitchLiveChatCompact";
+  const TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY =
+    "chroModsTwitchLiveChatOpacityTranslucentV2";
   const LIVE_CHAT_MIN_WIDTH = 300;
   const LIVE_CHAT_MIN_HEIGHT = 320;
-  const LIVE_CHAT_DEFAULT_OPACITY = 0.82;
+  const LIVE_CHAT_DEFAULT_OPACITY = 0.45;
+  const LIVE_CHAT_LEGACY_DEFAULT_OPACITY = 0.82;
   const LIVE_CHAT_IFRAME_STYLE_ID = "ytm-movable-chat-iframe";
   const LIVE_CHAT_COMPACT_IFRAME_CSS = `
     yt-live-chat-header-renderer,
@@ -199,6 +207,11 @@
     background: "solid",
   };
 
+  const DEFAULT_TWITCH_MOVABLE_LIVE_CHAT = {
+    chatOnly: true,
+    background: "solid",
+  };
+
   const DEFAULT_SETTINGS = {
     enabled: true,
     features: {
@@ -257,6 +270,7 @@
       "x-hover": false,
       "x-no-thanks": true,
       "twitch-no-footer": true,
+      "twitch-movable-live-chat": false,
       "cgpt-sidebar": true,
       "cgpt-page-header": true,
       "cgpt-composer": true,
@@ -274,6 +288,7 @@
       theater: { ...DEFAULT_THEATER },
       feed: { ...DEFAULT_FEED },
       movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
+      twitchMovableLiveChat: { ...DEFAULT_TWITCH_MOVABLE_LIVE_CHAT },
     },
     sites: {
       youtube: { enabled: true },
@@ -301,8 +316,8 @@
     return migrated;
   }
 
-  function migrateMovableLiveChat(movable = {}) {
-    const migrated = { ...DEFAULT_MOVABLE_LIVE_CHAT };
+  function migrateMovableLiveChat(movable = {}, defaults = DEFAULT_MOVABLE_LIVE_CHAT) {
+    const migrated = { ...defaults };
     if ("chatOnly" in movable) migrated.chatOnly = Boolean(movable.chatOnly);
     if (["solid", "soft", "translucent"].includes(movable.background)) {
       migrated.background = movable.background;
@@ -340,6 +355,10 @@
         },
         movableLiveChat: migrateMovableLiveChat(
           stored.subsettings?.movableLiveChat
+        ),
+        twitchMovableLiveChat: migrateMovableLiveChat(
+          stored.subsettings?.twitchMovableLiveChat,
+          DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
         ),
       },
     };
@@ -632,6 +651,7 @@
         LIVE_CHAT_OPACITY_KEY,
         LIVE_CHAT_COMPACT_KEY,
         LIVE_CHAT_OPACITY_MIGRATED_KEY,
+        LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY,
         LEGACY_LIVE_CHAT_POSITION_KEY,
         LEGACY_LIVE_CHAT_OPACITY_KEY,
       ]);
@@ -647,11 +667,27 @@
         chrome.storage.local.set({
           [LIVE_CHAT_OPACITY_KEY]: this.opacity,
           [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true,
+          [LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]: true,
+        });
+      } else if (
+        !stored[LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY] &&
+        (storedOpacity == null ||
+          storedOpacity === 1 ||
+          storedOpacity === LIVE_CHAT_LEGACY_DEFAULT_OPACITY)
+      ) {
+        this.opacity = LIVE_CHAT_DEFAULT_OPACITY;
+        chrome.storage.local.set({
+          [LIVE_CHAT_OPACITY_KEY]: this.opacity,
+          [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true,
+          [LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]: true,
         });
       } else {
         this.opacity = storedOpacity ?? LIVE_CHAT_DEFAULT_OPACITY;
-        if (!stored[LIVE_CHAT_OPACITY_MIGRATED_KEY]) {
-          chrome.storage.local.set({ [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true });
+        if (!stored[LIVE_CHAT_OPACITY_MIGRATED_KEY] || !stored[LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]) {
+          chrome.storage.local.set({
+            [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true,
+            [LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]: true,
+          });
         }
       }
       this.compact = nextCompact;
@@ -703,7 +739,6 @@
           transform: none !important;
           opacity: 1 !important;
           transition:
-            opacity .2s ease,
             border-color .2s ease,
             background-color .2s ease,
             box-shadow .2s ease,
@@ -717,11 +752,16 @@
           ) !important;
         }
         ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent {
-          opacity: var(--ytm-chat-rest-opacity, ${LIVE_CHAT_DEFAULT_OPACITY}) !important;
+          opacity: 1 !important;
+          background: color-mix(
+            in srgb,
+            var(--yt-spec-base-background, #0f0f0f) var(--ytm-chat-rest-opacity-pct, 45%),
+            transparent
+          ) !important;
         }
         ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent:hover,
         ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent.ytm-chat-interacting {
-          opacity: 1 !important;
+          background: var(--yt-spec-base-background, #0f0f0f) !important;
         }
         ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting),
         ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) #chat-container,
@@ -1117,6 +1157,11 @@
         String(this.opacity),
         "important"
       );
+      this.chat.style.setProperty(
+        "--ytm-chat-rest-opacity-pct",
+        `${Math.round(this.opacity * 100)}%`,
+        "important"
+      );
       this.chat.style.removeProperty("opacity");
     }
 
@@ -1217,6 +1262,7 @@
         "opacity",
         "position",
         "--ytm-chat-rest-opacity",
+        "--ytm-chat-rest-opacity-pct",
       ]) {
         this.chat.style.removeProperty(property);
       }
@@ -1258,6 +1304,772 @@
   }
 
   const movableLiveChat = new MovableLiveChat();
+
+  /* Twitch movable live chat — same drag/resize/opacity UX as YouTube, but
+     targeting theater-mode `.channel-root__right-column` (no live-chat iframe). */
+  class MovableTwitchLiveChat {
+    constructor() {
+      this.enabled = false;
+      this.chat = null;
+      this.position = null;
+      this.opacity = LIVE_CHAT_DEFAULT_OPACITY;
+      this.compact = false;
+      this.background = "solid";
+      this.resizeSide = "right";
+      this.listening = false;
+      this.checkInterval = null;
+      this.onResize = () => this.constrainToViewport();
+    }
+
+    async setEnabled(enabled, options = {}) {
+      const nextCompact = options.chatOnly === true;
+      const nextBackground = ["solid", "soft", "translucent"].includes(options.background)
+        ? options.background
+        : "solid";
+
+      if (enabled === this.enabled) {
+        if (enabled) {
+          this.compact = nextCompact;
+          this.background = nextBackground;
+          this.sync();
+        }
+        return;
+      }
+
+      this.enabled = enabled;
+      if (!enabled) {
+        this.destroy();
+        return;
+      }
+
+      const stored = await chrome.storage.local.get([
+        TWITCH_LIVE_CHAT_POSITION_KEY,
+        TWITCH_LIVE_CHAT_OPACITY_KEY,
+        TWITCH_LIVE_CHAT_COMPACT_KEY,
+        TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY,
+      ]);
+      if (!this.enabled) return;
+      this.position = stored[TWITCH_LIVE_CHAT_POSITION_KEY] || null;
+      const storedOpacity = stored[TWITCH_LIVE_CHAT_OPACITY_KEY];
+      if (
+        !stored[TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY] &&
+        (storedOpacity == null ||
+          storedOpacity === 1 ||
+          storedOpacity === LIVE_CHAT_LEGACY_DEFAULT_OPACITY)
+      ) {
+        this.opacity = LIVE_CHAT_DEFAULT_OPACITY;
+        chrome.storage.local.set({
+          [TWITCH_LIVE_CHAT_OPACITY_KEY]: this.opacity,
+          [TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]: true,
+        });
+      } else {
+        this.opacity = storedOpacity ?? LIVE_CHAT_DEFAULT_OPACITY;
+        if (!stored[TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]) {
+          chrome.storage.local.set({
+            [TWITCH_LIVE_CHAT_OPACITY_TRANSLUCENT_V2_KEY]: true,
+          });
+        }
+      }
+      this.compact = nextCompact;
+      this.background = nextBackground;
+      if (
+        options.chatOnly == null &&
+        stored[TWITCH_LIVE_CHAT_COMPACT_KEY] === true
+      ) {
+        this.compact = true;
+        this.persistChatOnly(true);
+      }
+      this.injectStyles();
+      this.startListening();
+      this.sync();
+    }
+
+    startListening() {
+      if (this.listening) return;
+      this.listening = true;
+      window.addEventListener("resize", this.onResize);
+      this.checkInterval = setInterval(() => this.sync(), 1000);
+    }
+
+    stopListening() {
+      if (!this.listening) return;
+      this.listening = false;
+      window.removeEventListener("resize", this.onResize);
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+
+    injectStyles() {
+      let style = document.getElementById(TWITCH_MOVABLE_CHAT_STYLE_ID);
+      if (!style) {
+        style = document.createElement("style");
+        style.id = TWITCH_MOVABLE_CHAT_STYLE_ID;
+      }
+      style.textContent = `
+        body.ttv-movable-chat-on .persistent-player--theatre {
+          width: 100% !important;
+        }
+        body.ttv-movable-chat-on .right-column--theatre:not(.right-column--collapsed) {
+          width: 0 !important;
+          min-width: 0 !important;
+          border: none !important;
+          transform: none !important;
+        }
+        body.ttv-movable-chat-on .right-column--theatre:not(.right-column--collapsed) .right-column__toggle-visibility {
+          display: none !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat {
+          position: fixed !important;
+          z-index: 2001 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          box-sizing: border-box !important;
+          min-width: ${LIVE_CHAT_MIN_WIDTH}px !important;
+          min-height: ${LIVE_CHAT_MIN_HEIGHT}px !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          border: 1px solid rgba(255,255,255,.12) !important;
+          border-radius: 14px !important;
+          background: var(--color-background-base, #0e0e10) !important;
+          box-shadow: 0 14px 50px rgba(0,0,0,.5) !important;
+          transform: none !important;
+          opacity: 1 !important;
+          transition:
+            border-color .2s ease,
+            background-color .2s ease,
+            box-shadow .2s ease,
+            border-radius .2s ease !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-bg-soft,
+        .right-column--theatre .channel-root__right-column.channel-root__right-column--expanded.ttv-movable-chat.ttv-chat-bg-soft {
+          background: color-mix(
+            in srgb,
+            var(--color-background-base, #0e0e10) 88%,
+            transparent
+          ) !important;
+          background-color: color-mix(
+            in srgb,
+            var(--color-background-base, #0e0e10) 88%,
+            transparent
+          ) !important;
+          box-shadow: 0 10px 36px rgba(0,0,0,.28) !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-bg-translucent,
+        .right-column--theatre .channel-root__right-column.channel-root__right-column--expanded.ttv-movable-chat.ttv-chat-bg-translucent {
+          opacity: 1 !important;
+          background: color-mix(
+            in srgb,
+            var(--color-background-base, #0e0e10) var(--ttv-chat-rest-opacity-pct, 45%),
+            transparent
+          ) !important;
+          background-color: color-mix(
+            in srgb,
+            var(--color-background-base, #0e0e10) var(--ttv-chat-rest-opacity-pct, 45%),
+            transparent
+          ) !important;
+          box-shadow: 0 8px 28px rgba(0,0,0,.22) !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-bg-translucent:hover,
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-bg-translucent.ttv-chat-interacting,
+        .right-column--theatre .channel-root__right-column.channel-root__right-column--expanded.ttv-movable-chat.ttv-chat-bg-translucent:hover,
+        .right-column--theatre .channel-root__right-column.channel-root__right-column--expanded.ttv-movable-chat.ttv-chat-bg-translucent.ttv-chat-interacting {
+          background: var(--color-background-base, #0e0e10) !important;
+          background-color: var(--color-background-base, #0e0e10) !important;
+          box-shadow: 0 14px 50px rgba(0,0,0,.5) !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) {
+          border: none !important;
+          border-width: 0 !important;
+          outline: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+
+        /* Strip Twitch chrome — messages only while floating */
+        .channel-root__right-column.ttv-movable-chat .stream-chat-header,
+        .channel-root__right-column.ttv-movable-chat .video-chat__header,
+        .channel-root__right-column.ttv-movable-chat .channel-leaderboard,
+        .channel-root__right-column.ttv-movable-chat .community-highlight-stack,
+        .channel-root__right-column.ttv-movable-chat [class*="community-highlight"],
+        .channel-root__right-column.ttv-movable-chat .marquee-animation,
+        .channel-root__right-column.ttv-movable-chat .marquee-animation__original,
+        .channel-root__right-column.ttv-movable-chat [data-test-selector="community-highlight-carousel"],
+        .channel-root__right-column.ttv-movable-chat .pinned-chat,
+        .channel-root__right-column.ttv-movable-chat .chat-room__header,
+        .channel-root__right-column.ttv-movable-chat .right-column__toggle-visibility {
+          display: none !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+          flex: 0 0 0 !important;
+        }
+
+        .channel-root__right-column.ttv-movable-chat > :not(.ttv-chat-toolbar):not(.ttv-chat-resize-handle),
+        .channel-root__right-column.ttv-movable-chat .chat-shell,
+        .channel-root__right-column.ttv-movable-chat .chat-shell__expanded,
+        .channel-root__right-column.ttv-movable-chat .chat-room,
+        .channel-root__right-column.ttv-movable-chat .stream-chat,
+        .channel-root__right-column.ttv-movable-chat .video-chat,
+        .channel-root__right-column.ttv-movable-chat .chat-room__content {
+          display: flex !important;
+          flex-direction: column !important;
+          flex: 1 1 auto !important;
+          min-height: 0 !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+        .channel-root__right-column.ttv-movable-chat .chat-list,
+        .channel-root__right-column.ttv-movable-chat .chat-list--default,
+        .channel-root__right-column.ttv-movable-chat .chat-scrollable-area__message-container,
+        .channel-root__right-column.ttv-movable-chat [data-test-selector="chat-scrollable-area__message-container"],
+        .channel-root__right-column.ttv-movable-chat .simplebar-wrapper,
+        .channel-root__right-column.ttv-movable-chat .simplebar-mask,
+        .channel-root__right-column.ttv-movable-chat .simplebar-offset,
+        .channel-root__right-column.ttv-movable-chat .simplebar-content-wrapper,
+        .channel-root__right-column.ttv-movable-chat .video-chat__message-list-wrapper {
+          flex: 1 1 auto !important;
+          min-height: 0 !important;
+          height: auto !important;
+        }
+
+        .channel-root__right-column.ttv-movable-chat .ttv-chat-toolbar {
+          display: none;
+          flex: 0 0 auto !important;
+          align-items: stretch;
+          gap: 4px;
+          height: auto !important;
+          min-height: 18px;
+          max-height: none !important;
+          padding: 4px 6px 2px;
+          box-sizing: border-box;
+          z-index: 3;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat .ttv-chat-toolbar {
+          display: flex;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) .ttv-chat-toolbar {
+          display: none !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) .ttv-chat-resize-handle {
+          display: none !important;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) .chat-input,
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) .chat-input-tray,
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-compact:not(:hover):not(.ttv-chat-interacting) [data-a-target="chat-input"] {
+          display: none !important;
+        }
+        .channel-root__right-column.ttv-movable-chat .chat-input {
+          flex: 0 0 auto !important;
+          height: auto !important;
+          min-height: 0 !important;
+          max-height: none !important;
+        }
+        .channel-root__right-column .ttv-chat-drag-handle {
+          flex: 1 1 auto;
+          height: 14px;
+          cursor: grab;
+          touch-action: none;
+          border-radius: 8px;
+          background: linear-gradient(90deg, transparent, ${ACCENT_COLOR}99, transparent);
+          opacity: .55;
+          transition: opacity .18s ease;
+        }
+        .channel-root__right-column.ttv-movable-chat:hover .ttv-chat-drag-handle,
+        .channel-root__right-column.ttv-movable-chat.ttv-chat-interacting .ttv-chat-drag-handle {
+          opacity: 1;
+        }
+        .channel-root__right-column .ttv-chat-compact-btn {
+          flex: 0 0 22px;
+          width: 22px;
+          height: 18px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 6px;
+          cursor: pointer;
+          color: ${ACCENT_COLOR};
+          background: rgba(255,255,255,.08);
+          opacity: .7;
+          transition: opacity .18s ease, background .18s ease;
+        }
+        .channel-root__right-column .ttv-chat-compact-btn:hover,
+        .channel-root__right-column .ttv-chat-compact-btn[aria-pressed="true"] {
+          opacity: 1;
+          background: rgba(255,143,107,.22);
+        }
+        .channel-root__right-column .ttv-chat-compact-btn svg {
+          display: block;
+          width: 14px;
+          height: 14px;
+          margin: 2px auto 0;
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 1.7;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .channel-root__right-column .ttv-chat-resize-handle {
+          display: none;
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 28px;
+          height: 28px;
+          cursor: nwse-resize;
+          touch-action: none;
+          z-index: 20;
+          background: linear-gradient(135deg, transparent 48%, ${ACCENT_COLOR} 49%);
+          opacity: .95;
+          pointer-events: auto;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat .ttv-chat-resize-handle {
+          display: block;
+        }
+        .right-column--theatre .channel-root__right-column.ttv-movable-chat.ttv-chat-resize-left .ttv-chat-resize-handle {
+          left: 0;
+          right: auto;
+          cursor: nesw-resize;
+          background: linear-gradient(225deg, transparent 48%, ${ACCENT_COLOR} 49%);
+        }
+        .channel-root__right-column.ttv-chat-bg-soft > *:not(.ttv-chat-toolbar):not(.ttv-chat-resize-handle),
+        .channel-root__right-column.ttv-chat-bg-soft .chat-shell,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-shell__expanded,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-room,
+        .channel-root__right-column.ttv-chat-bg-soft .stream-chat,
+        .channel-root__right-column.ttv-chat-bg-soft .video-chat,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-room__content,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-list,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-list--default,
+        .channel-root__right-column.ttv-chat-bg-soft .scrollable-area,
+        .channel-root__right-column.ttv-chat-bg-soft .simplebar-wrapper,
+        .channel-root__right-column.ttv-chat-bg-soft .simplebar-mask,
+        .channel-root__right-column.ttv-chat-bg-soft .simplebar-offset,
+        .channel-root__right-column.ttv-chat-bg-soft .simplebar-content-wrapper,
+        .channel-root__right-column.ttv-chat-bg-soft .simplebar-content,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-scrollable-area__message-container,
+        .channel-root__right-column.ttv-chat-bg-soft [data-test-selector="chat-scrollable-area__message-container"],
+        .channel-root__right-column.ttv-chat-bg-soft [data-test-selector="chat-room-component-layout"],
+        .channel-root__right-column.ttv-chat-bg-soft [data-a-target="right-column-chat-bar"],
+        .channel-root__right-column.ttv-chat-bg-soft .tw-c-background-base,
+        .channel-root__right-column.ttv-chat-bg-soft .tw-c-background-alt,
+        .channel-root__right-column.ttv-chat-bg-soft .tw-c-background-body,
+        .channel-root__right-column.ttv-chat-bg-soft [class*="Layout-"],
+        .channel-root__right-column.ttv-chat-bg-soft [class*="InjectLayout"],
+        .channel-root__right-column.ttv-chat-bg-soft .chat-input,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-input__textarea,
+        .channel-root__right-column.ttv-chat-bg-translucent > *:not(.ttv-chat-toolbar):not(.ttv-chat-resize-handle),
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-shell,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-shell__expanded,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-room,
+        .channel-root__right-column.ttv-chat-bg-translucent .stream-chat,
+        .channel-root__right-column.ttv-chat-bg-translucent .video-chat,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-room__content,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-list,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-list--default,
+        .channel-root__right-column.ttv-chat-bg-translucent .scrollable-area,
+        .channel-root__right-column.ttv-chat-bg-translucent .simplebar-wrapper,
+        .channel-root__right-column.ttv-chat-bg-translucent .simplebar-mask,
+        .channel-root__right-column.ttv-chat-bg-translucent .simplebar-offset,
+        .channel-root__right-column.ttv-chat-bg-translucent .simplebar-content-wrapper,
+        .channel-root__right-column.ttv-chat-bg-translucent .simplebar-content,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-scrollable-area__message-container,
+        .channel-root__right-column.ttv-chat-bg-translucent [data-test-selector="chat-scrollable-area__message-container"],
+        .channel-root__right-column.ttv-chat-bg-translucent [data-test-selector="chat-room-component-layout"],
+        .channel-root__right-column.ttv-chat-bg-translucent [data-a-target="right-column-chat-bar"],
+        .channel-root__right-column.ttv-chat-bg-translucent .tw-c-background-base,
+        .channel-root__right-column.ttv-chat-bg-translucent .tw-c-background-alt,
+        .channel-root__right-column.ttv-chat-bg-translucent .tw-c-background-body,
+        .channel-root__right-column.ttv-chat-bg-translucent [class*="Layout-"],
+        .channel-root__right-column.ttv-chat-bg-translucent [class*="InjectLayout"],
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-input,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-input__textarea {
+          background: transparent !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          box-shadow: none !important;
+        }
+        .channel-root__right-column.ttv-chat-bg-soft .chat-line__message,
+        .channel-root__right-column.ttv-chat-bg-soft [data-a-target="chat-line-message"],
+        .channel-root__right-column.ttv-chat-bg-soft .text-fragment,
+        .channel-root__right-column.ttv-chat-bg-soft .chat-author__display-name,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-line__message,
+        .channel-root__right-column.ttv-chat-bg-translucent [data-a-target="chat-line-message"],
+        .channel-root__right-column.ttv-chat-bg-translucent .text-fragment,
+        .channel-root__right-column.ttv-chat-bg-translucent .chat-author__display-name {
+          opacity: 1 !important;
+        }
+      `;
+      (document.head || document.documentElement).appendChild(style);
+    }
+
+    isTheatre() {
+      const col = document.querySelector(".right-column");
+      return Boolean(
+        col?.classList.contains("right-column--theatre") &&
+          !col.classList.contains("right-column--collapsed")
+      );
+    }
+
+    findChat() {
+      return document.querySelector(
+        ".right-column--theatre:not(.right-column--collapsed) .channel-root__right-column"
+      );
+    }
+
+    sync() {
+      if (!this.enabled) return;
+      this.injectStyles();
+      const inTheater = this.isTheatre();
+      document.body.classList.toggle("ttv-movable-chat-on", inTheater);
+
+      const chat = this.findChat();
+      if (!chat) {
+        if (this.chat) this.detachChat();
+        return;
+      }
+
+      if (this.chat !== chat) {
+        this.detachChat();
+        this.chat = chat;
+        this.setupChat();
+      }
+
+      this.chat.classList.toggle("ttv-movable-chat", inTheater);
+      this.chat.classList.toggle("ttv-chat-compact", inTheater && this.compact);
+      this.chat.classList.toggle("ttv-chat-bg-soft", inTheater && this.background === "soft");
+      this.chat.classList.toggle(
+        "ttv-chat-bg-translucent",
+        inTheater && this.background === "translucent"
+      );
+      if (inTheater) {
+        this.applyCompactButton();
+        this.applyPosition();
+      } else {
+        this.clearPosition();
+      }
+    }
+
+    setupChat() {
+      const toolbar = document.createElement("div");
+      toolbar.className = "ttv-chat-toolbar";
+
+      const dragHandle = document.createElement("div");
+      dragHandle.className = "ttv-chat-drag-handle";
+      dragHandle.setAttribute("aria-hidden", "true");
+      toolbar.appendChild(dragHandle);
+
+      const compactBtn = document.createElement("button");
+      compactBtn.type = "button";
+      compactBtn.className = "ttv-chat-compact-btn";
+      compactBtn.title = "Chat only";
+      compactBtn.setAttribute("aria-label", "Chat only");
+      compactBtn.setAttribute("aria-pressed", this.compact ? "true" : "false");
+      compactBtn.innerHTML =
+        '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 3.2h9.6a1.3 1.3 0 0 1 1.3 1.3v5.2a1.3 1.3 0 0 1-1.3 1.3H7.1L4.4 13.4V11H3.2a1.3 1.3 0 0 1-1.3-1.3V4.5a1.3 1.3 0 0 1 1.3-1.3z"/><path d="M5 6.4h6.2M5 8.8h4.2"/></svg>';
+      toolbar.appendChild(compactBtn);
+      this.chat.prepend(toolbar);
+      this.applyCompactButton();
+
+      const resizeHandle = document.createElement("div");
+      resizeHandle.className = "ttv-chat-resize-handle";
+      resizeHandle.setAttribute("aria-hidden", "true");
+      this.chat.appendChild(resizeHandle);
+
+      dragHandle.addEventListener("pointerdown", (event) =>
+        this.startInteraction(event, "move")
+      );
+      resizeHandle.addEventListener("pointerdown", (event) =>
+        this.startInteraction(event, "resize")
+      );
+      compactBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.setCompact(!this.compact);
+      });
+      dragHandle.addEventListener(
+        "wheel",
+        (event) => {
+          if (!this.chat.classList.contains("ttv-movable-chat")) return;
+          event.preventDefault();
+          this.opacity = Math.max(
+            0.25,
+            Math.min(1, this.opacity + (event.deltaY < 0 ? 0.05 : -0.05))
+          );
+          this.applyOpacity();
+          chrome.storage.local.set({
+            [TWITCH_LIVE_CHAT_OPACITY_KEY]: this.opacity,
+          });
+        },
+        { passive: false }
+      );
+    }
+
+    applyCompactButton() {
+      const btn = this.chat?.querySelector(".ttv-chat-compact-btn");
+      if (!btn) return;
+      btn.setAttribute("aria-pressed", this.compact ? "true" : "false");
+      btn.title = this.compact ? "Show chat chrome" : "Chat only";
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    setCompact(compact) {
+      this.compact = Boolean(compact);
+      this.chat?.classList.toggle("ttv-chat-compact", this.compact);
+      this.applyCompactButton();
+      chrome.storage.local.set({ [TWITCH_LIVE_CHAT_COMPACT_KEY]: this.compact });
+      this.persistChatOnly(this.compact);
+    }
+
+    async persistChatOnly(chatOnly) {
+      try {
+        const stored = await chrome.storage.sync.get([
+          SETTINGS_KEY,
+          LEGACY_SETTINGS_KEY,
+        ]);
+        const current = mergeSettings(
+          stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY]
+        );
+        current.subsettings.twitchMovableLiveChat = {
+          ...migrateMovableLiveChat(
+            current.subsettings?.twitchMovableLiveChat,
+            DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
+          ),
+          chatOnly: Boolean(chatOnly),
+        };
+        await chrome.storage.sync.set({ [SETTINGS_KEY]: current });
+      } catch {
+        /* ignore storage races */
+      }
+    }
+
+    startInteraction(event, mode) {
+      if (!this.chat?.classList.contains("ttv-movable-chat")) return;
+      event.preventDefault();
+      const start = this.chat.getBoundingClientRect();
+      const originX = event.clientX;
+      const originY = event.clientY;
+      const handle = event.currentTarget;
+      const resizeFromLeft = mode === "resize" && this.resizeSide === "left";
+      this.chat.classList.add("ttv-chat-interacting");
+      handle.setPointerCapture(event.pointerId);
+
+      const onMove = (moveEvent) => {
+        const dx = moveEvent.clientX - originX;
+        const dy = moveEvent.clientY - originY;
+        if (mode === "move") {
+          this.setRect(start.left + dx, start.top + dy, start.width, start.height);
+          return;
+        }
+        if (resizeFromLeft) {
+          const width = Math.max(LIVE_CHAT_MIN_WIDTH, start.width - dx);
+          const left = start.left + (start.width - width);
+          this.setRect(
+            left,
+            start.top,
+            width,
+            Math.max(LIVE_CHAT_MIN_HEIGHT, start.height + dy)
+          );
+          return;
+        }
+        this.setRect(
+          start.left,
+          start.top,
+          Math.max(LIVE_CHAT_MIN_WIDTH, start.width + dx),
+          Math.max(LIVE_CHAT_MIN_HEIGHT, start.height + dy)
+        );
+      };
+
+      const onEnd = () => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onEnd);
+        handle.removeEventListener("pointercancel", onEnd);
+        this.chat?.classList.remove("ttv-chat-interacting");
+        this.constrainToViewport();
+        this.savePosition();
+      };
+
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", onEnd);
+      handle.addEventListener("pointercancel", onEnd);
+    }
+
+    getMoveBounds() {
+      /* Theater chat floats over the full player; use the viewport so a
+         mis-measured video rect cannot collapse the minimum size. */
+      if (this.isTheatre()) {
+        return {
+          left: 0,
+          top: 0,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+        };
+      }
+      return {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+      };
+    }
+
+    updateResizeSide(left, width) {
+      if (!this.chat) return;
+      const center = left + width / 2;
+      const onRight = center >= window.innerWidth / 2;
+      this.resizeSide = onRight ? "left" : "right";
+      this.chat.classList.toggle("ttv-chat-resize-left", onRight);
+    }
+
+    applyOpacity() {
+      if (!this.chat) return;
+      this.chat.style.setProperty(
+        "--ttv-chat-rest-opacity",
+        String(this.opacity),
+        "important"
+      );
+      this.chat.style.setProperty(
+        "--ttv-chat-rest-opacity-pct",
+        `${Math.round(this.opacity * 100)}%`,
+        "important"
+      );
+      this.chat.style.removeProperty("opacity");
+    }
+
+    setRect(left, top, width, height) {
+      if (!this.chat) return;
+      const bounds = this.getMoveBounds();
+      const minWidth = Math.min(LIVE_CHAT_MIN_WIDTH, window.innerWidth);
+      const minHeight = Math.min(LIVE_CHAT_MIN_HEIGHT, window.innerHeight);
+      const maxWidth = Math.max(minWidth, bounds.right - bounds.left);
+      const maxHeight = Math.max(minHeight, bounds.bottom - bounds.top);
+      const clampedWidth = Math.min(maxWidth, Math.max(minWidth, width));
+      const clampedHeight = Math.min(maxHeight, Math.max(minHeight, height));
+      const clampedLeft = Math.min(
+        Math.max(left, bounds.left),
+        bounds.right - clampedWidth
+      );
+      const clampedTop = Math.min(
+        Math.max(top, bounds.top),
+        bounds.bottom - clampedHeight
+      );
+      this.chat.style.setProperty("left", `${Math.round(clampedLeft)}px`, "important");
+      this.chat.style.setProperty("top", `${Math.round(clampedTop)}px`, "important");
+      this.chat.style.setProperty("right", "auto", "important");
+      this.chat.style.setProperty(
+        "width",
+        `${Math.round(clampedWidth)}px`,
+        "important"
+      );
+      this.chat.style.setProperty(
+        "height",
+        `${Math.round(clampedHeight)}px`,
+        "important"
+      );
+      this.chat.style.setProperty("min-width", `${minWidth}px`, "important");
+      this.chat.style.setProperty("min-height", `${minHeight}px`, "important");
+      this.updateResizeSide(clampedLeft, clampedWidth);
+    }
+
+    applyPosition() {
+      if (!this.chat) return;
+      const bounds = this.getMoveBounds();
+      const minWidth = Math.min(LIVE_CHAT_MIN_WIDTH, window.innerWidth);
+      const minHeight = Math.min(LIVE_CHAT_MIN_HEIGHT, window.innerHeight);
+      const fallback = {
+        left: Math.max(bounds.left, bounds.right - 420),
+        top: Math.max(bounds.top, Math.min(bounds.top + 20, bounds.bottom - minHeight)),
+        width: Math.max(minWidth, Math.min(400, bounds.right - bounds.left)),
+        height: Math.max(minHeight, Math.min(620, bounds.bottom - bounds.top - 20)),
+      };
+      const position = { ...fallback, ...(this.position || {}) };
+      this.setRect(position.left, position.top, position.width, position.height);
+      this.applyOpacity();
+      const rect = this.chat.getBoundingClientRect();
+      if (
+        !this.position ||
+        Math.round(this.position.top) !== Math.round(rect.top) ||
+        Math.round(this.position.left) !== Math.round(rect.left) ||
+        Math.round(this.position.width) !== Math.round(rect.width) ||
+        Math.round(this.position.height) !== Math.round(rect.height)
+      ) {
+        this.savePosition();
+      }
+    }
+
+    constrainToViewport() {
+      if (!this.chat?.classList.contains("ttv-movable-chat")) return;
+      const rect = this.chat.getBoundingClientRect();
+      this.setRect(rect.left, rect.top, rect.width, rect.height);
+    }
+
+    savePosition() {
+      if (!this.chat) return;
+      const rect = this.chat.getBoundingClientRect();
+      this.position = {
+        left: Math.round(rect.left),
+        top: Math.round(rect.top),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+      chrome.storage.local.set({
+        [TWITCH_LIVE_CHAT_POSITION_KEY]: this.position,
+        [TWITCH_LIVE_CHAT_OPACITY_KEY]: this.opacity,
+        [TWITCH_LIVE_CHAT_COMPACT_KEY]: this.compact,
+      });
+    }
+
+    clearPosition() {
+      if (!this.chat) return;
+      for (const property of [
+        "left",
+        "right",
+        "top",
+        "width",
+        "height",
+        "min-width",
+        "min-height",
+        "opacity",
+        "position",
+        "--ttv-chat-rest-opacity",
+        "--ttv-chat-rest-opacity-pct",
+      ]) {
+        this.chat.style.removeProperty(property);
+      }
+    }
+
+    detachChat() {
+      if (!this.chat) return;
+      this.chat.classList.remove(
+        "ttv-movable-chat",
+        "ttv-chat-interacting",
+        "ttv-chat-compact",
+        "ttv-chat-bg-soft",
+        "ttv-chat-bg-translucent",
+        "ttv-chat-resize-left"
+      );
+      this.clearPosition();
+      this.chat.querySelector(".ttv-chat-toolbar")?.remove();
+      this.chat.querySelector(".ttv-chat-resize-handle")?.remove();
+      this.chat.querySelector(".ttv-chat-drag-handle")?.remove();
+      this.chat.querySelector(".ttv-chat-compact-btn")?.remove();
+      this.chat = null;
+    }
+
+    destroy() {
+      this.stopListening();
+      this.detachChat();
+      document.body.classList.remove("ttv-movable-chat-on");
+      document.getElementById(TWITCH_MOVABLE_CHAT_STYLE_ID)?.remove();
+    }
+  }
+
+  const movableTwitchLiveChat = new MovableTwitchLiveChat();
 
   const THEATER_COMMENTS_WIDTH_KEY = "chroModsTheaterCommentsWidth";
   const LEGACY_THEATER_COMMENTS_WIDTH_KEY = "youtubeThemingTheaterCommentsWidth";
@@ -1559,12 +2371,17 @@
     startObserver();
 
     const youtubeEnabled = siteId === "youtube" && siteEnabled;
+    const twitchEnabled = siteId === "twitch" && siteEnabled;
     setTheaterLayoutSyncEnabled(
       youtubeEnabled && merged.features?.["theater-mode"] !== false
     );
     await movableLiveChat.setEnabled(
       youtubeEnabled && merged.features?.["movable-live-chat"] === true,
       merged.subsettings?.movableLiveChat
+    );
+    await movableTwitchLiveChat.setEnabled(
+      twitchEnabled && merged.features?.["twitch-movable-live-chat"] === true,
+      merged.subsettings?.twitchMovableLiveChat
     );
     await theaterHoverComments.setEnabled(
       youtubeEnabled &&

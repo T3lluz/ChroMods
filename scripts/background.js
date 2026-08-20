@@ -58,6 +58,7 @@ const DEFAULT_SETTINGS = {
     "x-hover": false,
     "x-no-thanks": true,
     "twitch-no-footer": true,
+    "twitch-movable-live-chat": false,
     "cgpt-sidebar": true,
     "cgpt-page-header": true,
     "cgpt-composer": true,
@@ -83,6 +84,10 @@ const DEFAULT_SETTINGS = {
     },
     movableLiveChat: {
       chatOnly: false,
+      background: "solid",
+    },
+    twitchMovableLiveChat: {
+      chatOnly: true,
       background: "solid",
     },
   },

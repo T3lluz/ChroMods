@@ -22,7 +22,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | <img src="docs/sites/gemini.svg" width="20" height="20" alt="" /> | [Gemini](#gemini) | 4 | gemini.google.com |
 | <img src="docs/sites/duckduckgo.svg" width="20" height="20" alt="" /> | [DuckDuckGo](#duckduckgo) | 9 | duckduckgo.com |
 | <img src="docs/sites/x.svg" width="20" height="20" alt="" /> | [X](#x) | 4 | x.com, twitter.com |
-| <img src="docs/sites/twitch.svg" width="20" height="20" alt="" /> | [Twitch](#twitch) | 1 | twitch.tv |
+| <img src="docs/sites/twitch.svg" width="20" height="20" alt="" /> | [Twitch](#twitch) | 2 | twitch.tv |
 | <img src="docs/sites/chatgpt.svg" width="20" height="20" alt="" /> | [ChatGPT](#chatgpt) | 12 | chatgpt.com |
 
 ## Features
@@ -123,6 +123,7 @@ Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 | Mod | What it does | Default |
 |-----|--------------|---------|
 | **Hide footer** | Hide Twitch's page footer. | On |
+| **Movable live chat** | Drag and resize theater chat; chrome stays hidden until hover. | Off |
 
 ### <img src="docs/sites/chatgpt.svg" width="22" height="22" alt="" /> ChatGPT
 
