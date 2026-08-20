@@ -5,9 +5,48 @@
   const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
   const LIVE_CHAT_POSITION_KEY = "chroModsLiveChatPosition";
   const LIVE_CHAT_OPACITY_KEY = "chroModsLiveChatOpacity";
+  const LIVE_CHAT_COMPACT_KEY = "chroModsLiveChatCompact";
+  const LIVE_CHAT_OPACITY_MIGRATED_KEY = "chroModsLiveChatOpacityMigrated";
   const LEGACY_LIVE_CHAT_POSITION_KEY = "youtubeThemingLiveChatPosition";
   const LEGACY_LIVE_CHAT_OPACITY_KEY = "youtubeThemingLiveChatOpacity";
   const MOVABLE_CHAT_STYLE_ID = "chromods-movable-chat-styles";
+  const LIVE_CHAT_MIN_WIDTH = 300;
+  const LIVE_CHAT_MIN_HEIGHT = 320;
+  const LIVE_CHAT_DEFAULT_OPACITY = 0.82;
+  const LIVE_CHAT_IFRAME_STYLE_ID = "ytm-movable-chat-iframe";
+  const LIVE_CHAT_COMPACT_IFRAME_CSS = `
+    yt-live-chat-header-renderer,
+    yt-live-chat-message-input-renderer,
+    yt-live-chat-viewer-engagement-message-renderer,
+    yt-live-chat-banner-manager,
+    yt-live-chat-ticker-renderer,
+    #action-panel,
+    yt-live-chat-action-panel-renderer {
+      display: none !important;
+    }
+    yt-live-chat-renderer,
+    yt-live-chat-item-list-renderer,
+    #item-list,
+    #items,
+    #item-scroller,
+    #chat-messages,
+    #contents {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  `;
+  const LIVE_CHAT_SOFT_IFRAME_CSS = `
+    yt-live-chat-renderer {
+      background: color-mix(in srgb, var(--yt-spec-base-background, #0f0f0f) 88%, transparent) !important;
+    }
+  `;
+  const LIVE_CHAT_TRANSLUCENT_IFRAME_CSS = `
+    yt-live-chat-renderer {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+  `;
 
   const FEATURES = {
     "immersive-search": ["styles/youtube/immersive-search.css"],
@@ -155,6 +194,11 @@
     columns: "auto",
   };
 
+  const DEFAULT_MOVABLE_LIVE_CHAT = {
+    chatOnly: false,
+    background: "solid",
+  };
+
   const DEFAULT_SETTINGS = {
     enabled: true,
     features: {
@@ -229,6 +273,7 @@
     subsettings: {
       theater: { ...DEFAULT_THEATER },
       feed: { ...DEFAULT_FEED },
+      movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
     },
     sites: {
       youtube: { enabled: true },
@@ -252,6 +297,17 @@
     const migrated = { ...DEFAULT_THEATER };
     for (const key of Object.keys(DEFAULT_THEATER)) {
       if (key in theater) migrated[key] = theater[key];
+    }
+    return migrated;
+  }
+
+  function migrateMovableLiveChat(movable = {}) {
+    const migrated = { ...DEFAULT_MOVABLE_LIVE_CHAT };
+    if ("chatOnly" in movable) migrated.chatOnly = Boolean(movable.chatOnly);
+    if (["solid", "soft", "translucent"].includes(movable.background)) {
+      migrated.background = movable.background;
+    } else if ("translucent" in movable) {
+      migrated.background = movable.translucent === false ? "solid" : "translucent";
     }
     return migrated;
   }
@@ -282,6 +338,9 @@
           ...DEFAULT_FEED,
           ...(stored.subsettings?.feed || {}),
         },
+        movableLiveChat: migrateMovableLiveChat(
+          stored.subsettings?.movableLiveChat
+        ),
       },
     };
   }
@@ -535,15 +594,30 @@
       this.enabled = false;
       this.chat = null;
       this.position = null;
-      this.opacity = 1;
+      this.opacity = LIVE_CHAT_DEFAULT_OPACITY;
+      this.compact = false;
+      this.background = "solid";
+      this.resizeSide = "right";
       this.listening = false;
+      this.iframeObserver = null;
       this.onWatchStateChange = () => this.sync();
       this.onResize = () => this.constrainToViewport();
+      this.onMouseEnter = () => this.syncChrome();
+      this.onMouseLeave = () => this.syncChrome();
     }
 
-    async setEnabled(enabled) {
+    async setEnabled(enabled, options = {}) {
+      const nextCompact = options.chatOnly === true;
+      const nextBackground = ["solid", "soft", "translucent"].includes(options.background)
+        ? options.background
+        : "solid";
+
       if (enabled === this.enabled) {
-        if (enabled) this.sync();
+        if (enabled) {
+          this.compact = nextCompact;
+          this.background = nextBackground;
+          this.sync();
+        }
         return;
       }
 
@@ -556,12 +630,39 @@
       const stored = await chrome.storage.local.get([
         LIVE_CHAT_POSITION_KEY,
         LIVE_CHAT_OPACITY_KEY,
+        LIVE_CHAT_COMPACT_KEY,
+        LIVE_CHAT_OPACITY_MIGRATED_KEY,
         LEGACY_LIVE_CHAT_POSITION_KEY,
         LEGACY_LIVE_CHAT_OPACITY_KEY,
       ]);
       if (!this.enabled) return;
       this.position = stored[LIVE_CHAT_POSITION_KEY] || stored[LEGACY_LIVE_CHAT_POSITION_KEY] || null;
-      this.opacity = stored[LIVE_CHAT_OPACITY_KEY] ?? stored[LEGACY_LIVE_CHAT_OPACITY_KEY] ?? 1;
+      const storedOpacity =
+        stored[LIVE_CHAT_OPACITY_KEY] ?? stored[LEGACY_LIVE_CHAT_OPACITY_KEY];
+      if (
+        !stored[LIVE_CHAT_OPACITY_MIGRATED_KEY] &&
+        (storedOpacity == null || storedOpacity === 1)
+      ) {
+        this.opacity = LIVE_CHAT_DEFAULT_OPACITY;
+        chrome.storage.local.set({
+          [LIVE_CHAT_OPACITY_KEY]: this.opacity,
+          [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true,
+        });
+      } else {
+        this.opacity = storedOpacity ?? LIVE_CHAT_DEFAULT_OPACITY;
+        if (!stored[LIVE_CHAT_OPACITY_MIGRATED_KEY]) {
+          chrome.storage.local.set({ [LIVE_CHAT_OPACITY_MIGRATED_KEY]: true });
+        }
+      }
+      this.compact = nextCompact;
+      this.background = nextBackground;
+      if (
+        options.chatOnly == null &&
+        stored[LIVE_CHAT_COMPACT_KEY] === true
+      ) {
+        this.compact = true;
+        this.persistChatOnly(true);
+      }
       this.injectStyles();
       this.startListening();
       this.sync();
@@ -591,8 +692,8 @@
           z-index: 2001 !important;
           display: flex !important;
           flex-direction: column !important;
-          min-width: 240px !important;
-          min-height: 220px !important;
+          min-width: ${LIVE_CHAT_MIN_WIDTH}px !important;
+          min-height: ${LIVE_CHAT_MIN_HEIGHT}px !important;
           margin: 0 !important;
           overflow: hidden !important;
           border: 1px solid rgba(255,255,255,.12) !important;
@@ -600,26 +701,116 @@
           background: var(--yt-spec-base-background, #0f0f0f) !important;
           box-shadow: 0 14px 50px rgba(0,0,0,.5) !important;
           transform: none !important;
+          opacity: 1 !important;
+          transition:
+            opacity .2s ease,
+            border-color .2s ease,
+            background-color .2s ease,
+            box-shadow .2s ease,
+            border-radius .2s ease !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-soft {
+          background: color-mix(
+            in srgb,
+            var(--yt-spec-base-background, #0f0f0f) 88%,
+            transparent
+          ) !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent {
+          opacity: var(--ytm-chat-rest-opacity, ${LIVE_CHAT_DEFAULT_OPACITY}) !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent:hover,
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-bg-translucent.ytm-chat-interacting {
+          opacity: 1 !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting),
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) #chat-container,
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) ytd-live-chat-frame {
+          border: none !important;
+          border-width: 0 !important;
+          outline: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) #show-hide-button,
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) #close-button {
+          display: none !important;
         }
         #chat.ytm-movable-chat iframe {
           width: 100% !important;
           height: 100% !important;
+          flex: 1 1 auto !important;
+          min-height: 0 !important;
+          border: 0 !important;
+          outline: none !important;
+          background: transparent !important;
+        }
+        #chat .ytm-chat-toolbar {
+          display: none;
+          flex: 0 0 auto;
+          align-items: stretch;
+          gap: 4px;
+          min-height: 18px;
+          padding: 2px 4px 0;
+          box-sizing: border-box;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat .ytm-chat-toolbar {
+          display: flex;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) .ytm-chat-toolbar {
+          display: none !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-compact:not(:hover):not(.ytm-chat-interacting) .ytm-chat-resize-handle {
+          display: none !important;
         }
         #chat .ytm-chat-drag-handle {
-          display: none;
+          flex: 1 1 auto;
           height: 14px;
-          flex: 0 0 14px;
           cursor: grab;
           touch-action: none;
+          border-radius: 8px;
           background: linear-gradient(90deg, transparent, ${ACCENT_COLOR}99, transparent);
           opacity: .55;
           transition: opacity .18s ease;
         }
-        ytd-watch-flexy[theater] #chat.ytm-movable-chat .ytm-chat-drag-handle {
-          display: block;
-        }
-        #chat.ytm-movable-chat:hover .ytm-chat-drag-handle {
+        #chat.ytm-movable-chat:hover .ytm-chat-drag-handle,
+        #chat.ytm-movable-chat.ytm-chat-interacting .ytm-chat-drag-handle {
           opacity: 1;
+        }
+        #chat .ytm-chat-compact-btn {
+          flex: 0 0 22px;
+          width: 22px;
+          height: 18px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 6px;
+          cursor: pointer;
+          color: ${ACCENT_COLOR};
+          background: rgba(255,255,255,.08);
+          opacity: .7;
+          transition: opacity .18s ease, background .18s ease;
+        }
+        #chat .ytm-chat-compact-btn:hover,
+        #chat .ytm-chat-compact-btn[aria-pressed="true"] {
+          opacity: 1;
+          background: rgba(255,143,107,.22);
+        }
+        #chat .ytm-chat-compact-btn svg {
+          display: block;
+          width: 14px;
+          height: 14px;
+          margin: 2px auto 0;
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 1.7;
+          stroke-linecap: round;
+          stroke-linejoin: round;
         }
         #chat .ytm-chat-resize-handle {
           display: none;
@@ -635,6 +826,12 @@
         }
         ytd-watch-flexy[theater] #chat.ytm-movable-chat .ytm-chat-resize-handle {
           display: block;
+        }
+        ytd-watch-flexy[theater] #chat.ytm-movable-chat.ytm-chat-resize-left .ytm-chat-resize-handle {
+          left: 0;
+          right: auto;
+          cursor: nesw-resize;
+          background: linear-gradient(225deg, transparent 52%, ${ACCENT_COLOR} 53%);
         }
         #chat.ytm-chat-interacting iframe {
           pointer-events: none !important;
@@ -656,18 +853,41 @@
 
       const inTheater = Boolean(document.querySelector("ytd-watch-flexy[theater]"));
       this.chat.classList.toggle("ytm-movable-chat", inTheater);
+      this.chat.classList.toggle("ytm-chat-compact", inTheater && this.compact);
+      this.chat.classList.toggle("ytm-chat-bg-soft", inTheater && this.background === "soft");
+      this.chat.classList.toggle(
+        "ytm-chat-bg-translucent",
+        inTheater && this.background === "translucent"
+      );
       if (inTheater) {
+        this.applyCompactButton();
         this.applyPosition();
+        this.syncChrome();
       } else {
         this.clearPosition();
       }
     }
 
     setupChat() {
+      const toolbar = document.createElement("div");
+      toolbar.className = "ytm-chat-toolbar";
+
       const dragHandle = document.createElement("div");
       dragHandle.className = "ytm-chat-drag-handle";
       dragHandle.setAttribute("aria-hidden", "true");
-      this.chat.prepend(dragHandle);
+      toolbar.appendChild(dragHandle);
+
+      const compactBtn = document.createElement("button");
+      compactBtn.type = "button";
+      compactBtn.className = "ytm-chat-compact-btn";
+      compactBtn.title = "Chat only";
+      compactBtn.setAttribute("aria-label", "Chat only");
+      compactBtn.setAttribute("aria-pressed", this.compact ? "true" : "false");
+      compactBtn.innerHTML =
+        '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 3.2h9.6a1.3 1.3 0 0 1 1.3 1.3v5.2a1.3 1.3 0 0 1-1.3 1.3H7.1L4.4 13.4V11H3.2a1.3 1.3 0 0 1-1.3-1.3V4.5a1.3 1.3 0 0 1 1.3-1.3z"/><path d="M5 6.4h6.2M5 8.8h4.2"/></svg>';
+      toolbar.appendChild(compactBtn);
+      this.chat.prepend(toolbar);
+      this.applyCompactButton();
 
       const resizeHandle = document.createElement("div");
       resizeHandle.className = "ytm-chat-resize-handle";
@@ -680,22 +900,114 @@
       resizeHandle.addEventListener("pointerdown", (event) =>
         this.startInteraction(event, "resize")
       );
+      compactBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.setCompact(!this.compact);
+      });
       dragHandle.addEventListener(
         "wheel",
         (event) => {
           if (!this.chat.classList.contains("ytm-movable-chat")) return;
           event.preventDefault();
           this.opacity = Math.max(
-            0.2,
+            0.25,
             Math.min(1, this.opacity + (event.deltaY < 0 ? 0.05 : -0.05))
           );
-          this.chat.style.setProperty("opacity", String(this.opacity), "important");
+          this.applyOpacity();
           chrome.storage.local.set({
             [LIVE_CHAT_OPACITY_KEY]: this.opacity,
           });
         },
         { passive: false }
       );
+
+      this.chat.addEventListener("mouseenter", this.onMouseEnter);
+      this.chat.addEventListener("mouseleave", this.onMouseLeave);
+      this.watchChatFrame();
+    }
+
+    applyCompactButton() {
+      const btn = this.chat?.querySelector(".ytm-chat-compact-btn");
+      if (!btn) return;
+      btn.setAttribute("aria-pressed", this.compact ? "true" : "false");
+      btn.title = this.compact ? "Show chat chrome" : "Chat only";
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    setCompact(compact) {
+      this.compact = Boolean(compact);
+      this.chat?.classList.toggle("ytm-chat-compact", this.compact);
+      this.applyCompactButton();
+      chrome.storage.local.set({ [LIVE_CHAT_COMPACT_KEY]: this.compact });
+      this.persistChatOnly(this.compact);
+      this.syncChrome();
+    }
+
+    async persistChatOnly(chatOnly) {
+      try {
+        const stored = await chrome.storage.sync.get([
+          SETTINGS_KEY,
+          LEGACY_SETTINGS_KEY,
+        ]);
+        const current = mergeSettings(
+          stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY]
+        );
+        current.subsettings.movableLiveChat = {
+          ...migrateMovableLiveChat(current.subsettings?.movableLiveChat),
+          chatOnly: Boolean(chatOnly),
+        };
+        await chrome.storage.sync.set({ [SETTINGS_KEY]: current });
+      } catch {
+        /* ignore storage races */
+      }
+    }
+
+    watchChatFrame() {
+      this.iframeObserver?.disconnect();
+      const iframe = this.chat?.querySelector("iframe");
+      if (iframe) {
+        iframe.addEventListener("load", () => this.syncChrome());
+      }
+      this.iframeObserver = new MutationObserver(() => {
+        const next = this.chat?.querySelector("iframe");
+        if (next) {
+          next.addEventListener("load", () => this.syncChrome());
+          this.syncChrome();
+        }
+      });
+      if (this.chat) {
+        this.iframeObserver.observe(this.chat, { childList: true, subtree: true });
+      }
+      this.syncChrome();
+    }
+
+    syncChrome() {
+      if (!this.chat?.classList.contains("ytm-movable-chat")) return;
+      const iframe = this.chat.querySelector("iframe");
+      if (!iframe) return;
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc?.head) return;
+        let style = doc.getElementById(LIVE_CHAT_IFRAME_STYLE_ID);
+        if (!style) {
+          style = doc.createElement("style");
+          style.id = LIVE_CHAT_IFRAME_STYLE_ID;
+          doc.head.appendChild(style);
+        }
+        const revealed =
+          this.chat.matches(":hover") ||
+          this.chat.classList.contains("ytm-chat-interacting");
+        const parts = [];
+        if (this.background === "soft") parts.push(LIVE_CHAT_SOFT_IFRAME_CSS);
+        if (this.background === "translucent") {
+          parts.push(LIVE_CHAT_TRANSLUCENT_IFRAME_CSS);
+        }
+        if (this.compact && !revealed) parts.push(LIVE_CHAT_COMPACT_IFRAME_CSS);
+        style.textContent = parts.join("\n");
+      } catch {
+        /* cross-origin or not ready */
+      }
     }
 
     startInteraction(event, mode) {
@@ -705,7 +1017,9 @@
       const originX = event.clientX;
       const originY = event.clientY;
       const handle = event.currentTarget;
+      const resizeFromLeft = mode === "resize" && this.resizeSide === "left";
       this.chat.classList.add("ytm-chat-interacting");
+      this.syncChrome();
       handle.setPointerCapture(event.pointerId);
 
       const onMove = (moveEvent) => {
@@ -713,14 +1027,25 @@
         const dy = moveEvent.clientY - originY;
         if (mode === "move") {
           this.setRect(start.left + dx, start.top + dy, start.width, start.height);
-        } else {
-          this.setRect(
-            start.left,
-            start.top,
-            Math.max(240, start.width + dx),
-            Math.max(220, start.height + dy)
-          );
+          return;
         }
+        if (resizeFromLeft) {
+          const width = Math.max(LIVE_CHAT_MIN_WIDTH, start.width - dx);
+          const left = start.left + (start.width - width);
+          this.setRect(
+            left,
+            start.top,
+            width,
+            Math.max(LIVE_CHAT_MIN_HEIGHT, start.height + dy)
+          );
+          return;
+        }
+        this.setRect(
+          start.left,
+          start.top,
+          Math.max(LIVE_CHAT_MIN_WIDTH, start.width + dx),
+          Math.max(LIVE_CHAT_MIN_HEIGHT, start.height + dy)
+        );
       };
 
       const onEnd = () => {
@@ -730,6 +1055,7 @@
         this.chat?.classList.remove("ytm-chat-interacting");
         this.constrainToViewport();
         this.savePosition();
+        this.syncChrome();
       };
 
       handle.addEventListener("pointermove", onMove);
@@ -737,55 +1063,131 @@
       handle.addEventListener("pointercancel", onEnd);
     }
 
+    /* Keep chat below the theater hover-header hit strip
+       (theater-hide-header.css: top -40px + padding-bottom). */
+    getMinTop() {
+      if (!document.querySelector("ytd-watch-flexy[theater]:not([fullscreen])")) {
+        return 0;
+      }
+      const masthead = document.querySelector("#masthead-container");
+      if (!masthead) return 0;
+
+      const hideOffset = 40;
+      const paddingBottom = parseFloat(getComputedStyle(masthead).paddingBottom) || 0;
+      if (paddingBottom > 0) {
+        return Math.max(0, Math.round(masthead.offsetHeight - hideOffset));
+      }
+      return Math.max(0, Math.round(masthead.getBoundingClientRect().bottom));
+    }
+
+    getMoveBounds() {
+      const minTop = this.getMinTop();
+      const video =
+        document.querySelector("ytd-watch-flexy[theater] #full-bleed-container") ||
+        document.querySelector("ytd-watch-flexy[theater] #movie_player");
+      if (video) {
+        const rect = video.getBoundingClientRect();
+        return {
+          left: Math.max(0, Math.round(rect.left)),
+          top: Math.max(minTop, Math.round(rect.top)),
+          right: Math.min(window.innerWidth, Math.round(rect.right)),
+          bottom: Math.min(window.innerHeight, Math.round(rect.bottom)),
+        };
+      }
+      return {
+        left: 0,
+        top: minTop,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+      };
+    }
+
+    updateResizeSide(left, width) {
+      if (!this.chat) return;
+      const center = left + width / 2;
+      const onRight = center >= window.innerWidth / 2;
+      this.resizeSide = onRight ? "left" : "right";
+      this.chat.classList.toggle("ytm-chat-resize-left", onRight);
+    }
+
+    applyOpacity() {
+      if (!this.chat) return;
+      this.chat.style.setProperty(
+        "--ytm-chat-rest-opacity",
+        String(this.opacity),
+        "important"
+      );
+      this.chat.style.removeProperty("opacity");
+    }
+
     setRect(left, top, width, height) {
       if (!this.chat) return;
-      const maxWidth = Math.max(240, window.innerWidth - Math.max(0, left));
-      const maxHeight = Math.max(220, window.innerHeight - Math.max(0, top));
-      this.chat.style.setProperty(
-        "left",
-        `${Math.max(0, Math.min(left, window.innerWidth - 80))}px`,
-        "important"
+      const bounds = this.getMoveBounds();
+      const maxWidth = Math.max(1, bounds.right - bounds.left);
+      const maxHeight = Math.max(1, bounds.bottom - bounds.top);
+      const minWidth = Math.min(LIVE_CHAT_MIN_WIDTH, maxWidth);
+      const minHeight = Math.min(LIVE_CHAT_MIN_HEIGHT, maxHeight);
+      const clampedWidth = Math.min(maxWidth, Math.max(minWidth, width));
+      const clampedHeight = Math.min(maxHeight, Math.max(minHeight, height));
+      const clampedLeft = Math.min(
+        Math.max(left, bounds.left),
+        bounds.right - clampedWidth
       );
-      this.chat.style.setProperty(
-        "top",
-        `${Math.max(0, Math.min(top, window.innerHeight - 50))}px`,
-        "important"
+      const clampedTop = Math.min(
+        Math.max(top, bounds.top),
+        bounds.bottom - clampedHeight
       );
+      this.chat.style.setProperty("left", `${Math.round(clampedLeft)}px`, "important");
+      this.chat.style.setProperty("top", `${Math.round(clampedTop)}px`, "important");
       this.chat.style.setProperty("right", "auto", "important");
       this.chat.style.setProperty(
         "width",
-        `${Math.min(width, maxWidth)}px`,
+        `${Math.round(clampedWidth)}px`,
         "important"
       );
       this.chat.style.setProperty(
         "height",
-        `${Math.min(height, maxHeight)}px`,
+        `${Math.round(clampedHeight)}px`,
         "important"
       );
+      this.updateResizeSide(clampedLeft, clampedWidth);
     }
 
     applyPosition() {
       if (!this.chat) return;
+      const bounds = this.getMoveBounds();
+      if (this.position && typeof this.position.top === "number" && this.position.top < bounds.top) {
+        this.position = null;
+        chrome.storage.local.remove([
+          LIVE_CHAT_POSITION_KEY,
+          LEGACY_LIVE_CHAT_POSITION_KEY,
+        ]);
+      }
       const fallback = {
-        left: Math.max(0, window.innerWidth - 420),
-        top: 60,
-        width: 400,
-        height: Math.min(620, window.innerHeight - 80),
+        left: Math.max(bounds.left, bounds.right - 420),
+        top: Math.max(bounds.top, Math.min(bounds.top + 20, bounds.bottom - LIVE_CHAT_MIN_HEIGHT)),
+        width: Math.min(400, bounds.right - bounds.left),
+        height: Math.min(620, bounds.bottom - bounds.top - 20),
       };
       const position = { ...fallback, ...(this.position || {}) };
       this.setRect(position.left, position.top, position.width, position.height);
-      this.chat.style.setProperty("opacity", String(this.opacity), "important");
+      this.applyOpacity();
+      const rect = this.chat.getBoundingClientRect();
+      if (
+        !this.position ||
+        Math.round(this.position.top) !== Math.round(rect.top) ||
+        Math.round(this.position.left) !== Math.round(rect.left) ||
+        Math.round(this.position.width) !== Math.round(rect.width) ||
+        Math.round(this.position.height) !== Math.round(rect.height)
+      ) {
+        this.savePosition();
+      }
     }
 
     constrainToViewport() {
       if (!this.chat?.classList.contains("ytm-movable-chat")) return;
       const rect = this.chat.getBoundingClientRect();
-      this.setRect(
-        Math.min(rect.left, window.innerWidth - Math.min(80, rect.width)),
-        Math.min(rect.top, window.innerHeight - 50),
-        Math.min(rect.width, window.innerWidth),
-        Math.min(rect.height, window.innerHeight)
-      );
+      this.setRect(rect.left, rect.top, rect.width, rect.height);
     }
 
     savePosition() {
@@ -800,6 +1202,7 @@
       chrome.storage.local.set({
         [LIVE_CHAT_POSITION_KEY]: this.position,
         [LIVE_CHAT_OPACITY_KEY]: this.opacity,
+        [LIVE_CHAT_COMPACT_KEY]: this.compact,
       });
     }
 
@@ -813,6 +1216,7 @@
         "height",
         "opacity",
         "position",
+        "--ytm-chat-rest-opacity",
       ]) {
         this.chat.style.removeProperty(property);
       }
@@ -820,10 +1224,29 @@
 
     detachChat() {
       if (!this.chat) return;
-      this.chat.classList.remove("ytm-movable-chat", "ytm-chat-interacting");
+      this.iframeObserver?.disconnect();
+      this.iframeObserver = null;
+      this.chat.removeEventListener("mouseenter", this.onMouseEnter);
+      this.chat.removeEventListener("mouseleave", this.onMouseLeave);
+      this.chat.classList.remove(
+        "ytm-movable-chat",
+        "ytm-chat-interacting",
+        "ytm-chat-compact",
+        "ytm-chat-bg-soft",
+        "ytm-chat-bg-translucent",
+        "ytm-chat-resize-left"
+      );
       this.clearPosition();
-      this.chat.querySelector(".ytm-chat-drag-handle")?.remove();
+      this.chat.querySelector(".ytm-chat-toolbar")?.remove();
       this.chat.querySelector(".ytm-chat-resize-handle")?.remove();
+      this.chat.querySelector(".ytm-chat-drag-handle")?.remove();
+      this.chat.querySelector(".ytm-chat-compact-btn")?.remove();
+      const iframe = this.chat.querySelector("iframe");
+      try {
+        iframe?.contentDocument?.getElementById(LIVE_CHAT_IFRAME_STYLE_ID)?.remove();
+      } catch {
+        /* ignore */
+      }
       this.chat = null;
     }
 
@@ -1140,7 +1563,8 @@
       youtubeEnabled && merged.features?.["theater-mode"] !== false
     );
     await movableLiveChat.setEnabled(
-      youtubeEnabled && merged.features?.["movable-live-chat"] === true
+      youtubeEnabled && merged.features?.["movable-live-chat"] === true,
+      merged.subsettings?.movableLiveChat
     );
     await theaterHoverComments.setEnabled(
       youtubeEnabled &&

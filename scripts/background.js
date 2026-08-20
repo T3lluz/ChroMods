@@ -81,6 +81,10 @@ const DEFAULT_SETTINGS = {
     feed: {
       columns: "auto",
     },
+    movableLiveChat: {
+      chatOnly: false,
+      background: "solid",
+    },
   },
   sites: {
     youtube: { enabled: true },
@@ -110,6 +114,19 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ [SETTINGS_KEY]: DEFAULT_SETTINGS });
   });
 });
+
+/* Drop live-chat positions stuck under the theater header hit strip. */
+(function healLiveChatPosition() {
+  const keys = ["chroModsLiveChatPosition", "youtubeThemingLiveChatPosition"];
+  chrome.storage.local.get(keys, (stored) => {
+    if (chrome.runtime.lastError) return;
+    const remove = keys.filter((key) => {
+      const top = stored?.[key]?.top;
+      return typeof top === "number" && top < 40;
+    });
+    if (remove.length) chrome.storage.local.remove(remove);
+  });
+})();
 
 async function chromodsShortcutTab(tab) {
   if (tab?.id && tab.url) return tab;

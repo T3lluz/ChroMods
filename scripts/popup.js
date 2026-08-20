@@ -9,6 +9,11 @@ const DEFAULT_FEED = {
   columns: "auto",
 };
 
+const DEFAULT_MOVABLE_LIVE_CHAT = {
+  chatOnly: false,
+  background: "solid",
+};
+
 const THEATER_SUBSETTINGS = [
   {
     id: "hideHeader",
@@ -53,6 +58,26 @@ const FEED_SUBSETTINGS = [
       { value: "4", label: "4" },
       { value: "5", label: "5" },
       { value: "6", label: "6" },
+    ],
+  },
+];
+
+const MOVABLE_LIVE_CHAT_SUBSETTINGS = [
+  {
+    id: "chatOnly",
+    title: "Chat only",
+    description: "Hide border, header, and input until you hover the chat.",
+    type: "toggle",
+  },
+  {
+    id: "background",
+    title: "Background",
+    description: "How opaque the floating chat panel looks over the video.",
+    type: "select",
+    options: [
+      { value: "solid", label: "Solid" },
+      { value: "soft", label: "Soft" },
+      { value: "translucent", label: "Translucent until hover" },
     ],
   },
 ];
@@ -170,9 +195,11 @@ const FEATURE_META = [
     id: "movable-live-chat",
     category: "live",
     title: "Movable live chat",
-    description: "Drag, resize, and adjust live chat opacity in theater mode.",
+    description: "Drag and resize live chat in theater mode.",
     defaultEnabled: false,
     conflictsWith: "overlay-live-chat",
+    subsettings: MOVABLE_LIVE_CHAT_SUBSETTINGS,
+    subsettingsKey: "movableLiveChat",
   },
   {
     id: "gh-immersive-search",
@@ -564,6 +591,7 @@ const DEFAULT_SETTINGS = {
   subsettings: {
     theater: { ...DEFAULT_THEATER },
     feed: { ...DEFAULT_FEED },
+    movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
   },
 };
 
@@ -626,6 +654,17 @@ function migrateTheater(theater = {}) {
   return migrated;
 }
 
+function migrateMovableLiveChat(movable = {}) {
+  const migrated = { ...DEFAULT_MOVABLE_LIVE_CHAT };
+  if ("chatOnly" in movable) migrated.chatOnly = Boolean(movable.chatOnly);
+  if (["solid", "soft", "translucent"].includes(movable.background)) {
+    migrated.background = movable.background;
+  } else if ("translucent" in movable) {
+    migrated.background = movable.translucent === false ? "solid" : "translucent";
+  }
+  return migrated;
+}
+
 function getFeatureSubsettings(feature) {
   const key = feature.subsettingsKey;
   if (!key) return {};
@@ -633,9 +672,17 @@ function getFeatureSubsettings(feature) {
   if (key === "theater") {
     return migrateTheater(settings.subsettings?.theater);
   }
+  if (key === "feed") {
+    return {
+      ...DEFAULT_FEED,
+      ...(settings.subsettings?.feed || {}),
+    };
+  }
+  if (key === "movableLiveChat") {
+    return migrateMovableLiveChat(settings.subsettings?.movableLiveChat);
+  }
 
   return {
-    ...DEFAULT_FEED,
     ...(settings.subsettings?.[key] || {}),
   };
 }
@@ -657,6 +704,9 @@ async function loadSettings() {
         ...DEFAULT_FEED,
         ...(storedSettings?.subsettings?.feed || {}),
       },
+      movableLiveChat: migrateMovableLiveChat(
+        storedSettings?.subsettings?.movableLiveChat
+      ),
     },
   };
 

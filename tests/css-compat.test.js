@@ -138,6 +138,7 @@ test("immersive search hides voice search and blurs page content on focus", () =
 test("theater hide header stays out of fullscreen", () => {
   const css = read(style("youtube", "theater-hide-header.css"));
   assert.match(css, /padding-bottom:\s*24px/);
+  assert.match(css, /top:\s*-40px/);
   assert.match(css, /focus-within/);
   assert.match(css, /\[theater\]:not\(\[hidden\]\):not\(\[fullscreen\]\)/);
 });
@@ -561,6 +562,16 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /feed-layout-grid\.css/);
   assert.match(js, /MovableLiveChat/);
   assert.match(js, /movable-live-chat/);
+  assert.match(js, /getMinTop/);
+  assert.match(js, /getMoveBounds/);
+  assert.match(js, /LIVE_CHAT_MIN_WIDTH/);
+  assert.match(js, /ytm-chat-compact/);
+  assert.match(js, /ytm-chat-bg-translucent/);
+  assert.match(js, /ytm-chat-bg-soft/);
+  assert.match(js, /ytm-chat-resize-left/);
+  assert.match(js, /--ytm-chat-rest-opacity/);
+  assert.match(js, /movableLiveChat/);
+  assert.match(js, /hideOffset = 40/);
   assert.match(js, /setTheaterLayoutSyncEnabled/);
   assert.match(js, /TheaterHoverComments|theaterHoverComments/);
   assert.match(js, /"gh-no-tab-text"/);
@@ -615,6 +626,7 @@ test("background only seeds install defaults", () => {
   assert.match(js, /captureVisibleTab/);
   assert.match(js, /CHROMODS_DARK_WIPE/);
   assert.match(js, /chrome\.runtime\.lastError/);
+  assert.match(js, /chroModsLiveChatPosition/);
   assert.doesNotMatch(js, /broadcastSettings/);
 });
 
@@ -654,6 +666,11 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /commentsSide/);
   assert.match(js, /FEED_SUBSETTINGS/);
   assert.match(js, /columns/);
+  assert.match(js, /MOVABLE_LIVE_CHAT_SUBSETTINGS/);
+  assert.match(js, /movableLiveChat/);
+  assert.match(js, /chatOnly/);
+  assert.match(js, /background/);
+  assert.match(js, /Translucent until hover/);
   assert.match(js, /overlay-live-chat/);
   assert.match(js, /gh-no-tab-text/);
   assert.match(js, /gh-glass-effect/);

@@ -45,7 +45,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | **Better captions** | Use a compact frosted caption panel with clearer text. | Off |
 | **YouTube TV** | Polish the large-screen YouTube TV player and overlays. | Off |
 | **Overlay live chat** | Float live chat at the right edge while in theater mode. | Off |
-| **Movable live chat** | Drag, resize, and adjust live chat opacity in theater mode. | Off |
+| **Movable live chat** | Drag and resize live chat in theater mode. | Off |
 
 ### <img src="docs/sites/github.svg" width="22" height="22" alt="" /> GitHub
 
