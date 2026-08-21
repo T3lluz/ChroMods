@@ -1951,16 +1951,44 @@ body {
 }
 
 .update-hint {
-  margin: 8px 0 14px;
+  margin: 8px 0 0;
   font-size: 0.68rem;
   color: var(--text-muted);
   line-height: 1.45;
+}
+
+.update-hint code {
+  font-size: 0.66rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.update-details {
+  padding-bottom: 12px;
 }
 
 .update-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.update-details:not([hidden]) + .update-actions {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.update-foot {
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  line-height: 1.45;
 }
 
 .update-primary {

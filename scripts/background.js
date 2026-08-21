@@ -120,6 +120,13 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
 
   chromodsScheduleUpdateChecks();
+
+  /* Reloading an unpacked extension reports itself as an update, so this is
+     also where a just-installed new version settles its own notice. */
+  if (details?.reason === "update") {
+    chromodsSettleInstalledVersion().catch(() => {});
+  }
+
   chromodsCheckForUpdate({ force: details?.reason !== "chrome_update" }).catch(() => {});
 });
 
@@ -145,6 +152,10 @@ chrome.alarms?.onAlarm.addListener((alarm) => {
 });
 
 chromodsRefreshUpdateBadge().catch(() => {});
+
+/* Runs on every worker start, which is also the first thing that happens after
+   a reload, so a queued "Reload ChroMods" finishes by refreshing themed tabs. */
+chromodsFinishPendingReload().catch(() => {});
 
 /* Drop live-chat positions stuck under the theater header hit strip. */
 (function healLiveChatPosition() {

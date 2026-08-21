@@ -1,14 +1,20 @@
 const CHROMODS_UPDATE_REPO = { owner: "T3lluz", repo: "ChroMods", branch: "main" };
 
 const CHROMODS_UPDATE_KEY = "chroModsUpdate";
+const CHROMODS_RELOAD_KEY = "chroModsPendingReload";
 const CHROMODS_UPDATE_ALARM = "chromods-update-check";
 const CHROMODS_UPDATE_INTERVAL_MINUTES = 360;
 /* Background alarms drive the badge; popup opens only re-check after this gap. */
 const CHROMODS_UPDATE_MIN_GAP_MS = 30 * 60 * 1000;
+const CHROMODS_UPDATE_TIMEOUT_MS = 10000;
+/* A reload takes a second or two; anything older than this is a leftover. */
+const CHROMODS_RELOAD_MAX_AGE_MS = 60 * 1000;
 const CHROMODS_UPDATE_CHECK = "chromods-update-check";
 const CHROMODS_UPDATE_DISMISS = "chromods-update-dismiss";
 const CHROMODS_UPDATE_BADGE = "NEW";
 const CHROMODS_UPDATE_BADGE_COLOR = "#ff8f6b";
+const CHROMODS_EXTENSIONS_URL = "chrome://extensions/";
+const CHROMODS_SHORTCUTS_URL = "chrome://extensions/shortcuts";
 
 function chromodsUpdateRepoUrl(...parts) {
   return ["https://github.com", CHROMODS_UPDATE_REPO.owner, CHROMODS_UPDATE_REPO.repo, ...parts].join("/");
@@ -128,11 +134,25 @@ function chromodsUpdateHttpError(response) {
   return `GitHub returned ${status || "an error"}`;
 }
 
+/* A stalled request would otherwise hold the in-flight lock until the service
+   worker is torn down, leaving the popup stuck on "Checking…". */
+function chromodsUpdateAbortSignal() {
+  try {
+    return AbortSignal.timeout(CHROMODS_UPDATE_TIMEOUT_MS);
+  } catch {
+    return undefined;
+  }
+}
+
 async function chromodsFetchLatestRelease(fetchImpl) {
   const request = fetchImpl || fetch;
   const response = await request(
     `https://api.github.com/repos/${CHROMODS_UPDATE_REPO.owner}/${CHROMODS_UPDATE_REPO.repo}/releases/latest`,
-    { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }
+    {
+      headers: { Accept: "application/vnd.github+json" },
+      cache: "no-store",
+      signal: chromodsUpdateAbortSignal(),
+    }
   );
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(chromodsUpdateHttpError(response));
@@ -142,7 +162,10 @@ async function chromodsFetchLatestRelease(fetchImpl) {
 async function chromodsFetchBranchManifest(fetchImpl) {
   const request = fetchImpl || fetch;
   const url = `https://raw.githubusercontent.com/${CHROMODS_UPDATE_REPO.owner}/${CHROMODS_UPDATE_REPO.repo}/${CHROMODS_UPDATE_REPO.branch}/manifest.json`;
-  const response = await request(`${url}?t=${Date.now()}`, { cache: "no-store" });
+  const response = await request(`${url}?t=${Date.now()}`, {
+    cache: "no-store",
+    signal: chromodsUpdateAbortSignal(),
+  });
   if (!response.ok) throw new Error(chromodsUpdateHttpError(response));
   return chromodsBranchInfo(await response.json());
 }
@@ -243,6 +266,71 @@ async function chromodsRefreshUpdateBadge() {
   return state;
 }
 
+/* Reloading an unpacked extension re-reads it from disk, so the version the
+   popup was warning about is now the version that is running. */
+async function chromodsSettleInstalledVersion() {
+  const state = await chromodsGetUpdateState();
+  if (!state.latestVersion) return chromodsApplyUpdateBadge(state).then(() => state);
+  if (chromodsUpdateAvailable(state)) {
+    await chromodsApplyUpdateBadge(state);
+    return state;
+  }
+  const next = await chromodsSetUpdateState({ ...state, dismissedVersion: null });
+  await chromodsApplyUpdateBadge(next);
+  return next;
+}
+
+/* Content scripts in open tabs keep running the code from before the reload,
+   so every tab ChroMods touches has to be reloaded as well. Whether a tab is
+   themed depends on sites.js and dark-sites.js, which the service worker and
+   the popup both load alongside this file. */
+function chromodsThemedTab(tab, darkSites) {
+  const url = String(tab?.url || "");
+  if (!/^https?:\/\//i.test(url)) return false;
+  if (typeof matchSiteFromUrl === "function" && matchSiteFromUrl(url)) return true;
+  if (typeof chromodsDarkHostFromUrl !== "function") return false;
+  if (typeof chromodsIsDarkHostEnabled !== "function") return false;
+  const host = chromodsDarkHostFromUrl(url);
+  return Boolean(host) && chromodsIsDarkHostEnabled(darkSites, host);
+}
+
+function chromodsThemedTabIds(tabs, darkSites) {
+  return (Array.isArray(tabs) ? tabs : [])
+    .filter((tab) => Number.isFinite(tab?.id) && chromodsThemedTab(tab, darkSites))
+    .map((tab) => tab.id);
+}
+
+async function chromodsRefreshThemedTabs() {
+  if (!chrome.tabs?.query) return 0;
+  let darkSites = null;
+  if (typeof chromodsGetDarkSites === "function") {
+    darkSites = await chromodsGetDarkSites().catch(() => null);
+  }
+  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] }).catch(() => []);
+  const ids = chromodsThemedTabIds(tabs, darkSites);
+  await Promise.all(ids.map((id) => chrome.tabs.reload(id).catch(() => {})));
+  return ids.length;
+}
+
+/* The popup cannot outlive chrome.runtime.reload(), so the intent to refresh
+   tabs is parked in storage and picked up when the worker comes back. */
+async function chromodsRequestExtensionReload({ refreshTabs = true } = {}) {
+  await chrome.storage.local.set({
+    [CHROMODS_RELOAD_KEY]: { refreshTabs: Boolean(refreshTabs), at: Date.now() },
+  });
+  chrome.runtime.reload();
+}
+
+async function chromodsFinishPendingReload() {
+  const stored = await chrome.storage.local.get(CHROMODS_RELOAD_KEY).catch(() => null);
+  const pending = stored?.[CHROMODS_RELOAD_KEY];
+  if (!pending) return 0;
+  await chrome.storage.local.remove(CHROMODS_RELOAD_KEY).catch(() => {});
+  const age = Date.now() - (Number(pending.at) || 0);
+  if (!pending.refreshTabs || age < 0 || age > CHROMODS_RELOAD_MAX_AGE_MS) return 0;
+  return chromodsRefreshThemedTabs();
+}
+
 function chromodsUpdateRelativeTime(timestamp, now = Date.now()) {
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "never";
   const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
@@ -267,10 +355,21 @@ function chromodsUpdateNoteLines(notes, limit = 6) {
     .slice(0, limit);
 }
 
+function chromodsWindowsPlatform(platform = "") {
+  return String(platform || "").toLowerCase().includes("win");
+}
+
+/* Re-running the installer is the same command as installing: it refreshes the
+   folder whether the user cloned it or unpacked a ZIP. */
+function chromodsInstallCommand(platform = "") {
+  const base = `https://raw.githubusercontent.com/${CHROMODS_UPDATE_REPO.owner}/${CHROMODS_UPDATE_REPO.repo}/${CHROMODS_UPDATE_REPO.branch}`;
+  if (chromodsWindowsPlatform(platform)) return `irm ${base}/install.ps1 | iex`;
+  return `curl -fsSL ${base}/install.sh | bash`;
+}
+
 /* Unpacked installs live wherever the user cloned them; install.sh and
    install.ps1 default to these paths, so the popup can show a real command. */
 function chromodsUpdateCommand(platform = "") {
-  const value = String(platform || "").toLowerCase();
-  if (value.includes("win")) return 'git -C "$env:LOCALAPPDATA\\ChroMods" pull';
+  if (chromodsWindowsPlatform(platform)) return 'git -C "$env:LOCALAPPDATA\\ChroMods" pull';
   return 'git -C "$HOME/.chromods" pull';
 }

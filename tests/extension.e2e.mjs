@@ -140,6 +140,11 @@ async function run() {
       timeout: 20000,
     });
     assert.equal(await popupPage.locator("#update-details").isHidden(), true);
+    // Reloading is worth doing with or without a pending update, so those
+    // controls stay visible while the two-step instructions are hidden.
+    assert.equal(await popupPage.locator("#update-reload").isVisible(), true);
+    assert.equal(await popupPage.locator("#update-extensions").isVisible(), true);
+    assert.equal(await popupPage.locator("#update-dismiss").isHidden(), true);
     await popupPage.evaluate(async () => {
       await chrome.storage.local.set({
         chroModsUpdate: {
@@ -160,7 +165,12 @@ async function run() {
     });
     assert.match(await popupPage.locator("#update-headline").textContent() ?? "", /v99\.9\.9/);
     assert.deepEqual(await popupPage.locator("#update-notes li").allTextContents(), ["Pretend release"]);
-    assert.match(await popupPage.locator("#update-command-text").textContent() ?? "", /git -C .+ pull/);
+    assert.match(
+      (await popupPage.locator("#update-command-text").textContent()) ?? "",
+      /install\.(sh|ps1)/,
+      "the update command should be the installer one-liner"
+    );
+    assert.match(await popupPage.locator("#update-git-command").textContent() ?? "", /git -C .+ pull/);
     assert.equal(await popupPage.locator(".version-pill.has-update").count(), 1);
     const updateBadge = await popupPage.evaluate(async () => {
       await chrome.runtime.sendMessage({ type: "chromods-update-check", force: false });
