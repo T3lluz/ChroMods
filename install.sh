@@ -134,6 +134,6 @@ else
     say "  3. Pick the folder above"
   fi
   say ""
-  say "After that, updates are: re-run this command, then hit Reload ChroMods"
-  say "in the popup's Settings -> Updates."
+  say "After that, updates are: Settings -> Updates -> Apply update in the popup"
+  say "(or re-run this command, then hit Reload ChroMods)."
 fi

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" class="is-apply-page">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update ChroMods</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="apply-shell">
+      <header class="apply-header">
+        <img src="../icons/icon48.png" alt="" width="36" height="36" />
+        <div>
+          <h1>Update ChroMods</h1>
+          <p id="apply-versions" class="settings-muted">Checking the download…</p>
+        </div>
+      </header>
+
+      <p id="apply-status" class="apply-status">
+        Chromium can't overwrite an unpacked extension by itself. Pick the folder you loaded
+        (the installer uses <code>~/.chromods</code> or <code>%LOCALAPPDATA%\ChroMods</code>),
+        and ChroMods writes the new files then reloads.
+      </p>
+
+      <div class="apply-progress" hidden>
+        <div class="apply-progress-bar" id="apply-progress-bar"></div>
+      </div>
+
+      <button id="apply-run" class="update-primary apply-run" type="button" data-icon="ui-update" disabled>
+        Apply update
+      </button>
+
+      <p id="apply-folder" class="apply-folder settings-muted" hidden></p>
+
+      <details class="update-advanced apply-advanced">
+        <summary>Use a terminal instead</summary>
+        <div class="update-command">
+          <code id="apply-command-text">curl -fsSL .../install.sh | bash</code>
+          <button id="apply-copy" class="update-mini-btn" type="button">Copy</button>
+        </div>
+        <p class="update-hint">
+          Then return to the popup and hit Reload ChroMods. Hidden folders: show hidden files
+          in the picker if you installed to <code>~/.chromods</code>.
+        </p>
+      </details>
+    </div>
+    <script src="../scripts/icons.js"></script>
+    <script src="../scripts/updates.js"></script>
+    <script src="../scripts/apply-update.js"></script>
+    <script src="../scripts/apply-page.js"></script>
+  </body>
+</html>

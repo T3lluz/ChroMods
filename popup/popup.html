@@ -145,7 +145,9 @@
       <div class="settings-body">
         <section class="settings-section" id="update-section">
           <h2 class="section-title" data-icon="ui-update">Updates</h2>
-          <p class="settings-lead">ChroMods checks GitHub for new versions. Chromium can't auto-install an unpacked extension, so updating is two steps: get the new files, then reload.</p>
+          <p class="settings-lead" id="update-lead">
+            Styles already ship inside ChroMods. When a new version is published, apply it here — no terminal required.
+          </p>
           <div class="settings-card update-card">
             <div class="update-row">
               <span class="update-status-dot" id="update-dot" aria-hidden="true"></span>
@@ -159,24 +161,30 @@
               <ul id="update-notes" class="update-notes" hidden></ul>
               <p class="update-step">
                 <span class="update-step-num">1</span>
-                Get the new files
+                Apply the new files from this popup
               </p>
-              <div class="update-command">
-                <code id="update-command-text">curl -fsSL .../install.sh | bash</code>
-                <button id="update-copy" class="update-mini-btn" type="button">Copy</button>
-              </div>
-              <p class="update-hint">
-                Re-running the installer refreshes the folder in place. Cloned it yourself? Use
-                <code id="update-git-command">git pull</code> instead, or
-                <button id="update-download" class="update-link" type="button">download v—</button>
-                and replace the folder's contents.
+              <p class="update-hint" id="update-apply-hint">
+                Chromium still can't silently overwrite an unpacked folder, so you'll pick the ChroMods
+                directory once (usually <code>~/.chromods</code>). After that it's a button.
               </p>
-              <p class="update-step">
-                <span class="update-step-num">2</span>
-                Reload the extension
-              </p>
+              <details id="update-advanced" class="update-advanced">
+                <summary>Use a terminal instead</summary>
+                <div class="update-command">
+                  <code id="update-command-text">curl -fsSL .../install.sh | bash</code>
+                  <button id="update-copy" class="update-mini-btn" type="button">Copy</button>
+                </div>
+                <p class="update-hint">
+                  Re-running the installer refreshes the folder in place. Cloned it yourself? Use
+                  <code id="update-git-command">git pull</code> instead, or
+                  <button id="update-download" class="update-link" type="button">download v—</button>
+                  and replace the folder's contents, then Reload ChroMods.
+                </p>
+              </details>
             </div>
             <div class="update-actions">
+              <button id="update-apply" class="update-primary" type="button" data-icon="ui-update" hidden>
+                Apply update
+              </button>
               <button id="update-reload" class="update-primary" type="button" data-icon="action-reload">
                 Reload ChroMods
               </button>
@@ -243,6 +251,7 @@
     <script src="../scripts/shortcuts.js"></script>
     <script src="../scripts/style-request.js"></script>
     <script src="../scripts/updates.js"></script>
+    <script src="../scripts/apply-update.js"></script>
     <script src="../scripts/popup.js"></script>
   </body>
 </html>

@@ -123,6 +123,6 @@ if ($WasInstalled) {
     Write-Host "  3. Pick the folder above"
   }
   Write-Host ""
-  Write-Host "After that, updates are: re-run this command, then hit Reload ChroMods"
-  Write-Host "in the popup's Settings -> Updates."
+  Write-Host "After that, updates are: Settings -> Updates -> Apply update in the popup"
+  Write-Host "(or re-run this command, then hit Reload ChroMods)."
 }
