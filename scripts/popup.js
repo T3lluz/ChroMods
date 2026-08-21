@@ -642,11 +642,14 @@ const updateCheckBtn = document.getElementById("update-check");
 const updateDetails = document.getElementById("update-details");
 const updateNotes = document.getElementById("update-notes");
 const updateCommandText = document.getElementById("update-command-text");
+const updateGitCommand = document.getElementById("update-git-command");
 const updateCopyBtn = document.getElementById("update-copy");
 const updateDownloadBtn = document.getElementById("update-download");
 const updateReloadBtn = document.getElementById("update-reload");
+const updateExtensionsBtn = document.getElementById("update-extensions");
 const updateNotesLink = document.getElementById("update-notes-link");
 const updateDismissBtn = document.getElementById("update-dismiss");
+const shortcutsPageBtn = document.getElementById("shortcuts-page");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let currentSite = null;
@@ -1755,17 +1758,22 @@ function renderUpdateCard() {
     updateStatus.textContent = "Not checked yet.";
   }
 
+  /* Reloading is useful whether or not an update is pending, so the actions
+     row stays put and only the two-step instructions come and go. */
+  updateNotesLink.hidden = !available || !updateState.url;
+  updateNotesLink.textContent = updateState.source === "release" ? "What's new" : "See commits";
+  updateDismissBtn.hidden = !available || dismissed;
+
   updateDetails.hidden = !available || dismissed;
   if (updateDetails.hidden) return;
 
   const lines = chromodsUpdateNoteLines(updateState.notes);
   updateNotes.hidden = lines.length === 0;
   updateNotes.innerHTML = lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
-  updateCommandText.textContent = chromodsUpdateCommand(popupPlatform());
+  updateCommandText.textContent = chromodsInstallCommand(popupPlatform());
+  updateGitCommand.textContent = chromodsUpdateCommand(popupPlatform());
   updateDownloadBtn.hidden = !updateState.downloadUrl;
-  updateDownloadBtn.textContent = `Download v${updateState.latestVersion}`;
-  updateNotesLink.hidden = !updateState.url;
-  updateNotesLink.textContent = updateState.source === "release" ? "What's new" : "See commits";
+  updateDownloadBtn.textContent = `download v${updateState.latestVersion}`;
 }
 
 function renderUpdates() {
@@ -1823,13 +1831,27 @@ async function openUpdateLink(url) {
   window.close();
 }
 
+/* The request is parked in storage before the reload because this popup does
+   not survive it — the restarted service worker refreshes the tabs. */
+async function reloadExtension() {
+  updateReloadBtn.disabled = true;
+  updateReloadBtn.textContent = "Reloading…";
+  try {
+    await chromodsRequestExtensionReload({ refreshTabs: true });
+  } catch {
+    chrome.runtime.reload();
+  }
+}
+
 function bindUpdateControls() {
   updateCheckBtn.addEventListener("click", () => runUpdateCheck({ force: true }));
   updateCopyBtn.addEventListener("click", copyUpdateCommand);
   updateDownloadBtn.addEventListener("click", () => openUpdateLink(updateState.downloadUrl));
   updateNotesLink.addEventListener("click", () => openUpdateLink(updateState.url));
   updateDismissBtn.addEventListener("click", dismissUpdate);
-  updateReloadBtn.addEventListener("click", () => chrome.runtime.reload());
+  updateReloadBtn.addEventListener("click", reloadExtension);
+  updateExtensionsBtn.addEventListener("click", () => openUpdateLink(CHROMODS_EXTENSIONS_URL));
+  shortcutsPageBtn?.addEventListener("click", () => openUpdateLink(CHROMODS_SHORTCUTS_URL));
   versionPill?.addEventListener("click", () => setSettingsOpen(true));
 
   chrome.storage.onChanged.addListener((changes, area) => {

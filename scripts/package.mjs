@@ -13,6 +13,9 @@ const EXCLUDE = [
   "scripts/launch-cloud-agent.mjs",
   "scripts/triage-issue.mjs",
   "scripts/package.mjs",
+  "scripts/publish-cws.mjs",
+  "scripts/version.mjs",
+  ".DS_Store",
   "*/.DS_Store",
   "*.map",
 ];

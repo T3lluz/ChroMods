@@ -89,19 +89,43 @@ test("the update checker is wired into the background and the popup", () => {
   assert.match(background, /CHROMODS_UPDATE_CHECK/);
   assert.match(background, /CHROMODS_UPDATE_DISMISS/);
   assert.match(background, /chromodsRefreshUpdateBadge\(\)/);
+  // Runs at the top level rather than from onInstalled so the reload request is
+  // consumed exactly once per worker start.
+  assert.match(background, /^chromodsFinishPendingReload\(\)/m);
+  assert.match(background, /chromodsSettleInstalledVersion/);
 
   const popupHtml = read("popup/popup.html");
   assert.match(popupHtml, /scripts\/updates\.js/);
   const popupHtmlBeforeUpdates = popupHtml.indexOf("scripts/updates.js");
   assert.ok(popupHtmlBeforeUpdates < popupHtml.indexOf("scripts/popup.js"));
-  for (const id of ["update-check", "update-reload", "update-copy", "update-download", "update-dismiss"]) {
+  for (const id of [
+    "update-check",
+    "update-reload",
+    "update-copy",
+    "update-download",
+    "update-dismiss",
+    "update-extensions",
+    "update-git-command",
+    "shortcuts-page",
+  ]) {
     assert.match(popupHtml, new RegExp(`id="${id}"`), `popup is missing #${id}`);
   }
 
+  // Reloading and the extensions page are useful with or without a pending
+  // update, so they live outside the collapsible instructions.
+  const details = popupHtml.slice(
+    popupHtml.indexOf('id="update-details"'),
+    popupHtml.indexOf('class="update-actions"')
+  );
+  assert.ok(!details.includes('id="update-reload"'), "the reload button should not be gated on an update");
+
   const popup = read("scripts/popup.js");
   assert.match(popup, /chrome\.runtime\.reload\(\)/);
+  assert.match(popup, /chromodsRequestExtensionReload/);
   assert.match(popup, /chromodsUpdateAvailable/);
   assert.match(popup, /CHROMODS_UPDATE_KEY/);
+  assert.match(popup, /CHROMODS_EXTENSIONS_URL/);
+  assert.match(popup, /CHROMODS_SHORTCUTS_URL/);
 });
 
 test("all stylesheet modules exist", () => {

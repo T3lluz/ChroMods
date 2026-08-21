@@ -7,6 +7,8 @@
     "test:e2e": "node tests/extension.e2e.mjs",
     "readme": "node scripts/generate-readme.mjs",
     "package": "node scripts/package.mjs",
+    "release": "node scripts/version.mjs",
+    "publish:cws": "node scripts/publish-cws.mjs",
     "vendor:darkreader": "cp node_modules/darkreader/darkreader.js scripts/vendor/darkreader.js"
   },
   "devDependencies": {

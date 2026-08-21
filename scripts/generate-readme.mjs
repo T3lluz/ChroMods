@@ -117,7 +117,7 @@ ${siteSections}
 
 ## Install
 
-One command puts the extension in a known folder (\`~/.chromods\`, or \`%LOCALAPPDATA%\\ChroMods\` on Windows):
+One command downloads ChroMods into \`~/.chromods\` (\`%LOCALAPPDATA%\\ChroMods\` on Windows), copies that path to your clipboard, and opens your browser's extensions page:
 
 \`\`\`bash
 curl -fsSL https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/main/install.sh | bash
@@ -127,28 +127,31 @@ curl -fsSL https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/main
 irm https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/main/install.ps1 | iex
 \`\`\`
 
-Then open \`chrome://extensions\` → **Developer mode** → **Load unpacked** → pick that folder, and reload any open ${sitesPhrase} tabs.
+Three clicks are left: turn on **Developer mode**, click **Load unpacked**, and paste the path. Then reload any open ${sitesPhrase} tabs.
 
-Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://github.com/${GITHUB.owner}/${GITHUB.repo}/releases/latest)) and load that folder unpacked.
+Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://github.com/${GITHUB.owner}/${GITHUB.repo}/releases/latest)) and load that folder unpacked. Set \`CHROMODS_DIR\` to install somewhere else.
 
 ## Updating
 
-The popup checks GitHub for new versions every few hours and badges the toolbar icon when one lands. **Settings → Updates** shows what changed and walks through the two steps Chromium requires for an unpacked extension:
+The popup checks GitHub every few hours and badges the toolbar icon when a new version lands. Chromium can't auto-install an unpacked extension, so **Settings → Updates** shows what changed and covers the two steps:
 
-1. Get the new files — re-run the install command, \`git pull\` in the folder, or download the new ZIP.
-2. Hit **Reload ChroMods**, which reloads the extension from disk.
+1. **Get the new files** — re-run the install command above. It refreshes the folder in place whether you cloned it or unpacked a ZIP.
+2. **Hit Reload ChroMods** — re-reads the folder from disk and reloads your themed tabs, whose content scripts the reload would otherwise orphan.
+
+A one-click install with silent updates needs the Chrome Web Store; nothing outside it can auto-update on Windows or macOS. [docs/RELEASING.md](docs/RELEASING.md) has the details and the pipeline is ready for it.
 
 ## Dev
 
 \`\`\`bash
-npm install          # playwright for e2e
-npm test             # manifest, CSS compatibility, and wiring
-npm run test:e2e     # popup UI, theater geometry, and YouTube injection
-npm run readme       # regenerate this README from live feature metadata
-npm run package      # build dist/chromods-<version>.zip for a release
+npm install                 # playwright for e2e
+npm test                    # manifest, CSS compatibility, install, and wiring
+npm run test:e2e            # popup UI, theater geometry, and YouTube injection
+npm run readme              # regenerate this README from live feature metadata
+npm run package             # build dist/chromods-<version>.zip for a release
+npm run release -- patch    # bump manifest.json + README, ready to tag
 \`\`\`
 
-Releases are cut by pushing a \`v<version>\` tag that matches \`manifest.json\`; \`.github/workflows/release.yml\` tests, packages, and publishes the ZIP the updater points at.
+Releases are cut by pushing a \`v<version>\` tag that matches \`manifest.json\`; \`.github/workflows/release.yml\` tests, packages, and publishes the ZIP the updater points at. See [docs/RELEASING.md](docs/RELEASING.md).
 
 Chromium only. Zen browser-window transparency is excluded because Chromium cannot expose the chrome backdrop. Settings sync under \`chroModsSettings\`.
 

@@ -62,3 +62,13 @@ jobs:
             "dist/chromods-${{ steps.version.outputs.version }}.zip" \
             --title "ChroMods ${GITHUB_REF#refs/tags/}" \
             --generate-notes
+
+      # Skips itself until the store credentials exist; see docs/RELEASING.md.
+      - name: Publish to the Chrome Web Store
+        if: startsWith(github.ref, 'refs/tags/v') && env.CWS_EXTENSION_ID != ''
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+        run: npm run publish:cws

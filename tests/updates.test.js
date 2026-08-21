@@ -7,15 +7,30 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-function fakeChrome({ version = "1.5.0", stored = {} } = {}) {
+function fakeChrome({ version = "1.5.0", stored = {}, tabs = [] } = {}) {
   const local = { ...stored };
   const badge = { text: null, color: null, title: null };
+  const reloaded = { extension: 0, tabs: [] };
   return {
-    runtime: { getManifest: () => ({ version }) },
+    runtime: {
+      getManifest: () => ({ version }),
+      reload: () => {
+        reloaded.extension += 1;
+      },
+    },
+    tabs: {
+      query: async () => tabs,
+      reload: async (id) => {
+        reloaded.tabs.push(id);
+      },
+    },
     storage: {
       local: {
         get: async (key) => (key in local ? { [key]: local[key] } : {}),
         set: async (items) => Object.assign(local, items),
+        remove: async (key) => {
+          delete local[key];
+        },
       },
     },
     action: {
@@ -31,13 +46,26 @@ function fakeChrome({ version = "1.5.0", stored = {} } = {}) {
     },
     __local: local,
     __badge: badge,
+    __reloaded: reloaded,
   };
 }
 
 function loadUpdates(options = {}) {
   const source = fs.readFileSync(path.join(root, "scripts/updates.js"), "utf8");
   const chrome = fakeChrome(options);
-  const context = { chrome, fetch: options.fetch, URL, URLSearchParams, Date, console };
+  const context = {
+    chrome,
+    fetch: options.fetch,
+    URL,
+    URLSearchParams,
+    AbortSignal,
+    Date,
+    console,
+    /* Supplied by sites.js and dark-sites.js in the extension itself. */
+    matchSiteFromUrl: options.matchSiteFromUrl,
+    chromodsDarkHostFromUrl: options.chromodsDarkHostFromUrl,
+    chromodsIsDarkHostEnabled: options.chromodsIsDarkHostEnabled,
+  };
   vm.createContext(context);
   vm.runInContext(source, context);
   context.__chrome = chrome;
@@ -212,6 +240,112 @@ test("update instructions match the installer's default folder", () => {
   const powershell = fs.readFileSync(path.join(root, "install.ps1"), "utf8");
   assert.match(shell, /\$HOME\/\.chromods/);
   assert.match(powershell, /LOCALAPPDATA/);
+});
+
+test("the update one-liner is the install one-liner", () => {
+  const api = loadUpdates();
+  const unix = api.chromodsInstallCommand("macOS");
+  const windows = api.chromodsInstallCommand("Windows");
+  assert.match(unix, /^curl -fsSL https:\/\/raw\.githubusercontent\.com\/T3lluz\/ChroMods\/main\/install\.sh \| bash$/);
+  assert.equal(api.chromodsInstallCommand("Linux"), unix);
+  assert.match(windows, /^irm https:\/\/.+\/install\.ps1 \| iex$/);
+
+  const shell = fs.readFileSync(path.join(root, "install.sh"), "utf8");
+  const powershell = fs.readFileSync(path.join(root, "install.ps1"), "utf8");
+  assert.ok(shell.includes(unix), "install.sh no longer documents this command");
+  assert.ok(powershell.includes(windows), "install.ps1 no longer documents this command");
+});
+
+test("a reload settles the notice for the version it just installed", async () => {
+  const installed = loadUpdates({
+    version: "1.6.0",
+    stored: { chroModsUpdate: { latestVersion: "1.6.0", dismissedVersion: "1.6.0", checkedAt: 10 } },
+  });
+  const settled = await installed.chromodsSettleInstalledVersion();
+  assert.equal(settled.dismissedVersion, null, "a dismissal for an installed version is spent");
+  assert.equal(installed.__chrome.__badge.text, "");
+
+  /* A reload that did not bring the new files must keep warning. */
+  const stale = loadUpdates({
+    version: "1.5.0",
+    stored: { chroModsUpdate: { latestVersion: "1.6.0", dismissedVersion: "1.6.0", checkedAt: 10 } },
+  });
+  const kept = await stale.chromodsSettleInstalledVersion();
+  assert.equal(kept.dismissedVersion, "1.6.0");
+  assert.equal(stale.__chrome.__badge.text, "");
+});
+
+const THEMED_TABS = [
+  { id: 1, url: "https://www.youtube.com/watch?v=1" },
+  { id: 2, url: "https://example.com/" },
+  { id: 3, url: "chrome://extensions/" },
+  { id: 4, url: "https://news.example.org/" },
+  { id: 5 },
+];
+
+function tabMatchers() {
+  return {
+    matchSiteFromUrl: (url) => (/youtube\.com/.test(url) ? { id: "youtube" } : null),
+    chromodsDarkHostFromUrl: (url) => {
+      try {
+        return new URL(url).hostname;
+      } catch {
+        return null;
+      }
+    },
+    chromodsIsDarkHostEnabled: (sites, host) => Boolean(sites?.[host]),
+  };
+}
+
+test("only the tabs ChroMods touches are picked for a refresh", () => {
+  const api = loadUpdates(tabMatchers());
+  /* Spread because the arrays come back from the sandbox realm. */
+  const ids = (...args) => Array.from(api.chromodsThemedTabIds(...args));
+  assert.deepEqual(ids(THEMED_TABS, null), [1], "an off-theme tab, a chrome page, and an id-less tab are skipped");
+  assert.deepEqual(ids(THEMED_TABS, { "news.example.org": true }), [1, 4], "forced dark mode counts too");
+  assert.deepEqual(ids(null, null), []);
+});
+
+test("a queued reload refreshes themed tabs once the worker is back", async () => {
+  const api = loadUpdates({ ...tabMatchers(), tabs: THEMED_TABS });
+  await api.chromodsRequestExtensionReload();
+  assert.equal(api.__chrome.__reloaded.extension, 1);
+  assert.equal(api.__chrome.__local.chroModsPendingReload.refreshTabs, true);
+
+  assert.equal(await api.chromodsFinishPendingReload(), 1);
+  assert.deepEqual(api.__chrome.__reloaded.tabs, [1]);
+  assert.equal("chroModsPendingReload" in api.__chrome.__local, false, "the request is consumed once");
+});
+
+test("the worker's two entry points cannot refresh the same tabs twice", async () => {
+  /* The top level and onInstalled both call this, and a reload fires both. */
+  const api = loadUpdates({
+    ...tabMatchers(),
+    tabs: THEMED_TABS,
+    stored: { chroModsPendingReload: { refreshTabs: true, at: Date.now() } },
+  });
+  const [first, second] = await Promise.all([
+    api.chromodsFinishPendingReload(),
+    api.chromodsFinishPendingReload(),
+  ]);
+  assert.equal(first, 1);
+  assert.equal(second, 1, "the second caller shares the first result");
+  assert.deepEqual(api.__chrome.__reloaded.tabs, [1], "the tab is reloaded exactly once");
+});
+
+test("a stale or tab-less reload request refreshes nothing", async () => {
+  const stale = loadUpdates({
+    ...tabMatchers(),
+    tabs: THEMED_TABS,
+    stored: { chroModsPendingReload: { refreshTabs: true, at: Date.now() - 10 * 60 * 1000 } },
+  });
+  assert.equal(await stale.chromodsFinishPendingReload(), 0);
+  assert.deepEqual(stale.__chrome.__reloaded.tabs, []);
+
+  const optedOut = loadUpdates({ ...tabMatchers(), tabs: THEMED_TABS });
+  await optedOut.chromodsRequestExtensionReload({ refreshTabs: false });
+  assert.equal(await optedOut.chromodsFinishPendingReload(), 0);
+  assert.deepEqual(optedOut.__chrome.__reloaded.tabs, []);
 });
 
 test("release notes render as short plain lines", () => {
