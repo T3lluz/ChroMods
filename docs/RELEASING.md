@@ -7,7 +7,7 @@ Two distribution paths, and it is worth being blunt about the difference.
 | Path | Install | Updates | Cost |
 |------|---------|---------|------|
 | Chrome Web Store | One click, "Add to Chrome" | Silent and automatic | One-time $5 developer registration, plus review on each submission |
-| Unpacked folder | Run the installer, then Developer mode → Load unpacked | Re-run the installer, then **Reload ChroMods** in the popup | Free, no review |
+| Unpacked folder | Run the installer, then Developer mode → Load unpacked | **Apply update** in the popup (or re-run the installer, then Reload) | Free, no review |
 
 There is no third option. Directly installing a `.crx` from outside the store has
 been blocked on Windows since Chrome 33 and on macOS since Chrome 44, and a
@@ -16,8 +16,11 @@ policy, which needs administrator access on every machine. Linux can still side-
 a local CRX through a preferences file, but that helps a fraction of users and does
 nothing for the other two platforms.
 
-So the store is the only genuinely one-click, self-updating option, and everything
-else in this repo exists to make the unpacked path as short as it can be.
+So the store is the only genuinely one-click, self-updating option. Unpacked installs can
+apply a GitHub release from inside the extension (File System Access writes the ZIP into
+the folder you loaded), which is as close as Chromium allows without the store. Remotely
+hosted CSS is not fetched at runtime — that would trip Chrome Web Store policy — so
+upstream my-internet ports still land as bundled files in a ChroMods release.
 
 ## Cutting a release
 
@@ -35,7 +38,7 @@ Pushing the tag runs `.github/workflows/release.yml`, which tests, checks the RE
 is regenerated, refuses a tag that disagrees with `manifest.json`, packages
 `dist/chromods-<version>.zip`, and publishes it as a GitHub release. The popup's
 update checker reads that release: `tag_name` is the version it compares against and
-the ZIP asset is what its **download** link points at. Until the first release exists,
+the ZIP asset is what **Apply update** (and the download link) fetch. Until the first release exists,
 the checker falls back to `manifest.json` on `main`, so `main` is always a valid
 install source.
 

@@ -177,6 +177,8 @@ async function run() {
       "the update command should be the installer one-liner"
     );
     assert.match(await popupPage.locator("#update-git-command").textContent() ?? "", /git -C .+ pull/);
+    assert.equal(await popupPage.locator("#update-apply").isVisible(), true, "unpacked installs should offer Apply update");
+    assert.match(await popupPage.locator("#update-apply").textContent() ?? "", /99\.9\.9/);
     assert.equal(await popupPage.locator(".version-pill.has-update").count(), 1);
     const updateBadge = await popupPage.evaluate(async () => {
       await chrome.runtime.sendMessage({ type: "chromods-update-check", force: false });

@@ -635,6 +635,7 @@ const darkSkipNative = document.getElementById("dark-skip-native");
 const darkSiteListWrap = document.getElementById("dark-site-list-wrap");
 const darkSiteList = document.getElementById("dark-site-list");
 const updateSection = document.getElementById("update-section");
+const updateLead = document.getElementById("update-lead");
 const updateDot = document.getElementById("update-dot");
 const updateHeadline = document.getElementById("update-headline");
 const updateStatus = document.getElementById("update-status");
@@ -645,10 +646,13 @@ const updateCommandText = document.getElementById("update-command-text");
 const updateGitCommand = document.getElementById("update-git-command");
 const updateCopyBtn = document.getElementById("update-copy");
 const updateDownloadBtn = document.getElementById("update-download");
+const updateApplyBtn = document.getElementById("update-apply");
 const updateReloadBtn = document.getElementById("update-reload");
 const updateExtensionsBtn = document.getElementById("update-extensions");
 const updateNotesLink = document.getElementById("update-notes-link");
 const updateDismissBtn = document.getElementById("update-dismiss");
+const updateFoot = document.getElementById("update-foot");
+const updateApplyHint = document.getElementById("update-apply-hint");
 const shortcutsPageBtn = document.getElementById("shortcuts-page");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
@@ -663,6 +667,7 @@ let recordingShortcutId = null;
 let searchActiveIndex = -1;
 let searchHitTimer = 0;
 let updateState = chromodsNormalizeUpdateState(null);
+let installType = "unknown";
 let updateCopyTimer = 0;
 const collapsedCategories = new Set();
 const collapsedOtherSites = new Set();
@@ -1723,6 +1728,15 @@ async function loadUpdateState() {
   return updateState;
 }
 
+async function loadInstallType() {
+  try {
+    installType = await chromodsInstallType();
+  } catch {
+    installType = "unknown";
+  }
+  return installType;
+}
+
 function renderVersionPill() {
   if (!versionPill) return;
   const available = chromodsUpdateAvailable(updateState);
@@ -1738,12 +1752,26 @@ function renderUpdateCard() {
 
   const available = chromodsUpdateAvailable(updateState);
   const dismissed = available && !chromodsUpdateNoticeVisible(updateState);
+  const fromStore = chromodsStoreInstall(installType);
+  const canApply =
+    available &&
+    !dismissed &&
+    !fromStore &&
+    Boolean(updateState.downloadUrl) &&
+    chromodsIsAllowedUpdateUrl(updateState.downloadUrl);
+
   updateSection.classList.toggle("has-update", available);
   updateDot.classList.toggle("is-available", available);
   updateDot.classList.toggle("is-error", Boolean(updateState.error) && !available);
   updateHeadline.textContent = available
     ? `Update available — v${updateState.latestVersion}`
     : `ChroMods v${updateState.currentVersion}`;
+
+  if (updateLead) {
+    updateLead.textContent = fromStore
+      ? "Chrome Web Store builds update themselves. Check now asks Chrome to look again."
+      : "Styles already ship inside ChroMods. When a new version is published, apply it here — no terminal required.";
+  }
 
   const checked = `checked ${chromodsUpdateRelativeTime(updateState.checkedAt)}`;
   if (updateState.error) {
@@ -1758,11 +1786,32 @@ function renderUpdateCard() {
     updateStatus.textContent = "Not checked yet.";
   }
 
+  if (updateFoot) {
+    updateFoot.textContent = fromStore
+      ? "Chrome installs updates in the background. Reloading applies one if it is already waiting."
+      : canApply
+        ? "Apply downloads the release into the folder you loaded unpacked, then reloads your themed tabs."
+        : "Reloading re-reads the folder from disk and refreshes your themed tabs.";
+  }
+
   /* Reloading is useful whether or not an update is pending, so the actions
-     row stays put and only the two-step instructions come and go. */
+     row stays put and only the instructions come and go. */
   updateNotesLink.hidden = !available || !updateState.url;
   updateNotesLink.textContent = updateState.source === "release" ? "What's new" : "See commits";
   updateDismissBtn.hidden = !available || dismissed;
+  if (updateApplyBtn) {
+    updateApplyBtn.hidden = !canApply;
+    if (canApply) {
+      setTitledIcon(updateApplyBtn, "ui-update", `Apply v${updateState.latestVersion}`);
+    }
+  }
+  if (updateApplyHint) {
+    updateApplyHint.hidden = fromStore;
+    if (!fromStore && !chromodsCanPickUpdateFolder()) {
+      updateApplyHint.textContent =
+        "This browser can't grant folder access. Use the terminal fallback below, then Reload ChroMods.";
+    }
+  }
 
   updateDetails.hidden = !available || dismissed;
   if (updateDetails.hidden) return;
@@ -1785,6 +1834,14 @@ async function runUpdateCheck({ force = false } = {}) {
   if (updateCheckBtn.disabled) return;
   updateCheckBtn.disabled = true;
   if (force) updateCheckBtn.textContent = "Checking…";
+
+  if (force && chromodsStoreInstall(installType) && chrome.runtime.requestUpdateCheck) {
+    try {
+      chrome.runtime.requestUpdateCheck(() => {});
+    } catch {
+      /* unpacked installs throw; GitHub remains the source of truth */
+    }
+  }
 
   const next =
     (await sendUpdateMessage({ type: CHROMODS_UPDATE_CHECK, force })) ??
@@ -1843,12 +1900,25 @@ async function reloadExtension() {
   }
 }
 
+async function openApplyUpdate() {
+  if (!updateApplyBtn || updateApplyBtn.hidden || updateApplyBtn.disabled) return;
+  updateApplyBtn.disabled = true;
+  try {
+    await chromodsOpenApplyPage();
+    window.close();
+  } catch {
+    updateApplyBtn.disabled = false;
+    setTitledIcon(updateApplyBtn, "ui-update", "Couldn't open");
+  }
+}
+
 function bindUpdateControls() {
   updateCheckBtn.addEventListener("click", () => runUpdateCheck({ force: true }));
   updateCopyBtn.addEventListener("click", copyUpdateCommand);
   updateDownloadBtn.addEventListener("click", () => openUpdateLink(updateState.downloadUrl));
   updateNotesLink.addEventListener("click", () => openUpdateLink(updateState.url));
   updateDismissBtn.addEventListener("click", dismissUpdate);
+  updateApplyBtn?.addEventListener("click", openApplyUpdate);
   updateReloadBtn.addEventListener("click", reloadExtension);
   updateExtensionsBtn.addEventListener("click", () => openUpdateLink(CHROMODS_EXTENSIONS_URL));
   shortcutsPageBtn?.addEventListener("click", () => openUpdateLink(CHROMODS_SHORTCUTS_URL));
@@ -2211,7 +2281,7 @@ function renderPopup() {
 
 async function init() {
   stampStaticIcons();
-  await loadUpdateState();
+  await Promise.all([loadUpdateState(), loadInstallType()]);
   renderUpdates();
   await loadSettings();
   shortcutState = await chromodsGetShortcuts();

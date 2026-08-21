@@ -233,8 +233,8 @@
 
       <p class="lead">
         Theming mods for the sites you keep open, adapted from
-        <a href="https://github.com/sameerasw/my-internet">my-internet</a>. One command installs it,
-        and the same command updates it.
+        <a href="https://github.com/sameerasw/my-internet">my-internet</a>. One command installs it.
+        After that, updates happen in the popup — no terminal required.
       </p>
 
       <ul class="sites" id="sites"></ul>
@@ -258,12 +258,13 @@
       <div class="note">
         <p>
           The popup checks GitHub every few hours and badges the toolbar icon when a new version lands.
-          Chromium cannot auto-install an unpacked extension, so updating is two steps:
+          Open <strong>Settings → Updates → Apply update</strong>. The first time, pick the folder you
+          loaded unpacked (the installer uses <code>~/.chromods</code> or
+          <code>%LOCALAPPDATA%\ChroMods</code>); ChroMods writes the new files and reloads itself.
         </p>
         <p>
-          Re-run the install command above, then open the popup and hit
-          <strong>Settings &rarr; Updates &rarr; Reload ChroMods</strong>. That re-reads the folder from disk
-          and refreshes your themed tabs.
+          Prefer a terminal? Re-run the install command above, then hit
+          <strong>Reload ChroMods</strong> in the same settings panel.
         </p>
       </div>
 

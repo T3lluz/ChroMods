@@ -96,30 +96,46 @@ test("the update checker is wired into the background and the popup", () => {
 
   const popupHtml = read("popup/popup.html");
   assert.match(popupHtml, /scripts\/updates\.js/);
+  assert.match(popupHtml, /scripts\/apply-update\.js/);
   const popupHtmlBeforeUpdates = popupHtml.indexOf("scripts/updates.js");
-  assert.ok(popupHtmlBeforeUpdates < popupHtml.indexOf("scripts/popup.js"));
+  assert.ok(popupHtmlBeforeUpdates < popupHtml.indexOf("scripts/apply-update.js"));
+  assert.ok(popupHtml.indexOf("scripts/apply-update.js") < popupHtml.indexOf("scripts/popup.js"));
   for (const id of [
     "update-check",
     "update-reload",
+    "update-apply",
     "update-copy",
     "update-download",
     "update-dismiss",
     "update-extensions",
     "update-git-command",
+    "update-lead",
     "shortcuts-page",
   ]) {
     assert.match(popupHtml, new RegExp(`id="${id}"`), `popup is missing #${id}`);
   }
 
-  // Reloading and the extensions page are useful with or without a pending
-  // update, so they live outside the collapsible instructions.
+  // Reloading and applying live outside the collapsible notes so they stay
+  // reachable; only the terminal fallback is tucked behind <details>.
   const details = popupHtml.slice(
     popupHtml.indexOf('id="update-details"'),
     popupHtml.indexOf('class="update-actions"')
   );
   assert.ok(!details.includes('id="update-reload"'), "the reload button should not be gated on an update");
+  assert.ok(!details.includes('id="update-apply"'), "the apply button should sit in the actions row");
+  assert.match(details, /id="update-advanced"/);
+
+  const applyPage = read("popup/apply.html");
+  assert.match(applyPage, /scripts\/apply-update\.js/);
+  assert.match(applyPage, /scripts\/apply-page\.js/);
+  assert.match(applyPage, /id="apply-run"/);
+  assert.doesNotMatch(background, /apply-update\.js/, "the service worker cannot use the folder picker");
 
   const popup = read("scripts/popup.js");
+  assert.match(popup, /chromodsOpenApplyPage/);
+  assert.match(popup, /chromodsStoreInstall/);
+  assert.match(popup, /chromodsCanPickUpdateFolder/);
+
   assert.match(popup, /chrome\.runtime\.reload\(\)/);
   assert.match(popup, /chromodsRequestExtensionReload/);
   assert.match(popup, /chromodsUpdateAvailable/);

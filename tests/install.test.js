@@ -55,9 +55,11 @@ test("both installers cut the same corners for the user", () => {
   assert.match(shell, /chrome:\/\/extensions/);
   assert.match(powershell, /chrome:\/\/extensions/);
 
-  // A re-run is the documented update step, so it has to say so.
+  // A re-run still finishes with Reload; day-to-day updates are Apply in the popup.
   assert.match(shell, /Reload ChroMods/);
   assert.match(powershell, /Reload ChroMods/);
+  assert.match(shell, /Apply update/);
+  assert.match(powershell, /Apply update/);
 });
 
 test("the one-liners the popup shows are the ones that exist", () => {
@@ -70,6 +72,7 @@ test("the one-liners the popup shows are the ones that exist", () => {
   assert.ok(read("README.md").includes(unix), "the README install command drifted");
   assert.ok(landing.includes("install.sh"), "the install page lost the macOS/Linux command");
   assert.ok(landing.includes("install.ps1"), "the install page lost the Windows command");
+  assert.match(landing, /Apply update/, "the install page should point at the in-popup apply path");
 
   for (const file of ["install.sh", "install.ps1"]) {
     assert.ok(fs.existsSync(path.join(root, file)), `${file} has to exist at the repo root`);

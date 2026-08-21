@@ -160,12 +160,11 @@ Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://git
 
 ## Updating
 
-The popup checks GitHub every few hours and badges the toolbar icon when a new version lands. Chromium can't auto-install an unpacked extension, so **Settings → Updates** shows what changed and covers the two steps:
+Styles and scripts already live inside the extension — using ChroMods never needs a terminal. The popup checks GitHub every few hours and badges the toolbar icon when a new version lands.
 
-1. **Get the new files** — re-run the install command above. It refreshes the folder in place whether you cloned it or unpacked a ZIP.
-2. **Hit Reload ChroMods** — re-reads the folder from disk and reloads your themed tabs, whose content scripts the reload would otherwise orphan.
+**Settings → Updates → Apply update** downloads the latest release into the folder you loaded unpacked (you'll pick that folder once), then reloads ChroMods and your themed tabs. Chromium still cannot silently overwrite an unpacked extension; a Chrome Web Store listing is what gets you background updates. [docs/RELEASING.md](docs/RELEASING.md) has the details.
 
-A one-click install with silent updates needs the Chrome Web Store; nothing outside it can auto-update on Windows or macOS. [docs/RELEASING.md](docs/RELEASING.md) has the details and the pipeline is ready for it.
+The install command above remains as a fallback if you prefer a terminal.
 
 ## Dev
 
