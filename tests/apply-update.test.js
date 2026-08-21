@@ -229,7 +229,7 @@ test("stored and deflated zips both unpack, stripping a GitHub root folder", asy
   for (const compress of [false, true]) {
     const zip = zipArchive(extensionFiles(extra), { compress, nest: "ChroMods-v1.6.0/" });
     const files = await api.chromodsUnzip(zip);
-    const paths = files.map((file) => file.path).sort();
+    const paths = Array.from(files, (file) => String(file.path)).sort();
     assert.deepEqual(paths, [
       "manifest.json",
       "popup/popup.html",
