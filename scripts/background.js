@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
     "compact-sidebar": true,
     "hide-filter-chips": true,
     "player-blur": true,
+    "fullscreen-transition": true,
     "thumbnail-hover": false,
     "hide-distractions": false,
     "hide-side-guide": false,

@@ -1,0 +1,35 @@
+/* Fullscreen scale transition — Chromium FLIP around native fullscreen.
+   Native fullscreen does not interpolate; theater mode does because it is a
+   layout-size change. JS inverts the player between the two boxes, and this
+   file hides chrome so the video scale reads cleanly. */
+
+.html5-video-player.ytm-fs-animating {
+  transform-origin: 0 0 !important;
+  pointer-events: none !important;
+  will-change: transform;
+}
+
+.html5-video-player.ytm-fs-animating.ytm-fs-exiting {
+  z-index: 2147483646 !important;
+}
+
+.html5-video-player.ytm-fs-animating .ytp-chrome-bottom,
+.html5-video-player.ytm-fs-animating .ytp-chrome-top,
+.html5-video-player.ytm-fs-animating .ytp-gradient-bottom,
+.html5-video-player.ytm-fs-animating .ytp-gradient-top,
+.html5-video-player.ytm-fs-animating .ytp-cards-teaser,
+.html5-video-player.ytm-fs-animating .ytp-pause-overlay,
+.html5-video-player.ytm-fs-animating .ytp-ce-element,
+.html5-video-player.ytm-fs-animating .caption-window,
+.html5-video-player.ytm-fs-animating .ytp-caption-window-container {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .html5-video-player.ytm-fs-animating {
+    will-change: auto;
+  }
+}

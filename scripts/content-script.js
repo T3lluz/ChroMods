@@ -61,6 +61,7 @@
     "compact-sidebar": ["styles/youtube/compact-sidebar.css"],
     "hide-filter-chips": ["styles/youtube/hide-filter-chips.css"],
     "player-blur": ["styles/youtube/player-blur.css"],
+    "fullscreen-transition": ["styles/youtube/fullscreen-transition.css"],
     "thumbnail-hover": ["styles/youtube/thumbnail-hover.css"],
     "hide-distractions": ["styles/youtube/hide-distractions.css"],
     "hide-side-guide": ["styles/youtube/hide-side-guide.css"],
@@ -221,6 +222,7 @@
       "compact-sidebar": true,
       "hide-filter-chips": true,
       "player-blur": true,
+      "fullscreen-transition": true,
       "thumbnail-hover": false,
       "hide-distractions": false,
       "hide-side-guide": false,
@@ -2071,6 +2073,330 @@
 
   const movableTwitchLiveChat = new MovableTwitchLiveChat();
 
+  const FULLSCREEN_TRANSITION_MS = 380;
+  const FULLSCREEN_TRANSITION_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const FULLSCREEN_EVENTS = ["fullscreenchange", "webkitfullscreenchange"];
+  const FULLSCREEN_EXIT_STYLE_PROPS = [
+    "position",
+    "left",
+    "top",
+    "width",
+    "height",
+    "right",
+    "bottom",
+    "inset",
+    "margin",
+    "z-index",
+    "max-width",
+    "max-height",
+    "transform-origin",
+    "overflow",
+  ];
+
+  function copyBox(rect) {
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  function isUsableBox(box) {
+    return Boolean(box && box.width >= 64 && box.height >= 64);
+  }
+
+  function boxesAreClose(a, b) {
+    if (!a || !b) return false;
+    return (
+      Math.abs(a.left - b.left) < 8 &&
+      Math.abs(a.top - b.top) < 8 &&
+      Math.abs(a.width - b.width) < 8 &&
+      Math.abs(a.height - b.height) < 8
+    );
+  }
+
+  function invertBoxTransform(fromBox, toBox) {
+    const sx = fromBox.width / toBox.width;
+    const sy = fromBox.height / toBox.height;
+    if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx <= 0 || sy <= 0) {
+      return null;
+    }
+    const tx = fromBox.left - toBox.left;
+    const ty = fromBox.top - toBox.top;
+    return `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${sx.toFixed(5)}, ${sy.toFixed(5)})`;
+  }
+
+  function prefersReducedMotion() {
+    return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+  }
+
+  function getWatchPlayer() {
+    const flexy = document.querySelector("ytd-watch-flexy:not([hidden])");
+    const root = flexy || document;
+    return root.querySelector("#movie_player") || root.querySelector(".html5-video-player");
+  }
+
+  function getNativeFullscreenPlayer() {
+    const fs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fs || fs === document.documentElement || fs === document.body) {
+      return null;
+    }
+    if (fs.id === "movie_player" || fs.classList?.contains("html5-video-player")) {
+      return fs;
+    }
+    return (
+      fs.closest?.("#movie_player, .html5-video-player") ||
+      fs.querySelector?.("#movie_player, .html5-video-player")
+    );
+  }
+
+  class FullscreenTransition {
+    constructor() {
+      this.enabled = false;
+      this.listening = false;
+      this.inPlayerFullscreen = false;
+      this.fromRect = null;
+      this.fullscreenRect = null;
+      this.animation = null;
+      this.finishTimer = 0;
+      this.animatingPlayer = null;
+      this.onFullscreenChange = () => this.sync();
+      this.onWatchStateChange = () => this.sync();
+      this.onPointerDown = () => this.sampleFromRect();
+      this.onKeyDown = (event) => this.onSampleKey(event);
+      this.onResize = () => this.onViewportChange();
+    }
+
+    setEnabled(enabled) {
+      if (enabled === this.enabled) {
+        if (enabled) this.sync();
+        return;
+      }
+      this.enabled = enabled;
+      if (!enabled) {
+        this.stopListening();
+        this.finishAnimation();
+        this.inPlayerFullscreen = false;
+        this.fromRect = null;
+        this.fullscreenRect = null;
+        return;
+      }
+      this.startListening();
+      this.sampleFromRect();
+      this.sync();
+    }
+
+    startListening() {
+      if (this.listening) return;
+      this.listening = true;
+      for (const event of FULLSCREEN_EVENTS) {
+        document.addEventListener(event, this.onFullscreenChange, true);
+      }
+      addWatchStateListener(this.onWatchStateChange);
+      document.addEventListener("pointerdown", this.onPointerDown, true);
+      document.addEventListener("keydown", this.onKeyDown, true);
+      window.addEventListener("resize", this.onResize);
+    }
+
+    stopListening() {
+      if (!this.listening) return;
+      this.listening = false;
+      for (const event of FULLSCREEN_EVENTS) {
+        document.removeEventListener(event, this.onFullscreenChange, true);
+      }
+      removeWatchStateListener(this.onWatchStateChange);
+      document.removeEventListener("pointerdown", this.onPointerDown, true);
+      document.removeEventListener("keydown", this.onKeyDown, true);
+      window.removeEventListener("resize", this.onResize);
+    }
+
+    onSampleKey(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const key = event.key;
+      if (key === "f" || key === "F" || key === "Escape") this.sampleFromRect();
+    }
+
+    onViewportChange() {
+      if (this.inPlayerFullscreen) {
+        const player = getNativeFullscreenPlayer() || getWatchPlayer();
+        if (!player) return;
+        const box = copyBox(player.getBoundingClientRect());
+        if (isUsableBox(box)) this.fullscreenRect = box;
+        return;
+      }
+      this.sampleFromRect();
+    }
+
+    sampleFromRect() {
+      if (!this.enabled || this.inPlayerFullscreen) return;
+      const player = getWatchPlayer();
+      if (!player) return;
+      const box = copyBox(player.getBoundingClientRect());
+      if (isUsableBox(box)) this.fromRect = box;
+    }
+
+    fallbackFromBox(toBox) {
+      return {
+        left: toBox.left + toBox.width * 0.06,
+        top: toBox.top + toBox.height * 0.06,
+        width: toBox.width * 0.88,
+        height: toBox.height * 0.88,
+      };
+    }
+
+    pinPlayerBox(player, box) {
+      const style = player.style;
+      style.setProperty("position", "fixed", "important");
+      style.setProperty("left", `${box.left}px`, "important");
+      style.setProperty("top", `${box.top}px`, "important");
+      style.setProperty("width", `${box.width}px`, "important");
+      style.setProperty("height", `${box.height}px`, "important");
+      style.setProperty("right", "auto", "important");
+      style.setProperty("bottom", "auto", "important");
+      style.setProperty("inset", "auto", "important");
+      style.setProperty("margin", "0", "important");
+      style.setProperty("z-index", "2147483646", "important");
+      style.setProperty("max-width", "none", "important");
+      style.setProperty("max-height", "none", "important");
+      style.setProperty("transform-origin", "0 0", "important");
+      style.setProperty("overflow", "visible", "important");
+    }
+
+    unpinPlayer(player) {
+      if (!player) return;
+      const style = player.style;
+      for (const prop of FULLSCREEN_EXIT_STYLE_PROPS) style.removeProperty(prop);
+    }
+
+    animate(player, fromTransform, toTransform, exiting) {
+      this.finishAnimation();
+      this.animatingPlayer = player;
+      player.classList.toggle("ytm-fs-exiting", Boolean(exiting));
+      player.classList.add("ytm-fs-animating");
+
+      if (typeof player.animate !== "function") {
+        this.finishTimer = setTimeout(() => this.finishAnimation(), FULLSCREEN_TRANSITION_MS);
+        return;
+      }
+
+      const animation = player.animate(
+        [
+          { transform: fromTransform, transformOrigin: "0 0" },
+          { transform: toTransform, transformOrigin: "0 0" },
+        ],
+        {
+          duration: FULLSCREEN_TRANSITION_MS,
+          easing: FULLSCREEN_TRANSITION_EASING,
+          fill: "both",
+        }
+      );
+      this.animation = animation;
+      const done = () => {
+        if (this.animation !== animation) return;
+        this.finishAnimation();
+      };
+      animation.finished.then(done, done);
+      this.finishTimer = setTimeout(done, FULLSCREEN_TRANSITION_MS + 80);
+    }
+
+    finishAnimation() {
+      if (this.finishTimer) {
+        clearTimeout(this.finishTimer);
+        this.finishTimer = 0;
+      }
+      if (this.animation) {
+        try {
+          this.animation.cancel();
+        } catch {
+          /* already finished */
+        }
+        this.animation = null;
+      }
+      const player = this.animatingPlayer;
+      this.animatingPlayer = null;
+      if (!player) return;
+      player.classList.remove("ytm-fs-animating", "ytm-fs-exiting");
+      this.unpinPlayer(player);
+    }
+
+    playEnter(retries = 0) {
+      const player = getNativeFullscreenPlayer() || getWatchPlayer();
+      if (!player || !this.inPlayerFullscreen) return;
+
+      const toBox = copyBox(player.getBoundingClientRect());
+      if (!isUsableBox(toBox)) {
+        if (retries >= 8) return;
+        requestAnimationFrame(() => {
+          if (this.enabled && this.inPlayerFullscreen) this.playEnter(retries + 1);
+        });
+        return;
+      }
+      this.fullscreenRect = toBox;
+
+      const fromBox = isUsableBox(this.fromRect) ? this.fromRect : this.fallbackFromBox(toBox);
+      if (boxesAreClose(fromBox, toBox)) return;
+
+      const invert = invertBoxTransform(fromBox, toBox);
+      if (!invert) return;
+      this.animate(player, invert, "none", false);
+    }
+
+    playExit() {
+      const player = getWatchPlayer();
+      if (!player) return;
+
+      const toBox = copyBox(player.getBoundingClientRect());
+      const fromBox = isUsableBox(this.fullscreenRect)
+        ? this.fullscreenRect
+        : {
+            left: 0,
+            top: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+      if (!isUsableBox(toBox) || boxesAreClose(fromBox, toBox)) {
+        this.sampleFromRect();
+        return;
+      }
+
+      this.pinPlayerBox(player, toBox);
+      const invert = invertBoxTransform(fromBox, toBox);
+      if (!invert) {
+        this.unpinPlayer(player);
+        return;
+      }
+      this.animate(player, invert, "none", true);
+    }
+
+    sync() {
+      if (!this.enabled) return;
+      const playerFs = Boolean(getNativeFullscreenPlayer());
+      if (playerFs === this.inPlayerFullscreen) {
+        if (!playerFs) this.sampleFromRect();
+        return;
+      }
+      this.inPlayerFullscreen = playerFs;
+      if (prefersReducedMotion()) {
+        this.finishAnimation();
+        if (playerFs) {
+          const player = getNativeFullscreenPlayer();
+          if (player) {
+            const box = copyBox(player.getBoundingClientRect());
+            if (isUsableBox(box)) this.fullscreenRect = box;
+          }
+        } else {
+          this.sampleFromRect();
+        }
+        return;
+      }
+      if (playerFs) this.playEnter();
+      else this.playExit();
+    }
+  }
+
+  const fullscreenTransition = new FullscreenTransition();
+
   const THEATER_COMMENTS_WIDTH_KEY = "chroModsTheaterCommentsWidth";
   const LEGACY_THEATER_COMMENTS_WIDTH_KEY = "youtubeThemingTheaterCommentsWidth";
   const THEATER_COMMENTS_MIN_WIDTH = 300;
@@ -2388,6 +2714,9 @@
         merged.features?.["theater-mode"] !== false &&
         merged.subsettings?.theater?.hoverComments !== false,
       { commentsSide: merged.subsettings?.theater?.commentsSide ?? "left" }
+    );
+    fullscreenTransition.setEnabled(
+      youtubeEnabled && merged.features?.["fullscreen-transition"] !== false
     );
   }
 

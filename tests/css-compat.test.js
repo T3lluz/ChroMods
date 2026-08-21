@@ -231,6 +231,18 @@ test("theater header blur matches player blur frosted glass", () => {
   assert.match(css, /#background\.ytd-masthead/);
 });
 
+test("fullscreen transition scales with FLIP classes and hides player chrome", () => {
+  const css = read(style("youtube", "fullscreen-transition.css"));
+  assert.match(css, /\.html5-video-player\.ytm-fs-animating/);
+  assert.match(css, /transform-origin:\s*0 0/);
+  assert.match(css, /ytm-fs-exiting/);
+  assert.match(css, /\.ytp-chrome-bottom/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.doesNotMatch(css, /transition:\s*all/);
+  assert.doesNotMatch(css, /\bscale:/);
+  assert.doesNotMatch(css, /@-moz-document/);
+});
+
 test("immersive search uses transform scale without compounding the scale property", () => {
   const css = read(style("youtube", "immersive-search.css"));
   assert.match(css, /transform:\s*scale\(1\.05\)/);
@@ -638,6 +650,12 @@ test("content script maps features and theater subsettings", () => {
   assert.match(js, /hideOffset = 40/);
   assert.match(js, /setTheaterLayoutSyncEnabled/);
   assert.match(js, /TheaterHoverComments|theaterHoverComments/);
+  assert.match(js, /"fullscreen-transition"/);
+  assert.match(js, /fullscreen-transition\.css/);
+  assert.match(js, /FullscreenTransition/);
+  assert.match(js, /invertBoxTransform/);
+  assert.match(js, /ytm-fs-animating/);
+  assert.match(js, /prefersReducedMotion/);
   assert.match(js, /"gh-no-tab-text"/);
   assert.match(js, /gh-no-tab-text\.css/);
   assert.match(js, /"gh-glass-effect"/);
@@ -737,6 +755,8 @@ test("popup defines theater and feed subsettings", () => {
   assert.match(js, /hideHeader/);
   assert.match(js, /headerBlur/);
   assert.match(js, /commentsSide/);
+  assert.match(js, /fullscreen-transition/);
+  assert.match(js, /Fullscreen transition/);
   assert.match(js, /FEED_SUBSETTINGS/);
   assert.match(js, /columns/);
   assert.match(js, /MOVABLE_LIVE_CHAT_SUBSETTINGS/);
