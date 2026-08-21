@@ -25,6 +25,7 @@ const POPUP_ICONS = {
   "ui-keyboard": `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   "ui-sliders": `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 5H3M12 19H3M14 3v4M16 17v4M21 12h-9M21 19h-5M21 5h-7M8 10v4M8 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   "ui-globe": `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  "ui-update": `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   "action-reload": `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
