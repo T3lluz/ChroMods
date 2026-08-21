@@ -112,7 +112,7 @@ async function run() {
     await expandAllSitePanels(popupPage);
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 67, "Expected every non-transparency mod across all sites");
+    assert.equal(featureCards, 68, "Expected every non-transparency mod across all sites");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /ChroMods/);
@@ -133,6 +133,47 @@ async function run() {
     assert.equal(await popupPage.locator("[data-dark-slider]").count(), 4, "Expected Dark Reader sliders");
     assert.equal(await popupPage.locator(".dark-slider-icon").count(), 4, "Expected an icon on each dark slider");
     assert.equal(await popupPage.locator("#dark-skip-native").count(), 1);
+
+    // Updates: wait for the check the panel kicks off, then pin a known result
+    // so the assertions don't depend on what GitHub currently publishes.
+    await popupPage.waitForFunction(() => !document.getElementById("update-check")?.disabled, null, {
+      timeout: 20000,
+    });
+    assert.equal(await popupPage.locator("#update-details").isHidden(), true);
+    await popupPage.evaluate(async () => {
+      await chrome.storage.local.set({
+        chroModsUpdate: {
+          currentVersion: "0.0.1",
+          latestVersion: "99.9.9",
+          source: "release",
+          notes: "## Highlights\n- Pretend release\n",
+          url: "https://github.com/T3lluz/ChroMods/releases/tag/v99.9.9",
+          downloadUrl: "https://github.com/T3lluz/ChroMods/releases/download/v99.9.9/chromods-99.9.9.zip",
+          checkedAt: Date.now(),
+          error: null,
+          dismissedVersion: null,
+        },
+      });
+    });
+    await popupPage.waitForFunction(() => !document.getElementById("update-details")?.hidden, null, {
+      timeout: 5000,
+    });
+    assert.match(await popupPage.locator("#update-headline").textContent() ?? "", /v99\.9\.9/);
+    assert.deepEqual(await popupPage.locator("#update-notes li").allTextContents(), ["Pretend release"]);
+    assert.match(await popupPage.locator("#update-command-text").textContent() ?? "", /git -C .+ pull/);
+    assert.equal(await popupPage.locator(".version-pill.has-update").count(), 1);
+    const updateBadge = await popupPage.evaluate(async () => {
+      await chrome.runtime.sendMessage({ type: "chromods-update-check", force: false });
+      return chrome.action.getBadgeText({});
+    });
+    assert.equal(updateBadge, "NEW", "toolbar icon should badge a pending update");
+    await popupPage.locator("#update-dismiss").click();
+    await popupPage.waitForFunction(() => document.getElementById("update-details")?.hidden, null, {
+      timeout: 5000,
+    });
+    assert.equal(await popupPage.evaluate(() => chrome.action.getBadgeText({})), "");
+    await popupPage.evaluate(() => chrome.storage.local.remove("chroModsUpdate"));
+
     await popupPage.locator("#settings-back").click();
     await popupPage.waitForFunction(() => !document.getElementById("shell")?.classList.contains("is-settings-open"));
 

@@ -64,6 +64,7 @@ test("manifest is valid Chrome MV3", () => {
   assert.ok(manifest.web_accessible_resources?.[0]?.resources?.includes("styles/*/*.css"));
   assert.ok(manifest.action?.default_popup);
   assert.ok(manifest.permissions.includes("scripting"));
+  assert.ok(manifest.permissions.includes("alarms"), "update checks need the alarms permission");
   assert.ok(manifest.host_permissions.includes("<all_urls>"));
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtube.com")));
   assert.ok(manifest.host_permissions.some((p) => p.includes("youtu.be")));
@@ -78,6 +79,29 @@ test("manifest is valid Chrome MV3", () => {
   for (const file of ["icons/icon.svg", "icons/icon16.png", "icons/icon48.png", "icons/icon128.png"]) {
     assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
+});
+
+test("the update checker is wired into the background and the popup", () => {
+  const background = read("scripts/background.js");
+  assert.match(background, /importScripts\([^)]*"updates\.js"/);
+  assert.match(background, /chrome\.alarms\?\.onAlarm\.addListener/);
+  assert.match(background, /CHROMODS_UPDATE_ALARM/);
+  assert.match(background, /CHROMODS_UPDATE_CHECK/);
+  assert.match(background, /CHROMODS_UPDATE_DISMISS/);
+  assert.match(background, /chromodsRefreshUpdateBadge\(\)/);
+
+  const popupHtml = read("popup/popup.html");
+  assert.match(popupHtml, /scripts\/updates\.js/);
+  const popupHtmlBeforeUpdates = popupHtml.indexOf("scripts/updates.js");
+  assert.ok(popupHtmlBeforeUpdates < popupHtml.indexOf("scripts/popup.js"));
+  for (const id of ["update-check", "update-reload", "update-copy", "update-download", "update-dismiss"]) {
+    assert.match(popupHtml, new RegExp(`id="${id}"`), `popup is missing #${id}`);
+  }
+
+  const popup = read("scripts/popup.js");
+  assert.match(popup, /chrome\.runtime\.reload\(\)/);
+  assert.match(popup, /chromodsUpdateAvailable/);
+  assert.match(popup, /CHROMODS_UPDATE_KEY/);
 });
 
 test("all stylesheet modules exist", () => {
