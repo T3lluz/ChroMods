@@ -112,7 +112,7 @@ async function run() {
     await expandAllSitePanels(popupPage);
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 68, "Expected every non-transparency mod across all sites");
+    assert.equal(featureCards, 69, "Expected every non-transparency mod across all sites");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /ChroMods/);

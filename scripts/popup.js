@@ -162,6 +162,12 @@ const FEATURE_META = [
     subsettingsKey: "theater",
   },
   {
+    id: "fullscreen-transition",
+    category: "player",
+    title: "Fullscreen transition",
+    description: "Scale the player up and down when entering or leaving fullscreen, like theater mode.",
+  },
+  {
     id: "player-blur",
     category: "player",
     title: "Player blur",

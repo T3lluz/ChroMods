@@ -15,7 +15,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 
 | | Site | Mods | Hosts |
 | :---: | --- | ---: | --- |
-| <img src="docs/sites/youtube.svg" width="20" height="20" alt="" /> | [YouTube](#youtube) | 15 | youtube.com |
+| <img src="docs/sites/youtube.svg" width="20" height="20" alt="" /> | [YouTube](#youtube) | 16 | youtube.com |
 | <img src="docs/sites/github.svg" width="20" height="20" alt="" /> | [GitHub](#github) | 11 | github.com |
 | <img src="docs/sites/google.svg" width="20" height="20" alt="" /> | [Google](#google) | 5 | google.com and country search TLDs |
 | <img src="docs/sites/gmail.svg" width="20" height="20" alt="" /> | [Gmail](#gmail) | 6 | mail.google.com |
@@ -40,6 +40,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | **Hide side guide** | Completely remove YouTube's side navigation. | Off |
 | **Clean side guide** | Hide Studio, Sports, Settings, and footer links from the guide. | Off |
 | **Theater mode** | Full-window theater view with configurable comments panel. | On |
+| **Fullscreen transition** | Scale the player up and down when entering or leaving fullscreen, like theater mode. | On |
 | **Player blur** | Frosted-glass blur on video player controls and menus. | On |
 | **Disable ambient mode** | Remove YouTube's cinematic ambient glow behind the player. | Off |
 | **Better captions** | Use a compact frosted caption panel with clearer text. | Off |
