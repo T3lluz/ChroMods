@@ -272,12 +272,8 @@ async function chromodsRefreshUpdateBadge() {
    popup was warning about is now the version that is running. */
 async function chromodsSettleInstalledVersion() {
   const state = await chromodsGetUpdateState();
-  if (!state.latestVersion) return chromodsApplyUpdateBadge(state).then(() => state);
-  if (chromodsUpdateAvailable(state)) {
-    await chromodsApplyUpdateBadge(state);
-    return state;
-  }
-  const next = await chromodsSetUpdateState({ ...state, dismissedVersion: null });
+  const spent = state.latestVersion && !chromodsUpdateAvailable(state);
+  const next = spent ? await chromodsSetUpdateState({ ...state, dismissedVersion: null }) : state;
   await chromodsApplyUpdateBadge(next);
   return next;
 }
