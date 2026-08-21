@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChroMods — install</title>
+    <meta
+      name="description"
+      content="One command installs ChroMods, the Chromium theming mods for YouTube, GitHub, Google, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT."
+    />
+    <!-- Pages serves this folder as the site root, so assets stay inside docs/. -->
+    <link rel="icon" href="icon.svg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --accent: #ff8f6b;
+        --accent-dim: rgba(255, 143, 107, 0.14);
+        --bg: #0d0d10;
+        --bg-card: #18181f;
+        --bg-subtle: #1e1e26;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.14);
+        --text: #ececf1;
+        --text-muted: #8b8b9a;
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 56px 20px 72px;
+        background:
+          radial-gradient(120% 70% at 84% -8%, rgba(255, 122, 82, 0.16), transparent 60%),
+          var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+      }
+
+      header img {
+        width: 60px;
+        height: 60px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.9rem;
+        letter-spacing: -0.02em;
+      }
+
+      .version {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 2px 9px;
+        border: 1px solid rgba(255, 143, 107, 0.24);
+        border-radius: 999px;
+        background: var(--accent-dim);
+        color: var(--accent);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      .lead {
+        margin: 0 0 26px;
+        color: var(--text-muted);
+        font-size: 1.02rem;
+      }
+
+      .sites {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 34px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .sites img {
+        width: 22px;
+        height: 22px;
+        opacity: 0.75;
+      }
+
+      h2 {
+        margin: 34px 0 12px;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        padding: 5px 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--text-muted);
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .tab[aria-selected="true"] {
+        border-color: rgba(255, 143, 107, 0.45);
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+
+      .command {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 14px 14px 18px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+      }
+
+      .command code {
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 0.86rem;
+        scrollbar-width: none;
+      }
+
+      .command code::-webkit-scrollbar {
+        display: none;
+      }
+
+      .copy {
+        flex-shrink: 0;
+        padding: 7px 14px;
+        border: 1px solid rgba(255, 143, 107, 0.35);
+        border-radius: 9px;
+        background: var(--accent-dim);
+        color: var(--accent);
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .copy:hover {
+        border-color: rgba(255, 143, 107, 0.65);
+      }
+
+      ol {
+        margin: 16px 0 0;
+        padding-left: 22px;
+        color: var(--text-muted);
+      }
+
+      ol li {
+        margin-bottom: 6px;
+      }
+
+      ol strong {
+        color: var(--text);
+      }
+
+      .note {
+        margin: 22px 0 0;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-subtle);
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+
+      .note p {
+        margin: 0;
+      }
+
+      .note p + p {
+        margin-top: 8px;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      }
+
+      .note code,
+      ol code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        font-size: 0.84em;
+      }
+
+      footer {
+        margin-top: 44px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icon.svg" alt="" />
+        <div>
+          <h1>ChroMods</h1>
+          <span class="version" id="version">Chromium theming mods</span>
+        </div>
+      </header>
+
+      <p class="lead">
+        Theming mods for the sites you keep open, adapted from
+        <a href="https://github.com/sameerasw/my-internet">my-internet</a>. One command installs it,
+        and the same command updates it.
+      </p>
+
+      <ul class="sites" id="sites"></ul>
+
+      <h2>Install</h2>
+      <div class="tabs" role="tablist" aria-label="Operating system">
+        <button class="tab" type="button" role="tab" data-os="unix" aria-selected="true">macOS / Linux</button>
+        <button class="tab" type="button" role="tab" data-os="windows" aria-selected="false">Windows</button>
+      </div>
+      <div class="command">
+        <code id="command">curl -fsSL https://raw.githubusercontent.com/T3lluz/ChroMods/main/install.sh | bash</code>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+      <ol>
+        <li>Run the command. It downloads ChroMods, copies the folder path to your clipboard, and opens the extensions page.</li>
+        <li>Turn on <strong>Developer mode</strong>, top right.</li>
+        <li>Click <strong>Load unpacked</strong> and paste the path.</li>
+      </ol>
+
+      <h2>Update</h2>
+      <div class="note">
+        <p>
+          The popup checks GitHub every few hours and badges the toolbar icon when a new version lands.
+          Chromium cannot auto-install an unpacked extension, so updating is two steps:
+        </p>
+        <p>
+          Re-run the install command above, then open the popup and hit
+          <strong>Settings &rarr; Updates &rarr; Reload ChroMods</strong>. That re-reads the folder from disk
+          and refreshes your themed tabs.
+        </p>
+      </div>
+
+      <div class="note">
+        <p>
+          Prefer to do it by hand? Clone the repo or grab a
+          <a href="https://github.com/T3lluz/ChroMods/releases/latest">release ZIP</a> and load that folder
+          unpacked. Set <code>CHROMODS_DIR</code> before running the installer to put it somewhere else.
+        </p>
+      </div>
+
+      <footer>
+        MIT licensed &middot;
+        <a href="https://github.com/T3lluz/ChroMods">source on GitHub</a> &middot;
+        <a href="https://github.com/T3lluz/ChroMods/issues/new?labels=style&amp;title=%5BSTYLE%5D+">request a site</a>
+      </footer>
+    </main>
+
+    <script>
+      const REPO = "T3lluz/ChroMods";
+      const BRANCH = "main";
+      const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
+
+      const COMMANDS = {
+        unix: `curl -fsSL ${RAW}/install.sh | bash`,
+        windows: `irm ${RAW}/install.ps1 | iex`,
+      };
+
+      const SITES = [
+        ["youtube", "YouTube"],
+        ["github", "GitHub"],
+        ["google", "Google"],
+        ["gmail", "Gmail"],
+        ["gemini", "Gemini"],
+        ["duckduckgo", "DuckDuckGo"],
+        ["x", "X"],
+        ["twitch", "Twitch"],
+        ["chatgpt", "ChatGPT"],
+      ];
+
+      const commandEl = document.getElementById("command");
+      const copyBtn = document.getElementById("copy");
+      const tabs = [...document.querySelectorAll(".tab")];
+
+      document.getElementById("sites").innerHTML = SITES.map(
+        ([id, title]) => `<li><img src="sites/${id}.svg" alt="${title}" title="${title}" /></li>`
+      ).join("");
+
+      function selectOs(os) {
+        commandEl.textContent = COMMANDS[os] ?? COMMANDS.unix;
+        for (const tab of tabs) tab.setAttribute("aria-selected", String(tab.dataset.os === os));
+      }
+
+      for (const tab of tabs) tab.addEventListener("click", () => selectOs(tab.dataset.os));
+      selectOs(/win/i.test(navigator.userAgentData?.platform || navigator.platform || "") ? "windows" : "unix");
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(commandEl.textContent.trim());
+          copyBtn.textContent = "Copied";
+        } catch {
+          copyBtn.textContent = "Copy failed";
+        }
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+        }, 1600);
+      });
+
+      /* The manifest on the default branch is what the installer lands. */
+      fetch(`${RAW}/manifest.json`, { cache: "no-store" })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((manifest) => {
+          if (manifest?.version) document.getElementById("version").textContent = `v${manifest.version}`;
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>
