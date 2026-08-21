@@ -315,7 +315,22 @@ test("a queued reload refreshes themed tabs once the worker is back", async () =
   assert.equal(await api.chromodsFinishPendingReload(), 1);
   assert.deepEqual(api.__chrome.__reloaded.tabs, [1]);
   assert.equal("chroModsPendingReload" in api.__chrome.__local, false, "the request is consumed once");
-  assert.equal(await api.chromodsFinishPendingReload(), 0);
+});
+
+test("the worker's two entry points cannot refresh the same tabs twice", async () => {
+  /* The top level and onInstalled both call this, and a reload fires both. */
+  const api = loadUpdates({
+    ...tabMatchers(),
+    tabs: THEMED_TABS,
+    stored: { chroModsPendingReload: { refreshTabs: true, at: Date.now() } },
+  });
+  const [first, second] = await Promise.all([
+    api.chromodsFinishPendingReload(),
+    api.chromodsFinishPendingReload(),
+  ]);
+  assert.equal(first, 1);
+  assert.equal(second, 1, "the second caller shares the first result");
+  assert.deepEqual(api.__chrome.__reloaded.tabs, [1], "the tab is reloaded exactly once");
 });
 
 test("a stale or tab-less reload request refreshes nothing", async () => {

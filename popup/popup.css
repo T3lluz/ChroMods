@@ -1951,7 +1951,7 @@ body {
 }
 
 .update-hint {
-  margin: 8px 0 0;
+  margin: 8px 0 14px;
   font-size: 0.68rem;
   color: var(--text-muted);
   line-height: 1.45;
@@ -1966,7 +1966,7 @@ body {
 }
 
 .update-details {
-  padding-bottom: 12px;
+  padding-bottom: 4px;
 }
 
 .update-actions {

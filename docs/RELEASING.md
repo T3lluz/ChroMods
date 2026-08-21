@@ -61,6 +61,19 @@ Two things reviewers will ask about, worth having answers ready for: the
 turns it on for) and the bundled Dark Reader engine (vendored at
 `scripts/vendor/darkreader.js`, not fetched at runtime).
 
+## A note on testing the reload
+
+`chrome.runtime.reload()` permanently kills an extension that was loaded through
+Chromium's `--load-extension` flag, which is how Playwright loads one, so the e2e
+suite cannot click **Reload ChroMods** and watch what happens. This was confirmed
+against a two-file control extension, so it is the harness rather than anything in
+here. The pieces — picking the themed tabs, consuming the queued request, and
+discarding a stale one — are covered in `tests/updates.test.js`, and the refresh
+itself was verified by driving it inside a real extension context.
+
+Extensions loaded the normal way, through **Load unpacked**, reload fine; that is the
+usual hot-reload trick for unpacked development.
+
 ## The install page
 
 `docs/` is a GitHub Pages site: `docs/index.html` detects the visitor's OS, shows the

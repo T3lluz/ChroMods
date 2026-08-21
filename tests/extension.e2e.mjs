@@ -136,6 +136,12 @@ async function run() {
 
     // Updates: wait for the check the panel kicks off, then pin a known result
     // so the assertions don't depend on what GitHub currently publishes.
+    //
+    // Clicking Reload ChroMods is deliberately not covered here:
+    // chrome.runtime.reload() permanently kills an extension loaded through
+    // --load-extension, which is how Playwright loads one. Verified with a
+    // two-file control extension, so it is the harness, not the extension.
+    // The pieces are unit-tested in tests/updates.test.js instead.
     await popupPage.waitForFunction(() => !document.getElementById("update-check")?.disabled, null, {
       timeout: 20000,
     });
@@ -278,7 +284,13 @@ async function run() {
       };
     });
     assert.equal(theaterBounds.pageManagerMarginLeft, "0px", "Theater should clear sidebar margin");
-    assert.equal(theaterBounds.fullBleedHeight, `${theaterFixture.viewportSize().height}px`);
+    // 100dvh resolves to a fractional used value on fractional-DPI displays,
+    // so compare within a pixel rather than as a string.
+    const viewportHeight = theaterFixture.viewportSize().height;
+    assert.ok(
+      Math.abs(Number.parseFloat(theaterBounds.fullBleedHeight) - viewportHeight) < 1,
+      `Theater player should fill the viewport, got ${theaterBounds.fullBleedHeight} for ${viewportHeight}px`
+    );
     assert.equal(theaterBounds.fullBleedTop, "0px");
     assert.equal(theaterBounds.toolbarHeight, "0px");
 

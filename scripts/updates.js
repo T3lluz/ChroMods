@@ -7,8 +7,10 @@ const CHROMODS_UPDATE_INTERVAL_MINUTES = 360;
 /* Background alarms drive the badge; popup opens only re-check after this gap. */
 const CHROMODS_UPDATE_MIN_GAP_MS = 30 * 60 * 1000;
 const CHROMODS_UPDATE_TIMEOUT_MS = 10000;
-/* A reload takes a second or two; anything older than this is a leftover. */
-const CHROMODS_RELOAD_MAX_AGE_MS = 60 * 1000;
+/* A reload takes a second or two, but the service worker may not start until
+   Chromium has an event for it, so allow a slow browser plenty of room. Being
+   generous only means the tabs refresh late, which is what was asked for. */
+const CHROMODS_RELOAD_MAX_AGE_MS = 5 * 60 * 1000;
 const CHROMODS_UPDATE_CHECK = "chromods-update-check";
 const CHROMODS_UPDATE_DISMISS = "chromods-update-dismiss";
 const CHROMODS_UPDATE_BADGE = "NEW";
@@ -321,7 +323,7 @@ async function chromodsRequestExtensionReload({ refreshTabs = true } = {}) {
   chrome.runtime.reload();
 }
 
-async function chromodsFinishPendingReload() {
+async function chromodsRunPendingReload() {
   const stored = await chrome.storage.local.get(CHROMODS_RELOAD_KEY).catch(() => null);
   const pending = stored?.[CHROMODS_RELOAD_KEY];
   if (!pending) return 0;
@@ -329,6 +331,17 @@ async function chromodsFinishPendingReload() {
   const age = Date.now() - (Number(pending.at) || 0);
   if (!pending.refreshTabs || age < 0 || age > CHROMODS_RELOAD_MAX_AGE_MS) return 0;
   return chromodsRefreshThemedTabs();
+}
+
+let chromodsPendingReloadRun = null;
+
+/* Called from both the worker's top level and onInstalled, because a reload is
+   documented to fire onInstalled but the worker may also just start. A request
+   is only ever meaningful once per worker instance, so the first caller wins
+   and the other gets the same promise instead of reloading the tabs twice. */
+function chromodsFinishPendingReload() {
+  if (!chromodsPendingReloadRun) chromodsPendingReloadRun = chromodsRunPendingReload();
+  return chromodsPendingReloadRun;
 }
 
 function chromodsUpdateRelativeTime(timestamp, now = Date.now()) {

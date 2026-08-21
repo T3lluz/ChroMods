@@ -125,6 +125,7 @@ chrome.runtime.onInstalled.addListener((details) => {
      also where a just-installed new version settles its own notice. */
   if (details?.reason === "update") {
     chromodsSettleInstalledVersion().catch(() => {});
+    chromodsFinishPendingReload().catch(() => {});
   }
 
   chromodsCheckForUpdate({ force: details?.reason !== "chrome_update" }).catch(() => {});
@@ -153,8 +154,9 @@ chrome.alarms?.onAlarm.addListener((alarm) => {
 
 chromodsRefreshUpdateBadge().catch(() => {});
 
-/* Runs on every worker start, which is also the first thing that happens after
-   a reload, so a queued "Reload ChroMods" finishes by refreshing themed tabs. */
+/* A queued "Reload ChroMods" finishes here by refreshing the themed tabs whose
+   content scripts the reload orphaned. Also driven from onInstalled above; the
+   helper makes sure only one of the two does the work. */
 chromodsFinishPendingReload().catch(() => {});
 
 /* Drop live-chat positions stuck under the theater header hit strip. */
