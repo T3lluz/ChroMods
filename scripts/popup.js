@@ -634,6 +634,19 @@ const darkSystemControls = document.getElementById("dark-system-controls");
 const darkSkipNative = document.getElementById("dark-skip-native");
 const darkSiteListWrap = document.getElementById("dark-site-list-wrap");
 const darkSiteList = document.getElementById("dark-site-list");
+const updateSection = document.getElementById("update-section");
+const updateDot = document.getElementById("update-dot");
+const updateHeadline = document.getElementById("update-headline");
+const updateStatus = document.getElementById("update-status");
+const updateCheckBtn = document.getElementById("update-check");
+const updateDetails = document.getElementById("update-details");
+const updateNotes = document.getElementById("update-notes");
+const updateCommandText = document.getElementById("update-command-text");
+const updateCopyBtn = document.getElementById("update-copy");
+const updateDownloadBtn = document.getElementById("update-download");
+const updateReloadBtn = document.getElementById("update-reload");
+const updateNotesLink = document.getElementById("update-notes-link");
+const updateDismissBtn = document.getElementById("update-dismiss");
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let currentSite = null;
@@ -646,6 +659,8 @@ let shortcutState = chromodsMergeShortcuts();
 let recordingShortcutId = null;
 let searchActiveIndex = -1;
 let searchHitTimer = 0;
+let updateState = chromodsNormalizeUpdateState(null);
+let updateCopyTimer = 0;
 const collapsedCategories = new Set();
 const collapsedOtherSites = new Set();
 
@@ -1682,6 +1697,148 @@ function queueDarkThemeSave(host) {
   }, 80);
 }
 
+function popupPlatform() {
+  return navigator.userAgentData?.platform || navigator.platform || "";
+}
+
+async function sendUpdateMessage(message) {
+  try {
+    const response = await chrome.runtime.sendMessage(message);
+    if (response?.ok && response.state) return chromodsNormalizeUpdateState(response.state);
+  } catch {
+    /* the service worker can be missing on a freshly reloaded install */
+  }
+  return null;
+}
+
+async function loadUpdateState() {
+  try {
+    updateState = await chromodsGetUpdateState();
+  } catch {
+    updateState = chromodsNormalizeUpdateState(null);
+  }
+  return updateState;
+}
+
+function renderVersionPill() {
+  if (!versionPill) return;
+  const available = chromodsUpdateAvailable(updateState);
+  versionPill.textContent = `v${updateState.currentVersion}`;
+  versionPill.classList.toggle("has-update", available);
+  versionPill.title = available
+    ? `Update available — v${updateState.latestVersion}`
+    : "Version — open update settings";
+}
+
+function renderUpdateCard() {
+  if (!updateSection) return;
+
+  const available = chromodsUpdateAvailable(updateState);
+  const dismissed = available && !chromodsUpdateNoticeVisible(updateState);
+  updateSection.classList.toggle("has-update", available);
+  updateDot.classList.toggle("is-available", available);
+  updateDot.classList.toggle("is-error", Boolean(updateState.error) && !available);
+  updateHeadline.textContent = available
+    ? `Update available — v${updateState.latestVersion}`
+    : `ChroMods v${updateState.currentVersion}`;
+
+  const checked = `checked ${chromodsUpdateRelativeTime(updateState.checkedAt)}`;
+  if (updateState.error) {
+    updateStatus.textContent = `Couldn't check — ${updateState.error}.`;
+  } else if (dismissed) {
+    updateStatus.textContent = `You're on v${updateState.currentVersion}. Hidden until you check again.`;
+  } else if (available) {
+    updateStatus.textContent = `You're on v${updateState.currentVersion}, ${checked}.`;
+  } else if (updateState.checkedAt) {
+    updateStatus.textContent = `Up to date, ${checked}.`;
+  } else {
+    updateStatus.textContent = "Not checked yet.";
+  }
+
+  updateDetails.hidden = !available || dismissed;
+  if (updateDetails.hidden) return;
+
+  const lines = chromodsUpdateNoteLines(updateState.notes);
+  updateNotes.hidden = lines.length === 0;
+  updateNotes.innerHTML = lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
+  updateCommandText.textContent = chromodsUpdateCommand(popupPlatform());
+  updateDownloadBtn.hidden = !updateState.downloadUrl;
+  updateDownloadBtn.textContent = `Download v${updateState.latestVersion}`;
+  updateNotesLink.hidden = !updateState.url;
+  updateNotesLink.textContent = updateState.source === "release" ? "What's new" : "See commits";
+}
+
+function renderUpdates() {
+  renderUpdateCard();
+  renderVersionPill();
+}
+
+async function runUpdateCheck({ force = false } = {}) {
+  if (updateCheckBtn.disabled) return;
+  updateCheckBtn.disabled = true;
+  if (force) updateCheckBtn.textContent = "Checking…";
+
+  const next =
+    (await sendUpdateMessage({ type: CHROMODS_UPDATE_CHECK, force })) ??
+    (await chromodsCheckForUpdate({ force }).catch(() => null));
+  if (next) updateState = next;
+  else await loadUpdateState();
+
+  /* Asking explicitly means the user wants to see it again. */
+  if (force && updateState.dismissedVersion) {
+    updateState = await chromodsSetUpdateState({ ...updateState, dismissedVersion: null });
+    await chromodsApplyUpdateBadge(updateState);
+  }
+
+  updateCheckBtn.disabled = false;
+  updateCheckBtn.textContent = "Check now";
+  renderUpdates();
+}
+
+async function dismissUpdate() {
+  const next =
+    (await sendUpdateMessage({ type: CHROMODS_UPDATE_DISMISS })) ??
+    (await chromodsDismissUpdate().catch(() => null));
+  if (next) updateState = next;
+  else await loadUpdateState();
+  renderUpdates();
+}
+
+async function copyUpdateCommand() {
+  try {
+    await navigator.clipboard.writeText(updateCommandText.textContent.trim());
+    updateCopyBtn.textContent = "Copied";
+  } catch {
+    updateCopyBtn.textContent = "Copy failed";
+  }
+  clearTimeout(updateCopyTimer);
+  updateCopyTimer = window.setTimeout(() => {
+    updateCopyBtn.textContent = "Copy";
+  }, 1600);
+}
+
+async function openUpdateLink(url) {
+  if (!url) return;
+  await chrome.tabs.create({ url });
+  window.close();
+}
+
+function bindUpdateControls() {
+  updateCheckBtn.addEventListener("click", () => runUpdateCheck({ force: true }));
+  updateCopyBtn.addEventListener("click", copyUpdateCommand);
+  updateDownloadBtn.addEventListener("click", () => openUpdateLink(updateState.downloadUrl));
+  updateNotesLink.addEventListener("click", () => openUpdateLink(updateState.url));
+  updateDismissBtn.addEventListener("click", dismissUpdate);
+  updateReloadBtn.addEventListener("click", () => chrome.runtime.reload());
+  versionPill?.addEventListener("click", () => setSettingsOpen(true));
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes[CHROMODS_UPDATE_KEY]) return;
+    updateState = chromodsNormalizeUpdateState(changes[CHROMODS_UPDATE_KEY].newValue);
+    renderUpdates();
+  });
+}
+
 function stopShortcutRecording() {
   recordingShortcutId = null;
   shortcutList?.querySelectorAll(".shortcut-bind").forEach((button) => {
@@ -1824,6 +1981,8 @@ async function renderDarkSettings() {
 async function renderSettings() {
   shortcutState = await chromodsGetShortcuts();
   if (!darkSettingsHost) darkSettingsHost = activeDarkHost();
+  renderUpdates();
+  runUpdateCheck();
   renderShortcutList();
   await renderDarkSettings();
   if (activeTab?.id && activeDarkHost()) {
@@ -1898,6 +2057,7 @@ function bindControls() {
 
   settingsOpenBtn.addEventListener("click", () => setSettingsOpen(true));
   settingsBackBtn.addEventListener("click", () => setSettingsOpen(false));
+  bindUpdateControls();
 
   searchInput.addEventListener("focus", () => setSearchFocused(true));
   searchInput.addEventListener("blur", () => {
@@ -2029,9 +2189,8 @@ function renderPopup() {
 
 async function init() {
   stampStaticIcons();
-  if (versionPill && chrome.runtime?.getManifest) {
-    versionPill.textContent = `v${chrome.runtime.getManifest().version}`;
-  }
+  await loadUpdateState();
+  renderUpdates();
   await loadSettings();
   shortcutState = await chromodsGetShortcuts();
   await detectActiveTab();

@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test
+        run: npm test
+
+      - name: Check README is generated
+        run: node scripts/generate-readme.mjs --check
+
+      - name: Read version
+        id: version
+        run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag must match manifest version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          if [ "$TAG" != "${{ steps.version.outputs.version }}" ]; then
+            echo "Tag v$TAG does not match manifest version ${{ steps.version.outputs.version }}" >&2
+            exit 1
+          fi
+
+      - name: Package
+        run: npm run package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromods-${{ steps.version.outputs.version }}
+          path: dist/*.zip
+
+      # The popup's updater reads this release: tag_name is the version it
+      # compares against, and the .zip asset is what "Download" points at.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            "dist/chromods-${{ steps.version.outputs.version }}.zip" \
+            --title "ChroMods ${GITHUB_REF#refs/tags/}" \
+            --generate-notes

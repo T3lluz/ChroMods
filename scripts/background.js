@@ -1,4 +1,4 @@
-importScripts("dark-sites.js", "sites.js", "shortcuts.js");
+importScripts("dark-sites.js", "sites.js", "shortcuts.js", "updates.js");
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -107,7 +107,7 @@ const DEFAULT_SETTINGS = {
 const SETTINGS_KEY = "chroModsSettings";
 const LEGACY_SETTINGS_KEY = "youtubeThemingSettings";
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.storage.sync.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY], (stored) => {
     if (chrome.runtime.lastError) return;
     const data = stored || {};
@@ -118,7 +118,33 @@ chrome.runtime.onInstalled.addListener(() => {
     }
     chrome.storage.sync.set({ [SETTINGS_KEY]: DEFAULT_SETTINGS });
   });
+
+  chromodsScheduleUpdateChecks();
+  chromodsCheckForUpdate({ force: details?.reason !== "chrome_update" }).catch(() => {});
 });
+
+function chromodsScheduleUpdateChecks() {
+  try {
+    chrome.alarms.create(CHROMODS_UPDATE_ALARM, {
+      delayInMinutes: 1,
+      periodInMinutes: CHROMODS_UPDATE_INTERVAL_MINUTES,
+    });
+  } catch {
+    /* alarms are unavailable in some test harnesses */
+  }
+}
+
+chrome.runtime.onStartup?.addListener(() => {
+  chromodsScheduleUpdateChecks();
+  chromodsCheckForUpdate().catch(() => {});
+});
+
+chrome.alarms?.onAlarm.addListener((alarm) => {
+  if (alarm?.name !== CHROMODS_UPDATE_ALARM) return;
+  chromodsCheckForUpdate({ force: true }).catch(() => {});
+});
+
+chromodsRefreshUpdateBadge().catch(() => {});
 
 /* Drop live-chat positions stuck under the theater header hit strip. */
 (function healLiveChatPosition() {
@@ -209,6 +235,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === CHROMODS_SHORTCUT_RUN) {
     chromodsApplyShortcutCommand(message.actionId, sender.tab)
       .then((ok) => sendResponse({ ok: Boolean(ok) }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+  if (message?.type === CHROMODS_UPDATE_CHECK) {
+    chromodsCheckForUpdate({ force: Boolean(message.force) })
+      .then((state) => sendResponse({ ok: true, state }))
+      .catch((error) => sendResponse({ ok: false, error: String(error?.message || error) }));
+    return true;
+  }
+  if (message?.type === CHROMODS_UPDATE_DISMISS) {
+    chromodsDismissUpdate()
+      .then((state) => sendResponse({ ok: true, state }))
       .catch(() => sendResponse({ ok: false }));
     return true;
   }

@@ -25,7 +25,14 @@
             <img src="../icons/icon48.png" alt="" class="logo-img" width="32" height="32" />
             <div class="title-wrap">
               <h1 class="app-title">ChroMods</h1>
-              <span class="version-pill" id="version-pill">v1.0.0</span>
+              <button
+                id="version-pill"
+                class="version-pill"
+                type="button"
+                title="Version — open update settings"
+              >
+                v1.0.0
+              </button>
             </div>
           </div>
           <div class="header-actions">
@@ -136,6 +143,47 @@
         <h1 class="settings-title" data-icon="ui-sliders">Settings</h1>
       </header>
       <div class="settings-body">
+        <section class="settings-section" id="update-section">
+          <h2 class="section-title" data-icon="ui-update">Updates</h2>
+          <p class="settings-lead">ChroMods checks GitHub for new versions. Chromium can't auto-install an unpacked extension, so updating is: get the new files, then reload.</p>
+          <div class="settings-card update-card">
+            <div class="update-row">
+              <span class="update-status-dot" id="update-dot" aria-hidden="true"></span>
+              <div class="update-copy">
+                <h3 id="update-headline">ChroMods</h3>
+                <p id="update-status" class="settings-muted">Checking for updates…</p>
+              </div>
+              <button id="update-check" class="shortcut-bind update-check" type="button">Check now</button>
+            </div>
+            <div id="update-details" class="update-details" hidden>
+              <ul id="update-notes" class="update-notes" hidden></ul>
+              <p class="update-step">
+                <span class="update-step-num">1</span>
+                Get the new files
+              </p>
+              <div class="update-command">
+                <code id="update-command-text">git -C "$HOME/.chromods" pull</code>
+                <button id="update-copy" class="update-mini-btn" type="button">Copy</button>
+              </div>
+              <p class="update-hint">
+                Run it in your ChroMods folder. Installed from a ZIP instead?
+                <button id="update-download" class="update-link" type="button">Download v— </button>
+                and replace the folder's contents.
+              </p>
+              <p class="update-step">
+                <span class="update-step-num">2</span>
+                Reload the extension
+              </p>
+              <div class="update-actions">
+                <button id="update-reload" class="update-primary" type="button" data-icon="action-reload">
+                  Reload ChroMods
+                </button>
+                <button id="update-notes-link" class="update-link" type="button">What's new</button>
+                <button id="update-dismiss" class="update-link update-dismiss" type="button">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </section>
         <section class="settings-section">
           <h2 class="section-title" data-icon="ui-keyboard">Keyboard shortcuts</h2>
           <p class="settings-lead">Shortcuts work on any website. Click a binding to change the combo, or remap them in chrome://extensions/shortcuts.</p>
@@ -186,6 +234,7 @@
     <script src="../scripts/dark-sites.js"></script>
     <script src="../scripts/shortcuts.js"></script>
     <script src="../scripts/style-request.js"></script>
+    <script src="../scripts/updates.js"></script>
     <script src="../scripts/popup.js"></script>
   </body>
 </html>

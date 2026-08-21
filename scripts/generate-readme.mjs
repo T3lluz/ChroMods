@@ -117,8 +117,26 @@ ${siteSections}
 
 ## Install
 
-1. Clone this repo → \`chrome://extensions\` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open ${sitesPhrase} tabs
+One command puts the extension in a known folder (\`~/.chromods\`, or \`%LOCALAPPDATA%\\ChroMods\` on Windows):
+
+\`\`\`bash
+curl -fsSL https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/main/install.sh | bash
+\`\`\`
+
+\`\`\`powershell
+irm https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/main/install.ps1 | iex
+\`\`\`
+
+Then open \`chrome://extensions\` → **Developer mode** → **Load unpacked** → pick that folder, and reload any open ${sitesPhrase} tabs.
+
+Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://github.com/${GITHUB.owner}/${GITHUB.repo}/releases/latest)) and load that folder unpacked.
+
+## Updating
+
+The popup checks GitHub for new versions every few hours and badges the toolbar icon when one lands. **Settings → Updates** shows what changed and walks through the two steps Chromium requires for an unpacked extension:
+
+1. Get the new files — re-run the install command, \`git pull\` in the folder, or download the new ZIP.
+2. Hit **Reload ChroMods**, which reloads the extension from disk.
 
 ## Dev
 
@@ -127,7 +145,10 @@ npm install          # playwright for e2e
 npm test             # manifest, CSS compatibility, and wiring
 npm run test:e2e     # popup UI, theater geometry, and YouTube injection
 npm run readme       # regenerate this README from live feature metadata
+npm run package      # build dist/chromods-<version>.zip for a release
 \`\`\`
+
+Releases are cut by pushing a \`v<version>\` tag that matches \`manifest.json\`; \`.github/workflows/release.yml\` tests, packages, and publishes the ZIP the updater points at.
 
 Chromium only. Zen browser-window transparency is excluded because Chromium cannot expose the chrome backdrop. Settings sync under \`chroModsSettings\`.
 
@@ -139,6 +160,7 @@ MIT — CSS derived from [my-internet](https://github.com/sameerasw/my-internet)
 
 const popupSrc = fs.readFileSync(path.join(root, "scripts/popup.js"), "utf8");
 const sitesSrc = fs.readFileSync(path.join(root, "scripts/sites.js"), "utf8");
+const updatesSrc = fs.readFileSync(path.join(root, "scripts/updates.js"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 
 const features = evalArray(extractConstArray(popupSrc, "FEATURE_META"), {
@@ -150,6 +172,10 @@ const features = evalArray(extractConstArray(popupSrc, "FEATURE_META"), {
 const sites = evalArray(extractConstArray(sitesSrc, "SITE_META"), {
   GOOGLE_SEARCH_HOST: "null",
 });
+
+const GITHUB = Function(
+  `"use strict"; return (${updatesSrc.match(/const CHROMODS_UPDATE_REPO = (\{[^}]*\})/)?.[1]});`
+)();
 
 const readme = buildReadme({
   version: manifest.version,
