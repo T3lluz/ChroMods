@@ -144,8 +144,26 @@ Applies to Search only — Gmail, Docs, and other Google apps are left alone.
 
 ## Install
 
-1. Clone this repo → `chrome://extensions` → **Developer mode** → **Load unpacked** → repo root
-2. Reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT tabs
+One command puts the extension in a known folder (`~/.chromods`, or `%LOCALAPPDATA%\ChroMods` on Windows):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/T3lluz/ChroMods/main/install.sh | bash
+```
+
+```powershell
+irm https://raw.githubusercontent.com/T3lluz/ChroMods/main/install.ps1 | iex
+```
+
+Then open `chrome://extensions` → **Developer mode** → **Load unpacked** → pick that folder, and reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT tabs.
+
+Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://github.com/T3lluz/ChroMods/releases/latest)) and load that folder unpacked.
+
+## Updating
+
+The popup checks GitHub for new versions every few hours and badges the toolbar icon when one lands. **Settings → Updates** shows what changed and walks through the two steps Chromium requires for an unpacked extension:
+
+1. Get the new files — re-run the install command, `git pull` in the folder, or download the new ZIP.
+2. Hit **Reload ChroMods**, which reloads the extension from disk.
 
 ## Dev
 
@@ -154,7 +172,10 @@ npm install          # playwright for e2e
 npm test             # manifest, CSS compatibility, and wiring
 npm run test:e2e     # popup UI, theater geometry, and YouTube injection
 npm run readme       # regenerate this README from live feature metadata
+npm run package      # build dist/chromods-<version>.zip for a release
 ```
+
+Releases are cut by pushing a `v<version>` tag that matches `manifest.json`; `.github/workflows/release.yml` tests, packages, and publishes the ZIP the updater points at.
 
 Chromium only. Zen browser-window transparency is excluded because Chromium cannot expose the chrome backdrop. Settings sync under `chroModsSettings`.
 
