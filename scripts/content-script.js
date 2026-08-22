@@ -2931,7 +2931,10 @@
       return Math.min(ceiling, this.normalizeWidth(width));
     }
 
-    /* The guide is what the rail is really competing with for room. */
+    /* The page's own overhead, which is what the rail is really competing with.
+       On a narrow window the guide stops being a column and becomes an overlay
+       drawer as wide as the viewport, so cap it: still counted as a reason the
+       page is cramped, never allowed to dominate the sum. */
     guideWidth() {
       const guide = this.getLayout()?.querySelector("#guide");
       const width = guide?.getBoundingClientRect().width ?? 0;
