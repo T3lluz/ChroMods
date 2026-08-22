@@ -2076,6 +2076,17 @@
   const FULLSCREEN_TRANSITION_MS = 380;
   const FULLSCREEN_TRANSITION_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
   const FULLSCREEN_EVENTS = ["fullscreenchange", "webkitfullscreenchange"];
+  const FULLSCREEN_SCALE_CLASS = "ytm-fs-scaling";
+  /* Chromium's UA stylesheet pins the fullscreen element to `transform: none`,
+     and a UA !important declaration outranks inline styles, author !important,
+     and Web Animations alike. Entering fullscreen therefore has to scale a
+     descendant; leaving it animates the player, which is no longer the
+     fullscreen element by the time the event fires. */
+  const FULLSCREEN_SCALE_TARGETS = [
+    ".html5-video-container",
+    "video.html5-main-video",
+    "video",
+  ];
   const FULLSCREEN_EXIT_STYLE_PROPS = [
     "position",
     "left",
@@ -2137,6 +2148,14 @@
     return root.querySelector("#movie_player") || root.querySelector(".html5-video-player");
   }
 
+  function getFullscreenScaleTarget(player) {
+    for (const selector of FULLSCREEN_SCALE_TARGETS) {
+      const target = player.querySelector(selector);
+      if (target) return target;
+    }
+    return null;
+  }
+
   function getNativeFullscreenPlayer() {
     const fs = document.fullscreenElement || document.webkitFullscreenElement;
     if (!fs || fs === document.documentElement || fs === document.body) {
@@ -2161,6 +2180,7 @@
       this.animation = null;
       this.finishTimer = 0;
       this.animatingPlayer = null;
+      this.animatingTarget = null;
       this.onFullscreenChange = () => this.sync();
       this.onWatchStateChange = () => this.sync();
       this.onPointerDown = () => this.sampleFromRect();
@@ -2269,18 +2289,20 @@
       for (const prop of FULLSCREEN_EXIT_STYLE_PROPS) style.removeProperty(prop);
     }
 
-    animate(player, fromTransform, toTransform, exiting) {
+    animate(player, target, fromTransform, toTransform, exiting) {
       this.finishAnimation();
       this.animatingPlayer = player;
+      this.animatingTarget = target;
       player.classList.toggle("ytm-fs-exiting", Boolean(exiting));
       player.classList.add("ytm-fs-animating");
+      if (target !== player) target.classList.add(FULLSCREEN_SCALE_CLASS);
 
-      if (typeof player.animate !== "function") {
+      if (typeof target.animate !== "function") {
         this.finishTimer = setTimeout(() => this.finishAnimation(), FULLSCREEN_TRANSITION_MS);
         return;
       }
 
-      const animation = player.animate(
+      const animation = target.animate(
         [
           { transform: fromTransform, transformOrigin: "0 0" },
           { transform: toTransform, transformOrigin: "0 0" },
@@ -2314,7 +2336,14 @@
         this.animation = null;
       }
       const player = this.animatingPlayer;
+      const target = this.animatingTarget;
       this.animatingPlayer = null;
+      this.animatingTarget = null;
+      if (target && target !== player) {
+        target.classList.remove(FULLSCREEN_SCALE_CLASS);
+        target.style.removeProperty("transform");
+        target.style.removeProperty("transform-origin");
+      }
       if (!player) return;
       player.classList.remove("ytm-fs-animating", "ytm-fs-exiting");
       this.unpinPlayer(player);
@@ -2324,22 +2353,28 @@
       const player = getNativeFullscreenPlayer() || getWatchPlayer();
       if (!player || !this.inPlayerFullscreen) return;
 
-      const toBox = copyBox(player.getBoundingClientRect());
-      if (!isUsableBox(toBox)) {
+      const playerBox = copyBox(player.getBoundingClientRect());
+      if (isUsableBox(playerBox)) this.fullscreenRect = playerBox;
+
+      /* Scaling the fullscreen element itself is a no-op, so without an inner
+         box to scale there is nothing to animate — and hiding the player chrome
+         for a transition that cannot run would only swallow clicks. */
+      const target = getFullscreenScaleTarget(player);
+      const toBox = target ? copyBox(target.getBoundingClientRect()) : null;
+      if (!target || !isUsableBox(toBox) || !isUsableBox(playerBox)) {
         if (retries >= 8) return;
         requestAnimationFrame(() => {
           if (this.enabled && this.inPlayerFullscreen) this.playEnter(retries + 1);
         });
         return;
       }
-      this.fullscreenRect = toBox;
 
       const fromBox = isUsableBox(this.fromRect) ? this.fromRect : this.fallbackFromBox(toBox);
       if (boxesAreClose(fromBox, toBox)) return;
 
       const invert = invertBoxTransform(fromBox, toBox);
       if (!invert) return;
-      this.animate(player, invert, "none", false);
+      this.animate(player, target, invert, "none", false);
     }
 
     playExit() {
@@ -2366,7 +2401,7 @@
         this.unpinPlayer(player);
         return;
       }
-      this.animate(player, invert, "none", true);
+      this.animate(player, player, invert, "none", true);
     }
 
     sync() {

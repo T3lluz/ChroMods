@@ -243,6 +243,37 @@ test("fullscreen transition scales with FLIP classes and hides player chrome", (
   assert.doesNotMatch(css, /@-moz-document/);
 });
 
+/* Chromium's UA stylesheet sets `transform: none` on the fullscreen element and
+   a UA !important declaration outranks author styles, inline styles, and Web
+   Animations. Scaling the player on the way in is silently dropped, so the FLIP
+   has to run on an inner box. */
+test("entering fullscreen scales a descendant, not the fullscreen element", () => {
+  const css = read(style("youtube", "fullscreen-transition.css"));
+  assert.match(css, /\.html5-video-player\.ytm-fs-animating \.ytm-fs-scaling/);
+
+  const js = read("scripts/content-script.js");
+  assert.match(js, /FULLSCREEN_SCALE_TARGETS/);
+  assert.match(js, /\.html5-video-container/);
+  assert.match(js, /getFullscreenScaleTarget/);
+  assert.match(js, /ytm-fs-scaling/);
+
+  const playEnter = js.slice(js.indexOf("playEnter("), js.indexOf("playExit("));
+  assert.match(playEnter, /getFullscreenScaleTarget\(player\)/);
+  assert.match(
+    playEnter,
+    /this\.animate\(player,\s*target,/,
+    "the enter animation must run on the inner target"
+  );
+
+  const exitStart = js.indexOf("playExit(");
+  const playExit = js.slice(exitStart, js.indexOf("\n    sync() {", exitStart));
+  assert.match(
+    playExit,
+    /this\.animate\(player,\s*player,/,
+    "the exit animation can use the player, which is no longer fullscreen"
+  );
+});
+
 test("immersive search uses transform scale without compounding the scale property", () => {
   const css = read(style("youtube", "immersive-search.css"));
   assert.match(css, /transform:\s*scale\(1\.05\)/);
