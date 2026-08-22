@@ -65,7 +65,11 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
 
 Theater, immersive search, feed layout, compact/clean/hide side guide, hide filter chips, player blur, fullscreen transition, thumbnail hover, hide distractions, disable ambient mode, better captions, overlay live chat, movable live chat, YouTube TV.
 
-YouTube Music: sticky queue (docks the player page's `#side-panel` as a right-hand rail while `ytmusic-app-layout` has `player-visible` but not `player-page-open`). `music.youtube.com` is its own site id (`ytmusic`), and `matchSiteFromHostname` resolves it by longest matching hostname — do not rely on `SITE_META` order.
+YouTube Music: sticky queue — docks the player page's `#side-panel` as a right-hand rail while `ytmusic-app-layout` has `player-visible` but not `player-page-open`. The CSS is driven by the `StickyQueue` controller in `scripts/content-script.js`, not by the layout's own attributes: it puts `ytm-queue-docked` / `-collapsed` / `-resizing` / `-animated` on `<html>` and sets `--chromods-ytm-queue-width` inline on `documentElement`, so the rail never flashes at the default width before the stored one loads. The rail resizes by dragging `.ytm-queue-handle` (or arrow keys / Home on it), collapses via `.ytm-queue-toggle`, and auto-collapses when the window has no room for even the narrowest rail beside the guide and a readable browse column — the last of which the popup's `ytmusicQueue.autoCompact` subsetting turns off. Width and collapsed state live in `chrome.storage.local` under `chroModsYtmQueueWidth` / `chroModsYtmQueueCollapsed` and sync across tabs.
+
+Two things there are easy to get wrong. The remembered width is the user's own request, clamped only to the mod's bounds; the window's ceilings (a share of the viewport, and the room the browse column needs) are applied at render time, so a stint in a narrow window does not forget how wide they like it. And the auto-collapse ignores the chosen width on purpose — deriving it from the rail's width made dragging the rail wider the thing that tucked it away.
+
+`music.youtube.com` is its own site id (`ytmusic`), and `matchSiteFromHostname` resolves it by longest matching hostname — do not rely on `SITE_META` order.
 
 GitHub: immersive search, hover sidebars, no tab text, repo sidebar hover, hide footer, hide toolbar separator, glass effect, softer borders, remove button borders, timeline badges, chip spacing.
 
@@ -91,8 +95,10 @@ Some mods cannot be verified by reading the CSS, because Chromium's own cascade 
 
 - A UA `!important` declaration outranks inline styles, author `!important`, and Web Animations. This is why the fullscreen transition scales an inner box on the way in: `transform` on the fullscreen element itself is dropped (`tests/fullscreen.e2e.mjs` guards it).
 - The YouTube Music queue rail has to beat an inline `visibility: hidden` (`tests/ytmusic.e2e.mjs` guards it).
+- That rail is also parked a viewport below where it belongs, so a `transition` on the docked rule slides it up the screen on every page load. The transitions live behind `ytm-queue-animated`, which `StickyQueue` adds a paint after docking.
+- Polymer builds `ytmusic-app-layout` with `player-visible` already set and then inserts it, so an attribute `MutationObserver` never sees the state arrive. `StickyQueue.scheduleSettle()` re-checks on a few timers and on `yt-navigate-finish`; do not replace it with a document-wide `childList` observer.
 
-Both tests serve a local fixture for the real hostname through Playwright routing, so they run offline with no account. They need `npx playwright install chromium`, and extensions only load in headed Chromium (`xvfb-run` on a headless box).
+Both tests serve a local fixture for the real hostname through Playwright routing, so they run offline with no account. They need `npx playwright install chromium`, and extensions only load in headed Chromium (`xvfb-run` on a headless box). Chromium throttles transitions in a background tab, so bring a page to the front before measuring anything mid-animation.
 
 ## GitHub issue auto-port
 
