@@ -6,6 +6,7 @@
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/extension.e2e.mjs",
     "test:fullscreen": "node tests/fullscreen.e2e.mjs",
+    "test:ytmusic": "node tests/ytmusic.e2e.mjs",
     "readme": "node scripts/generate-readme.mjs",
     "package": "node scripts/package.mjs",
     "release": "node scripts/version.mjs",
