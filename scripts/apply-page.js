@@ -65,6 +65,7 @@ function describeFolderState(permission) {
 function applyButtonLabel(permission) {
   const version = applyState.latestVersion ? ` v${applyState.latestVersion}` : "";
   if (!chromodsCanPickUpdateFolder()) return "Folder access unavailable";
+  if (!chromodsUpdateAvailable(applyState)) return "Nothing to apply";
   if (savedDirectory && permission === "granted") return `Apply${version}`;
   if (savedDirectory) return `Allow folder & apply${version}`;
   return `Choose folder & apply${version}`;
@@ -81,7 +82,7 @@ async function renderApplyPage() {
     ? await chromodsQueryDirectoryPermission(savedDirectory)
     : "prompt";
 
-  applyFolder.hidden = false;
+  applyFolder.hidden = !available;
   applyFolder.textContent = describeFolderState(permission);
 
   const canRun =
