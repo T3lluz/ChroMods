@@ -156,19 +156,29 @@ test("cloud agent prompt asks for a PR that closes the issue", () => {
   assert.match(prompt, /FULL upstream file/);
 });
 
-test("music.youtube.com is a new site even though it suffixes youtube.com", async () => {
-  const result = await classifyIssue(
+test("a youtube.com subdomain is judged on its own, not on the parent site", async () => {
+  /* music.youtube.com is its own site now, so a request for it is a duplicate. */
+  const music = await classifyIssue(
     { title: "[STYLE] music.youtube.com", body: "" },
+    { root, fetchImpl: mockFetch({}) }
+  );
+  assert.equal(music.verdict, "skip");
+  assert.equal(music.reason, "already-ported");
+  assert.equal(music.siteId, "ytmusic");
+
+  /* Studio still isn't ported, and suffixing youtube.com must not hide that. */
+  const studio = await classifyIssue(
+    { title: "[STYLE] studio.youtube.com", body: "" },
     {
       root,
       fetchImpl: mockFetch({
         "css-mapping.json": "{}",
-        "websites/music.youtube.com.css": "/* ytm-glass $ Frosted player */\n#player { border-radius: 12px; }\n",
+        "websites/studio.youtube.com.css": "/* yts-glass $ Frosted panels */\n#panel { border-radius: 12px; }\n",
       }),
     }
   );
-  assert.equal(result.verdict, "simple");
-  assert.equal(result.host, "music.youtube.com");
+  assert.equal(studio.verdict, "simple");
+  assert.equal(studio.host, "studio.youtube.com");
 });
 
 test("issue triage workflow launches a cloud agent instead of pushing to main", () => {

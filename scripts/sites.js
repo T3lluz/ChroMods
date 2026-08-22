@@ -9,6 +9,12 @@ const SITE_META = [
     icon: "site-youtube",
   },
   {
+    id: "ytmusic",
+    title: "YouTube Music",
+    hostnames: ["music.youtube.com"],
+    icon: "site-ytmusic",
+  },
+  {
     id: "github",
     title: "GitHub",
     hostnames: ["github.com"],
@@ -68,19 +74,39 @@ function normalizeHostname(hostname) {
     .toLowerCase();
 }
 
-function hostMatchesSite(host, site) {
+/* Scores how specifically a site claims a host: the length of the hostname it
+   matched, or 0 for no match. music.youtube.com is claimed by both YouTube
+   Music and YouTube, and the longer claim is the one the user means. */
+function siteHostMatchLength(host, site) {
   if (site.hostnamePattern) {
-    return site.hostnamePattern.test(host);
+    return site.hostnamePattern.test(host) ? host.length : 0;
   }
-  return site.hostnames.some(
-    (candidate) => host === candidate || host.endsWith(`.${candidate}`)
-  );
+  let longest = 0;
+  for (const candidate of site.hostnames) {
+    if (host === candidate || host.endsWith(`.${candidate}`)) {
+      longest = Math.max(longest, candidate.length);
+    }
+  }
+  return longest;
+}
+
+function hostMatchesSite(host, site) {
+  return siteHostMatchLength(host, site) > 0;
 }
 
 function matchSiteFromHostname(hostname) {
   const host = normalizeHostname(hostname);
   if (!host) return null;
-  return SITE_META.find((site) => hostMatchesSite(host, site)) ?? null;
+  let match = null;
+  let matchLength = 0;
+  for (const site of SITE_META) {
+    const length = siteHostMatchLength(host, site);
+    if (length > matchLength) {
+      match = site;
+      matchLength = length;
+    }
+  }
+  return match;
 }
 
 function matchSiteFromUrl(url) {

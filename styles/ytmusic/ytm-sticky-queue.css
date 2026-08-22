@@ -1,0 +1,97 @@
+/* Sticky queue — keep Up next docked on the right while you browse.
+
+   YouTube Music keeps the queue inside the full player page (#player-page),
+   which it parks below the viewport with a transform and hides with an inline
+   `visibility: hidden` the moment you leave it. So the queue exists and stays
+   populated while you browse playlists; it is simply out of sight.
+
+   This pins that panel back as a right-hand column between the nav bar and the
+   player bar, hides the album-art half of the player page, and reserves the
+   column so browse pages lay out beside it instead of underneath. The layout
+   exposes `player-visible` while something is queued and `player-page-open`
+   only while the full player is up, so those two attributes are the state to
+   key off — the player-ui-state enum also reports MINIPLAYER for a dismissed
+   player page. */
+
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"]) {
+  --chromods-ytm-queue-width: 360px;
+}
+
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page {
+  visibility: visible !important;
+  transform: none !important;
+  position: fixed !important;
+  top: var(--ytmusic-nav-bar-height, 64px) !important;
+  bottom: var(--ytmusic-player-bar-height, 72px) !important;
+  right: 0 !important;
+  left: auto !important;
+  width: var(--chromods-ytm-queue-width) !important;
+  max-width: 40vw !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-shadow: -14px 0 28px rgb(0 0 0 / 35%) !important;
+}
+
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page
+  .content {
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* The album art, video, and lyrics column has no room in a 360px rail. */
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page
+  #main-panel {
+  display: none !important;
+}
+
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page
+  #side-panel {
+  visibility: visible !important;
+  position: static !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  opacity: 1 !important;
+  overflow: hidden !important;
+}
+
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page
+  #side-panel
+  #tab-renderer {
+  height: 100% !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+/* Upstream pads the list for the player bar; the rail already stops above it. */
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #player-page
+  div.ytmusic-player-queue#contents {
+  margin-bottom: 0 !important;
+}
+
+/* Reserve the rail so browse pages, search, and playlists shrink instead of
+   sliding under the queue. */
+ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
+  #content {
+  padding-right: var(--chromods-ytm-queue-width) !important;
+}
+
+@media (max-width: 900px) {
+  ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"]) {
+    --chromods-ytm-queue-width: 300px;
+  }
+}

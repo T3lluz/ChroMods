@@ -112,11 +112,12 @@ async function run() {
     await expandAllSitePanels(popupPage);
 
     const featureCards = await popupPage.locator(".feature-card").count();
-    assert.equal(featureCards, 69, "Expected every non-transparency mod across all sites");
+    assert.equal(featureCards, 70, "Expected every non-transparency mod across all sites");
 
     const title = await popupPage.locator(".app-title").textContent();
     assert.match(title ?? "", /ChroMods/);
-    assert.equal(await popupPage.locator(".site-chip").count(), 9, "Expected a chip for every supported site");
+    assert.equal(await popupPage.locator(".site-chip").count(), 10, "Expected a chip for every supported site");
+    assert.equal(await popupPage.locator('.feature-card[data-feature="ytm-sticky-queue"]').count(), 1);
     assert.match(await popupPage.locator("#other-sites-title").textContent() ?? "", /Sites/);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-no-tab-text"]').count(), 1);
     assert.equal(await popupPage.locator('.feature-card[data-feature="gh-glass-effect"]').count(), 1);

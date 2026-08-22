@@ -213,6 +213,14 @@ const FEATURE_META = [
     subsettingsKey: "movableLiveChat",
   },
   {
+    id: "ytm-sticky-queue",
+    site: "ytmusic",
+    category: "player",
+    title: "Sticky queue",
+    description:
+      "Dock Up next on the right so the queue stays visible while you browse playlists.",
+  },
+  {
     id: "gh-immersive-search",
     site: "github",
     category: "search",

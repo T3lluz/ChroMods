@@ -3,7 +3,7 @@
 <div align="center">
   <img src="icons/icon.svg" width="72" height="72" alt="ChroMods" />
   <h1>ChroMods</h1>
-  <p>Chrome MV3 theming mods for YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
+  <p>Chrome MV3 theming mods for YouTube, YouTube Music, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT.<br/>Styles adapted from <a href="https://github.com/sameerasw/my-internet">my-internet</a>.</p>
   <p>
     <img alt="Version" src="https://img.shields.io/badge/v1.5.0-111111?label=version" />
     <img alt="Manifest V3" src="https://img.shields.io/badge/MV3-4285F4?logo=googlechrome&logoColor=white" />
@@ -16,6 +16,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | | Site | Mods | Hosts |
 | :---: | --- | ---: | --- |
 | <img src="docs/sites/youtube.svg" width="20" height="20" alt="" /> | [YouTube](#youtube) | 16 | youtube.com |
+| <img src="docs/sites/ytmusic.svg" width="20" height="20" alt="" /> | [YouTube Music](#ytmusic) | 1 | music.youtube.com |
 | <img src="docs/sites/github.svg" width="20" height="20" alt="" /> | [GitHub](#github) | 11 | github.com |
 | <img src="docs/sites/google.svg" width="20" height="20" alt="" /> | [Google](#google) | 5 | google.com and country search TLDs |
 | <img src="docs/sites/gmail.svg" width="20" height="20" alt="" /> | [Gmail](#gmail) | 6 | mail.google.com |
@@ -47,6 +48,12 @@ The popup detects the active tab and shows that site's mods first. Search the he
 | **YouTube TV** | Polish the large-screen YouTube TV player and overlays. | Off |
 | **Overlay live chat** | Float live chat at the right edge while in theater mode. | Off |
 | **Movable live chat** | Drag and resize live chat in theater mode. | Off |
+
+### <img src="docs/sites/ytmusic.svg" width="22" height="22" alt="" /> YouTube Music
+
+| Mod | What it does | Default |
+|-----|--------------|---------|
+| **Sticky queue** | Dock Up next on the right so the queue stays visible while you browse playlists. | On |
 
 ### <img src="docs/sites/github.svg" width="22" height="22" alt="" /> GitHub
 
@@ -155,7 +162,7 @@ curl -fsSL https://raw.githubusercontent.com/T3lluz/ChroMods/main/install.sh | b
 irm https://raw.githubusercontent.com/T3lluz/ChroMods/main/install.ps1 | iex
 ```
 
-Three clicks are left: turn on **Developer mode**, click **Load unpacked**, and paste the path. Then reload any open YouTube, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT tabs.
+Three clicks are left: turn on **Developer mode**, click **Load unpacked**, and paste the path. Then reload any open YouTube, YouTube Music, GitHub, Google Search, Gmail, Gemini, DuckDuckGo, X, Twitch, and ChatGPT tabs.
 
 Prefer doing it by hand? Clone the repo (or download a [release ZIP](https://github.com/T3lluz/ChroMods/releases/latest)) and load that folder unpacked. Set `CHROMODS_DIR` to install somewhere else.
 

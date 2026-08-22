@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
     "youtube-tv": false,
     "overlay-live-chat": false,
     "movable-live-chat": false,
+    "ytm-sticky-queue": true,
     "gh-no-tab-text": true,
     "gh-no-footer": true,
     "gh-hover": false,
@@ -94,6 +95,7 @@ const DEFAULT_SETTINGS = {
   },
   sites: {
     youtube: { enabled: true },
+    ytmusic: { enabled: true },
     github: { enabled: true },
     google: { enabled: true },
     gmail: { enabled: true },

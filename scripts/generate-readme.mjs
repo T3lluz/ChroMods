@@ -6,6 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const SITE_COPY = {
   youtube: { hosts: "youtube.com" },
+  ytmusic: { hosts: "music.youtube.com" },
   github: { hosts: "github.com" },
   google: { hosts: "google.com and country search TLDs" },
   gmail: { hosts: "mail.google.com" },

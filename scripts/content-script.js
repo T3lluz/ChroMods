@@ -70,6 +70,7 @@
     "better-captions": ["styles/youtube/better-captions.css"],
     "youtube-tv": ["styles/youtube/youtube-tv.css"],
     "overlay-live-chat": ["styles/youtube/overlay-live-chat.css"],
+    "ytm-sticky-queue": ["styles/ytmusic/ytm-sticky-queue.css"],
     "gh-no-tab-text": ["styles/github/gh-no-tab-text.css"],
     "gh-no-footer": ["styles/github/gh-no-footer.css"],
     "gh-hover": ["styles/github/gh-hover.css"],
@@ -125,6 +126,7 @@
   };
 
   const FEATURE_SITE = {
+    "ytm-sticky-queue": "ytmusic",
     "gh-no-tab-text": "github",
     "gh-no-footer": "github",
     "gh-hover": "github",
@@ -232,6 +234,7 @@
       "youtube-tv": false,
       "overlay-live-chat": false,
       "movable-live-chat": false,
+      "ytm-sticky-queue": true,
       "gh-no-tab-text": true,
       "gh-no-footer": true,
       "gh-hover": false,
@@ -294,6 +297,7 @@
     },
     sites: {
       youtube: { enabled: true },
+      ytmusic: { enabled: true },
       github: { enabled: true },
       google: { enabled: true },
       gmail: { enabled: true },
@@ -369,6 +373,7 @@
   function getFeatureSite(featureId) {
     if (FEATURE_SITE[featureId]) return FEATURE_SITE[featureId];
     const id = String(featureId);
+    if (id.startsWith("ytm-")) return "ytmusic";
     if (id.startsWith("ddg-")) return "duckduckgo";
     if (id.startsWith("gh-")) return "github";
     if (id.startsWith("gmail-")) return "gmail";
