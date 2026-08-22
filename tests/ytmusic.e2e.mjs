@@ -52,24 +52,37 @@ const MUSIC_FIXTURE = `<!DOCTYPE html>
   ytmusic-player-queue-item { display: block; height: 56px; border-bottom: 1px solid #222; }
 </style></head>
 <body>
-  <ytmusic-app-layout id="layout" player-visible player-ui-state="MINIPLAYER">
-    <ytmusic-nav-bar></ytmusic-nav-bar>
-    <tp-yt-app-drawer id="guide" opened persistent>Guide</tp-yt-app-drawer>
-    <div id="content"><ytmusic-browse-response id="browse-page">Browse</ytmusic-browse-response></div>
-    <ytmusic-player-page id="player-page" style="visibility: hidden;">
-      <div class="content">
-        <div id="main-panel">Album art</div>
-        <div id="side-panel" class="side-panel">
-          <tp-yt-paper-tabs>Up next</tp-yt-paper-tabs>
-          <ytmusic-tab-renderer id="tab-renderer">
-            <ytmusic-player-queue id="queue"><div id="contents" class="ytmusic-player-queue">${QUEUE_ITEMS}</div></ytmusic-player-queue>
-          </ytmusic-tab-renderer>
+  <template id="layout-template">
+    <ytmusic-app-layout id="layout" player-visible player-ui-state="MINIPLAYER">
+      <ytmusic-nav-bar></ytmusic-nav-bar>
+      <tp-yt-app-drawer id="guide" opened persistent>Guide</tp-yt-app-drawer>
+      <div id="content"><ytmusic-browse-response id="browse-page">Browse</ytmusic-browse-response></div>
+      <ytmusic-player-page id="player-page" style="visibility: hidden;">
+        <div class="content">
+          <div id="main-panel">Album art</div>
+          <div id="side-panel" class="side-panel">
+            <tp-yt-paper-tabs>Up next</tp-yt-paper-tabs>
+            <ytmusic-tab-renderer id="tab-renderer">
+              <ytmusic-player-queue id="queue"><div id="contents" class="ytmusic-player-queue">${QUEUE_ITEMS}</div></ytmusic-player-queue>
+            </ytmusic-tab-renderer>
+          </div>
         </div>
-      </div>
-    </ytmusic-player-page>
-    <ytmusic-player-bar></ytmusic-player-bar>
-  </ytmusic-app-layout>
+      </ytmusic-player-page>
+      <ytmusic-player-bar></ytmusic-player-bar>
+    </ytmusic-app-layout>
+  </template>
   <script>
+    /* Polymer builds the layout with its state attributes already set and only
+       then inserts it, so an attribute observer never sees them arrive. The
+       template reproduces that. A "late" query param also holds the insert back
+       by that many ms, which is the case only a settle pass can catch. */
+    const buildLayout = () => {
+      document.body.appendChild(document.getElementById("layout-template").content.cloneNode(true));
+    };
+    const late = Number(new URLSearchParams(location.search).get("late"));
+    if (late > 0) setTimeout(buildLayout, late);
+    else buildLayout();
+
     /* The real app flips these two together when you open or leave the player. */
     window.__setPlayerPageOpen = (open) => {
       const layout = document.getElementById("layout");
@@ -172,12 +185,8 @@ async function run() {
   const results = [];
   const { context, extensionId } = await launch();
 
-  try {
-    const page = await context.newPage();
-    const pageErrors = [];
-    page.on("pageerror", (error) => pageErrors.push(String(error)));
-
-    await page.route("**/*", async (route) => {
+  const serveFixture = (target) =>
+    target.route("**/*", async (route) => {
       const url = route.request().url();
       if (url.startsWith("chrome-extension://")) return route.continue();
       if (/^https:\/\/music\.youtube\.com\//.test(url)) {
@@ -186,6 +195,24 @@ async function run() {
       return route.abort();
     });
 
+  try {
+    /* A layout that lands well after the content script, with its state
+       attributes already set: the observer has nothing to see, so only a settle
+       pass can dock this. Done first so it cannot disturb anything else. */
+    const latePage = await context.newPage();
+    await serveFixture(latePage);
+    await latePage.goto("https://music.youtube.com/?late=1200", { waitUntil: "domcontentloaded" });
+    await latePage.waitForFunction(() => document.documentElement.classList.contains("ytm-queue-docked"), null, {
+      timeout: 10000,
+    });
+    await latePage.close();
+    results.push("a queue restored after the page settles still docks");
+
+    const page = await context.newPage();
+    const pageErrors = [];
+    page.on("pageerror", (error) => pageErrors.push(String(error)));
+
+    await serveFixture(page);
     await page.goto("https://music.youtube.com/", { waitUntil: "domcontentloaded" });
     const injected = await page.waitForFunction(
       () => {
@@ -199,8 +226,6 @@ async function run() {
     assert.doesNotMatch(await injected.jsonValue(), /ytd-watch-flexy/);
     results.push("music.youtube.com gets the YouTube Music mods, not YouTube's");
 
-    /* The fixture loads with the queue already restored, so nothing ever changes
-       an attribute: docking here proves the settle pass, not the observer. */
     await page.waitForFunction(() => document.documentElement.classList.contains("ytm-queue-docked"), null, {
       timeout: 20000,
     });
