@@ -277,26 +277,80 @@ test("entering fullscreen scales a descendant, not the fullscreen element", () =
 
 /* YouTube Music keeps the queue inside the player page, parked below the
    viewport and hidden with an inline style, so docking it means overriding both
-   and reserving the column it lands in. */
+   and reserving the column it lands in. The rail's width and collapsed state
+   come from StickyQueue, so the CSS keys off classes it applies to <html>
+   rather than the layout's own attributes — otherwise the rail would flash at a
+   default width before the stored one loads. */
 test("the sticky queue docks the player page's side panel and reserves its column", () => {
   const css = read(style("ytmusic", "ytm-sticky-queue.css"));
-  const state = /ytmusic-app-layout\[player-visible\]:not\(\[player-page-open\]\)/;
-  assert.match(css, state);
-  assert.match(css, /#player-page/);
+  assert.match(css, /html\.ytm-queue-docked ytmusic-app-layout #player-page/);
   assert.match(css, /#side-panel/);
   assert.match(css, /visibility:\s*visible\s*!important/);
   assert.match(css, /transform:\s*none\s*!important/);
   assert.match(css, /--ytmusic-nav-bar-height/);
   assert.match(css, /--ytmusic-player-bar-height/);
-  assert.match(css, /padding-right:\s*var\(--chromods-ytm-queue-width\)\s*!important/);
+  assert.match(css, /padding-right:\s*var\(--chromods-ytm-queue-rail\)\s*!important/);
   // The album-art column has no room in the rail.
   assert.match(css, /#main-panel\s*\{[^}]*display:\s*none/);
-  // Every rule has to bow out while the full player is open.
+  // Collapsing slides the rail out and gives its column back.
+  assert.match(css, /html\.ytm-queue-docked\.ytm-queue-collapsed\s*\{[^}]*--chromods-ytm-queue-rail:\s*0px/);
+  assert.match(
+    css,
+    /html\.ytm-queue-docked\.ytm-queue-collapsed ytmusic-app-layout #player-page\s*\{[^}]*translateX\(100%\)/
+  );
+  assert.match(css, /prefers-reduced-motion/);
+
+  // Nothing may leak onto the full player page or an ordinary browse page.
   for (const block of css.split("}").filter((chunk) => chunk.includes("{"))) {
     const [selector] = block.split("{");
     if (!selector.includes("ytmusic-app-layout")) continue;
-    assert.match(selector, /:not\(\[player-page-open\]\)/, `unguarded selector: ${selector.trim()}`);
+    assert.match(
+      selector,
+      /html\.ytm-queue-(docked|resizing|animated)/,
+      `unguarded selector: ${selector.trim()}`
+    );
   }
+});
+
+test("the sticky queue rail is resizable, collapsible, and remembers both", () => {
+  const css = read(style("ytmusic", "ytm-sticky-queue.css"));
+  assert.match(css, /\.ytm-queue-handle\s*\{[^}]*cursor:\s*ew-resize/);
+  assert.match(css, /\.ytm-queue-handle\s*\{[^}]*touch-action:\s*none/);
+  assert.match(css, /\.ytm-queue-toggle/);
+  // Both controls ride the rail's edge, so they follow a resize and a collapse.
+  assert.match(css, /\.ytm-queue-handle\s*\{[^}]*right:\s*var\(--chromods-ytm-queue-rail/);
+  assert.match(css, /\.ytm-queue-toggle\s*\{[^}]*right:\s*var\(--chromods-ytm-queue-rail/);
+  // Dragging must track the pointer rather than lag a transition behind it.
+  assert.match(css, /html\.ytm-queue-resizing[^{]*\{[^}]*transition:\s*none/);
+  // The rail is parked below the viewport, so a load must snap, not slide up.
+  assert.match(css, /html\.ytm-queue-animated ytmusic-app-layout #player-page\s*\{[^}]*transition:\s*transform/);
+  assert.match(css, /focus-visible/);
+
+  const js = read("scripts/content-script.js");
+  assert.match(js, /class StickyQueue/);
+  assert.match(js, /animateAfterPaint/);
+  assert.match(js, /stickyQueue\.setEnabled\(/);
+  assert.match(js, /chroModsYtmQueueWidth/);
+  assert.match(js, /chroModsYtmQueueCollapsed/);
+  assert.match(js, /YTM_QUEUE_MIN_WIDTH/);
+  assert.match(js, /YTM_QUEUE_MAX_WIDTH/);
+  assert.match(js, /YTM_QUEUE_MAX_VIEWPORT_SHARE/);
+  // Narrow windows collapse it, and that decision is recomputed, not stored.
+  assert.match(js, /YTM_QUEUE_MIN_CONTENT_WIDTH/);
+  assert.match(js, /resolveAutoCollapsed/);
+  assert.match(js, /contentRoomBeside/);
+  assert.match(js, /guideWidth/);
+  // Keyboard resizing and cross-tab state.
+  assert.match(js, /onHandleKeyDown/);
+  assert.match(js, /aria-valuenow/);
+  assert.match(js, /applyStoredChanges/);
+  assert.match(js, /chrome\.storage\.onChanged\.removeListener\(this\.onStorageChange\)/);
+  // The rail bows out for the full player and for fullscreen.
+  const dockStart = js.indexOf("shouldDock()");
+  const shouldDock = js.slice(dockStart, js.indexOf("clampWidth(width)", dockStart));
+  assert.match(shouldDock, /hasAttribute\("player-visible"\)/);
+  assert.match(shouldDock, /hasAttribute\("player-page-open"\)/);
+  assert.match(shouldDock, /FULLSCREEN/);
 });
 
 test("the sticky queue is wired up as a YouTube Music mod", () => {
@@ -305,12 +359,19 @@ test("the sticky queue is wired up as a YouTube Music mod", () => {
   assert.match(content, /"ytm-sticky-queue":\s*"ytmusic"/);
   assert.match(content, /id\.startsWith\("ytm-"\)/);
   assert.match(content, /ytmusic:\s*\{\s*enabled:\s*true\s*\}/);
+  assert.match(content, /ytmusicQueue/);
   assert.match(read("scripts/background.js"), /ytmusic:\s*\{\s*enabled:\s*true\s*\}/);
+  assert.match(read("scripts/background.js"), /ytmusicQueue/);
 
   const popup = read("scripts/popup.js");
   assert.match(popup, /id:\s*"ytm-sticky-queue"/);
   assert.match(popup, /site:\s*"ytmusic"/);
   assert.match(popup, /Sticky queue/);
+  assert.match(popup, /YTMUSIC_QUEUE_SUBSETTINGS/);
+  assert.match(popup, /subsettingsKey:\s*"ytmusicQueue"/);
+  assert.match(popup, /autoCompact/);
+  // The README generator evaluates FEATURE_META, so it needs the stub too.
+  assert.match(read("scripts/generate-readme.mjs"), /YTMUSIC_QUEUE_SUBSETTINGS/);
 
   // music.youtube.com already matches the manifest's *.youtube.com patterns.
   const manifest = JSON.parse(read("manifest.json"));

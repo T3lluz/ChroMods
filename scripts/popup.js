@@ -19,6 +19,10 @@ const DEFAULT_TWITCH_MOVABLE_LIVE_CHAT = {
   background: "solid",
 };
 
+const DEFAULT_YTMUSIC_QUEUE = {
+  autoCompact: true,
+};
+
 const THEATER_SUBSETTINGS = [
   {
     id: "hideHeader",
@@ -84,6 +88,15 @@ const MOVABLE_LIVE_CHAT_SUBSETTINGS = [
       { value: "soft", label: "Soft" },
       { value: "translucent", label: "Translucent until hover" },
     ],
+  },
+];
+
+const YTMUSIC_QUEUE_SUBSETTINGS = [
+  {
+    id: "autoCompact",
+    title: "Tuck away when narrow",
+    description: "Collapse the queue when the window has no room for it beside the page.",
+    type: "toggle",
   },
 ];
 
@@ -218,7 +231,9 @@ const FEATURE_META = [
     category: "player",
     title: "Sticky queue",
     description:
-      "Dock Up next on the right so the queue stays visible while you browse playlists.",
+      "Dock Up next on the right so the queue stays visible while you browse playlists. Drag its edge to resize, or collapse it out of the way.",
+    subsettings: YTMUSIC_QUEUE_SUBSETTINGS,
+    subsettingsKey: "ytmusicQueue",
   },
   {
     id: "gh-immersive-search",
@@ -622,6 +637,7 @@ const DEFAULT_SETTINGS = {
     feed: { ...DEFAULT_FEED },
     movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
     twitchMovableLiveChat: { ...DEFAULT_TWITCH_MOVABLE_LIVE_CHAT },
+    ytmusicQueue: { ...DEFAULT_YTMUSIC_QUEUE },
   },
 };
 
@@ -740,6 +756,12 @@ function getFeatureSubsettings(feature) {
       DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
     );
   }
+  if (key === "ytmusicQueue") {
+    return {
+      ...DEFAULT_YTMUSIC_QUEUE,
+      ...(settings.subsettings?.ytmusicQueue || {}),
+    };
+  }
 
   return {
     ...(settings.subsettings?.[key] || {}),
@@ -770,6 +792,10 @@ async function loadSettings() {
         storedSettings?.subsettings?.twitchMovableLiveChat,
         DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
       ),
+      ytmusicQueue: {
+        ...DEFAULT_YTMUSIC_QUEUE,
+        ...(storedSettings?.subsettings?.ytmusicQueue || {}),
+      },
     },
   };
 

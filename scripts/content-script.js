@@ -215,6 +215,10 @@
     background: "solid",
   };
 
+  const DEFAULT_YTMUSIC_QUEUE = {
+    autoCompact: true,
+  };
+
   const DEFAULT_SETTINGS = {
     enabled: true,
     features: {
@@ -294,6 +298,7 @@
       feed: { ...DEFAULT_FEED },
       movableLiveChat: { ...DEFAULT_MOVABLE_LIVE_CHAT },
       twitchMovableLiveChat: { ...DEFAULT_TWITCH_MOVABLE_LIVE_CHAT },
+      ytmusicQueue: { ...DEFAULT_YTMUSIC_QUEUE },
     },
     sites: {
       youtube: { enabled: true },
@@ -366,6 +371,10 @@
           stored.subsettings?.twitchMovableLiveChat,
           DEFAULT_TWITCH_MOVABLE_LIVE_CHAT
         ),
+        ytmusicQueue: {
+          ...DEFAULT_YTMUSIC_QUEUE,
+          ...(stored.subsettings?.ytmusicQueue || {}),
+        },
       },
     };
   }
@@ -2722,6 +2731,426 @@
 
   const theaterHoverComments = new TheaterHoverComments();
 
+  const YTM_QUEUE_WIDTH_KEY = "chroModsYtmQueueWidth";
+  const YTM_QUEUE_COLLAPSED_KEY = "chroModsYtmQueueCollapsed";
+  const YTM_QUEUE_DEFAULT_WIDTH = 360;
+  const YTM_QUEUE_MIN_WIDTH = 260;
+  const YTM_QUEUE_MAX_WIDTH = 560;
+  const YTM_QUEUE_MAX_VIEWPORT_SHARE = 0.45;
+  const YTM_QUEUE_KEY_STEP = 16;
+  /* Narrower than this and the page behind the rail stops being usable, which
+     is the whole reason the rail can tuck itself away. */
+  const YTM_QUEUE_MIN_CONTENT_WIDTH = 560;
+  const YTM_QUEUE_DOCKED_CLASS = "ytm-queue-docked";
+  const YTM_QUEUE_COLLAPSED_CLASS = "ytm-queue-collapsed";
+  const YTM_QUEUE_RESIZING_CLASS = "ytm-queue-resizing";
+  const YTM_QUEUE_ANIMATED_CLASS = "ytm-queue-animated";
+  const YTM_QUEUE_WIDTH_VAR = "--chromods-ytm-queue-width";
+  /* The layout reflects `player-visible` while anything is queued and
+     `player-page-open` only while the full player is up. */
+  const YTM_QUEUE_ATTRIBUTES = ["player-visible", "player-page-open", "player-ui-state"];
+  /* The layout is built well after document_start, and a page that loads with a
+     queue already restored never changes an attribute for the observer to see,
+     so re-check a few times while the app settles. */
+  const YTM_QUEUE_SETTLE_DELAYS = [0, 300, 900, 2000];
+  const YTM_QUEUE_CHEVRON =
+    '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3.5 5.5 8l5 4.5"/></svg>';
+
+  /* Docks YouTube Music's queue as a resizable right-hand rail.
+     The width and collapsed state are the user's, so they live in storage and
+     follow them across tabs; the auto-collapse is the window's business and is
+     recomputed from the viewport every time it changes. */
+  class StickyQueue {
+    constructor() {
+      this.enabled = false;
+      this.loaded = false;
+      this.autoCompact = true;
+      this.width = YTM_QUEUE_DEFAULT_WIDTH;
+      this.userCollapsed = false;
+      this.autoCollapsed = false;
+      this.docked = false;
+      this.handle = null;
+      this.toggle = null;
+      this.attributeObserver = null;
+      this.listening = false;
+      this.resizeFrame = 0;
+      this.settleTimers = [];
+      this.animateFrame = 0;
+      this.onViewportChange = () => this.queueSync();
+      this.onNavigate = () => this.scheduleSettle();
+      this.onDomReady = () => this.scheduleSettle();
+      this.onStorageChange = (changes, area) => this.applyStoredChanges(changes, area);
+    }
+
+    async setEnabled(enabled, options = {}) {
+      const autoCompact = options.autoCompact !== false;
+      const autoCompactChanged = autoCompact !== this.autoCompact;
+      this.autoCompact = autoCompact;
+
+      if (!enabled) {
+        if (this.enabled) this.destroy();
+        this.enabled = false;
+        return;
+      }
+
+      const wasEnabled = this.enabled;
+      this.enabled = true;
+      if (!this.loaded) await this.loadStoredState();
+      if (!this.enabled) return;
+      this.startListening();
+      if (!wasEnabled || autoCompactChanged) this.sync();
+      else this.queueSync();
+    }
+
+    async loadStoredState() {
+      let stored = null;
+      try {
+        stored = await chrome.storage.local.get([YTM_QUEUE_WIDTH_KEY, YTM_QUEUE_COLLAPSED_KEY]);
+      } catch {
+        /* first run, or storage is unavailable: the defaults are fine */
+      }
+      this.loaded = true;
+      const width = Number(stored?.[YTM_QUEUE_WIDTH_KEY]);
+      if (Number.isFinite(width)) this.width = width;
+      this.userCollapsed = stored?.[YTM_QUEUE_COLLAPSED_KEY] === true;
+    }
+
+    startListening() {
+      if (this.listening) return;
+      this.listening = true;
+      /* The layout element is built after document_start, so watch the tree for
+         the attributes rather than waiting for the element itself. */
+      this.attributeObserver = new MutationObserver(() => this.sync());
+      this.attributeObserver.observe(document.documentElement, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: YTM_QUEUE_ATTRIBUTES,
+      });
+      window.addEventListener("resize", this.onViewportChange);
+      window.addEventListener("yt-navigate-finish", this.onNavigate);
+      chrome.storage.onChanged.addListener(this.onStorageChange);
+      this.scheduleSettle();
+    }
+
+    stopListening() {
+      if (!this.listening) return;
+      this.listening = false;
+      this.attributeObserver?.disconnect();
+      this.attributeObserver = null;
+      window.removeEventListener("resize", this.onViewportChange);
+      window.removeEventListener("yt-navigate-finish", this.onNavigate);
+      document.removeEventListener("DOMContentLoaded", this.onDomReady);
+      chrome.storage.onChanged.removeListener(this.onStorageChange);
+      this.clearSettleTimers();
+      if (this.resizeFrame) {
+        cancelAnimationFrame(this.resizeFrame);
+        this.resizeFrame = 0;
+      }
+    }
+
+    clearSettleTimers() {
+      for (const timer of this.settleTimers) clearTimeout(timer);
+      this.settleTimers = [];
+    }
+
+    /* The layout is built long after document_start, and a page that opens with
+       a queue already restored never changes one of the watched attributes, so
+       the observer alone would never fire. Re-check while the app settles. */
+    scheduleSettle() {
+      this.clearSettleTimers();
+      this.settleTimers = YTM_QUEUE_SETTLE_DELAYS.map((delay) =>
+        setTimeout(() => this.sync(), delay)
+      );
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", this.onDomReady, { once: true });
+      }
+    }
+
+    /* Another tab moved the handle or hid the rail. */
+    applyStoredChanges(changes, area) {
+      if (area !== "local" || !this.enabled) return;
+      let changed = false;
+      const width = Number(changes[YTM_QUEUE_WIDTH_KEY]?.newValue);
+      if (Number.isFinite(width) && width !== this.width) {
+        this.width = width;
+        changed = true;
+      }
+      if (YTM_QUEUE_COLLAPSED_KEY in changes) {
+        const collapsed = changes[YTM_QUEUE_COLLAPSED_KEY].newValue === true;
+        if (collapsed !== this.userCollapsed) {
+          this.userCollapsed = collapsed;
+          changed = true;
+        }
+      }
+      if (changed) this.sync();
+    }
+
+    queueSync() {
+      if (this.resizeFrame) return;
+      this.resizeFrame = requestAnimationFrame(() => {
+        this.resizeFrame = 0;
+        this.sync();
+      });
+    }
+
+    getLayout() {
+      return document.querySelector("ytmusic-app-layout");
+    }
+
+    /* The rail only makes sense with a queue to show and the full player away. */
+    shouldDock() {
+      const layout = this.getLayout();
+      if (!layout) return false;
+      if (!layout.hasAttribute("player-visible")) return false;
+      if (layout.hasAttribute("player-page-open")) return false;
+      if (layout.getAttribute("player-ui-state") === "FULLSCREEN") return false;
+      return Boolean(document.querySelector("#player-page #side-panel"));
+    }
+
+    /* The width the user asked for, which is what gets remembered. Its bounds
+       are the mod's own, not the window's, so a stint in a narrow window does
+       not quietly forget how wide they like the rail. */
+    normalizeWidth(width) {
+      const wanted = Number.isFinite(width) ? width : YTM_QUEUE_DEFAULT_WIDTH;
+      return Math.round(Math.min(YTM_QUEUE_MAX_WIDTH, Math.max(YTM_QUEUE_MIN_WIDTH, wanted)));
+    }
+
+    /* The width the rail actually gets, once this window has had its say: a
+       share of the viewport, and whatever room the page still needs beside it.
+       Both floor at the minimum, so a window with no room to spare clamps here
+       and then auto-collapses rather than inverting the rail. */
+    clampWidth(width) {
+      const ceiling = Math.max(
+        YTM_QUEUE_MIN_WIDTH,
+        Math.min(
+          YTM_QUEUE_MAX_WIDTH,
+          Math.round(window.innerWidth * YTM_QUEUE_MAX_VIEWPORT_SHARE),
+          this.contentRoomBeside(YTM_QUEUE_MIN_CONTENT_WIDTH)
+        )
+      );
+      return Math.min(ceiling, this.normalizeWidth(width));
+    }
+
+    /* The guide is what the rail is really competing with for room. */
+    guideWidth() {
+      const guide = this.getLayout()?.querySelector("#guide");
+      const width = guide?.getBoundingClientRect().width ?? 0;
+      return width < 8 ? 0 : Math.min(width, 320);
+    }
+
+    contentRoomBeside(width) {
+      return window.innerWidth - this.guideWidth() - width;
+    }
+
+    /* Deliberately independent of the chosen width: widening the rail is the
+       user asking for more of it, so it must never be what tucks it away. Only
+       a window with no room for even the narrowest rail does that. */
+    resolveAutoCollapsed() {
+      if (!this.autoCompact) return false;
+      return this.contentRoomBeside(YTM_QUEUE_MIN_WIDTH) < YTM_QUEUE_MIN_CONTENT_WIDTH;
+    }
+
+    isCollapsed() {
+      return this.userCollapsed || this.autoCollapsed;
+    }
+
+    sync() {
+      if (!this.enabled) return;
+
+      const docked = this.shouldDock();
+      if (!docked) {
+        if (this.docked) this.undock();
+        return;
+      }
+
+      const wasDocked = this.docked;
+      this.docked = true;
+      const width = this.clampWidth(this.width);
+      this.autoCollapsed = this.resolveAutoCollapsed();
+
+      const root = document.documentElement;
+      root.style.setProperty(YTM_QUEUE_WIDTH_VAR, `${width}px`);
+      root.classList.add(YTM_QUEUE_DOCKED_CLASS);
+      root.classList.toggle(YTM_QUEUE_COLLAPSED_CLASS, this.isCollapsed());
+      this.ensureChrome();
+      this.updateChrome(width);
+      if (!wasDocked) this.animateAfterPaint();
+    }
+
+    /* The rail starts life parked a viewport below, so transitioning into place
+       would slide it up the screen on every load. Let the docked position paint
+       first, then hand the transitions over for collapses and resizes. */
+    animateAfterPaint() {
+      if (this.animateFrame) return;
+      this.animateFrame = requestAnimationFrame(() => {
+        this.animateFrame = requestAnimationFrame(() => {
+          this.animateFrame = 0;
+          if (this.docked) document.documentElement.classList.add(YTM_QUEUE_ANIMATED_CLASS);
+        });
+      });
+    }
+
+    undock() {
+      this.docked = false;
+      if (this.animateFrame) {
+        cancelAnimationFrame(this.animateFrame);
+        this.animateFrame = 0;
+      }
+      const root = document.documentElement;
+      root.classList.remove(
+        YTM_QUEUE_DOCKED_CLASS,
+        YTM_QUEUE_COLLAPSED_CLASS,
+        YTM_QUEUE_RESIZING_CLASS,
+        YTM_QUEUE_ANIMATED_CLASS
+      );
+      root.style.removeProperty(YTM_QUEUE_WIDTH_VAR);
+      this.removeChrome();
+    }
+
+    /* Both controls are fixed and live on <body>: the rail itself is Polymer's,
+       and anything parked inside it would go away with it when it collapses. */
+    ensureChrome() {
+      const host = document.body;
+      if (!host) return;
+
+      if (!this.handle || this.handle.parentElement !== host) {
+        this.handle?.remove();
+        const handle = document.createElement("div");
+        handle.className = "ytm-queue-handle";
+        handle.setAttribute("role", "separator");
+        handle.setAttribute("aria-orientation", "vertical");
+        handle.setAttribute("aria-label", "Resize the queue");
+        handle.setAttribute("aria-valuemin", String(YTM_QUEUE_MIN_WIDTH));
+        handle.setAttribute("aria-valuemax", String(YTM_QUEUE_MAX_WIDTH));
+        handle.tabIndex = 0;
+        handle.addEventListener("pointerdown", (event) => this.startResize(event));
+        handle.addEventListener("keydown", (event) => this.onHandleKeyDown(event));
+        handle.addEventListener("dblclick", () => this.setWidth(YTM_QUEUE_DEFAULT_WIDTH, { save: true }));
+        host.appendChild(handle);
+        this.handle = handle;
+      }
+
+      if (!this.toggle || this.toggle.parentElement !== host) {
+        this.toggle?.remove();
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "ytm-queue-toggle";
+        toggle.innerHTML = YTM_QUEUE_CHEVRON;
+        toggle.addEventListener("click", (event) => {
+          event.preventDefault();
+          this.setCollapsed(!this.isCollapsed());
+        });
+        host.appendChild(toggle);
+        this.toggle = toggle;
+      }
+    }
+
+    updateChrome(width) {
+      const collapsed = this.isCollapsed();
+      if (this.handle) {
+        this.handle.setAttribute("aria-valuenow", String(width));
+        this.handle.setAttribute("aria-valuetext", `${width} pixels`);
+      }
+      if (this.toggle) {
+        /* Auto-collapsed is still expandable — the user gets the last word. */
+        const label = collapsed ? "Show the queue" : "Hide the queue";
+        this.toggle.title = label;
+        this.toggle.setAttribute("aria-label", label);
+        this.toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      }
+    }
+
+    removeChrome() {
+      this.handle?.remove();
+      this.handle = null;
+      this.toggle?.remove();
+      this.toggle = null;
+    }
+
+    setWidth(width, { save = false } = {}) {
+      this.width = this.normalizeWidth(width);
+      const shown = this.clampWidth(this.width);
+      if (this.docked) {
+        document.documentElement.style.setProperty(YTM_QUEUE_WIDTH_VAR, `${shown}px`);
+        this.updateChrome(shown);
+      }
+      if (save) this.saveWidth();
+      return shown;
+    }
+
+    saveWidth() {
+      chrome.storage.local.set({ [YTM_QUEUE_WIDTH_KEY]: this.width }).catch(() => {});
+    }
+
+    setCollapsed(collapsed) {
+      const next = Boolean(collapsed);
+      this.userCollapsed = next;
+      /* Reopening on a narrow window is an explicit ask, so honour it until the
+         window changes again. */
+      if (!next) this.autoCollapsed = false;
+      chrome.storage.local.set({ [YTM_QUEUE_COLLAPSED_KEY]: next }).catch(() => {});
+      this.sync();
+    }
+
+    onHandleKeyDown(event) {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      /* Step from the width on screen, not the remembered one, so a key press
+         always moves the edge the user is looking at. */
+      const from = this.clampWidth(this.width);
+      let next = null;
+      if (event.key === "ArrowLeft") next = from + YTM_QUEUE_KEY_STEP;
+      else if (event.key === "ArrowRight") next = from - YTM_QUEUE_KEY_STEP;
+      else if (event.key === "Home") next = YTM_QUEUE_DEFAULT_WIDTH;
+      else return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.setWidth(next, { save: true });
+    }
+
+    startResize(event) {
+      if (!this.docked || !this.handle) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const handle = event.currentTarget;
+      const startWidth = this.clampWidth(this.width);
+      const originX = event.clientX;
+
+      document.documentElement.classList.add(YTM_QUEUE_RESIZING_CLASS);
+      handle.classList.add("is-resizing");
+      try {
+        handle.setPointerCapture(event.pointerId);
+      } catch {
+        /* capture is a nicety; the listeners below still track the drag */
+      }
+
+      const onMove = (moveEvent) => {
+        /* The rail is on the right, so dragging left widens it. */
+        this.setWidth(startWidth - (moveEvent.clientX - originX));
+      };
+
+      const onEnd = () => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onEnd);
+        handle.removeEventListener("pointercancel", onEnd);
+        document.documentElement.classList.remove(YTM_QUEUE_RESIZING_CLASS);
+        handle.classList.remove("is-resizing");
+        this.saveWidth();
+      };
+
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", onEnd);
+      handle.addEventListener("pointercancel", onEnd);
+    }
+
+    destroy() {
+      this.stopListening();
+      this.undock();
+    }
+  }
+
+  const stickyQueue = new StickyQueue();
+
   async function applySettings(settings) {
     const generation = ++applyGeneration;
     const merged = mergeSettings(settings);
@@ -2764,6 +3193,10 @@
     );
     fullscreenTransition.setEnabled(
       youtubeEnabled && merged.features?.["fullscreen-transition"] !== false
+    );
+    await stickyQueue.setEnabled(
+      siteId === "ytmusic" && siteEnabled && merged.features?.["ytm-sticky-queue"] !== false,
+      merged.subsettings?.ytmusicQueue
     );
   }
 
