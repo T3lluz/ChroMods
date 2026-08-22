@@ -17,18 +17,24 @@ const screenshotDir = path.join(__dirname, "screenshots");
 fs.rmSync(userDataDir, { recursive: true, force: true });
 fs.mkdirSync(screenshotDir, { recursive: true });
 
-/* Only the parts of a watch page the transition looks for: the flexy wrapper it
-   searches from, the player, and the inner video box it scales. */
+/* The parts of a watch page the transition looks for, with the live player's
+   own geometry: .html5-video-container is a zero-height wrapper at the player's
+   top-left corner, and the video is absolutely positioned inside it. A
+   transition that only scales boxes with a size of their own would silently do
+   nothing here, which is exactly what happens on youtube.com. */
+const PLAYER_WIDTH = 854;
+const PLAYER_HEIGHT = 480;
+
 const WATCH_FIXTURE = `<!DOCTYPE html>
 <html lang="en" dark><head><meta charset="utf-8"><title>ChroMods fullscreen fixture</title>
 <style>
   html, body { margin: 0; background: #0f0f0f; }
   ytd-app, #page-manager, ytd-watch-flexy, #columns, #primary { display: block; }
   #player-full-bleed-container, #full-bleed-container { display: block; position: relative; }
-  #full-bleed-container { width: 854px; height: 480px; margin: 24px auto; }
-  #movie_player { position: relative; width: 100%; height: 100%; background: #000; }
-  .html5-video-container { position: absolute; inset: 0; }
-  video { width: 100%; height: 100%; background: #1b3a5c; }
+  #full-bleed-container { width: ${PLAYER_WIDTH}px; height: ${PLAYER_HEIGHT}px; margin: 24px auto; }
+  #movie_player { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  .html5-video-container { position: relative; width: 100%; height: 0; overflow: visible; }
+  video.html5-main-video { position: absolute; left: 0; top: 0; background: #1b3a5c; }
   .ytp-chrome-bottom { position: absolute; left: 0; bottom: 0; width: 100%; height: 40px; background: #333; }
   #enter-fullscreen { position: fixed; top: 4px; left: 4px; z-index: 9; }
 </style></head>
@@ -37,7 +43,9 @@ const WATCH_FIXTURE = `<!DOCTYPE html>
   <ytd-app><div id="page-manager"><ytd-watch-flexy><div id="columns"><div id="primary">
     <div id="player-full-bleed-container"><div id="full-bleed-container">
       <div id="movie_player" class="html5-video-player">
-        <div class="html5-video-container"><video class="html5-main-video"></video></div>
+        <div class="html5-video-container">
+          <video class="video-stream html5-main-video" style="width: ${PLAYER_WIDTH}px; height: ${PLAYER_HEIGHT}px"></video>
+        </div>
         <div class="ytp-chrome-bottom"></div>
       </div>
     </div></div>
@@ -45,8 +53,16 @@ const WATCH_FIXTURE = `<!DOCTYPE html>
   <script>
     const player = document.getElementById("movie_player");
     const inner = player.querySelector(".html5-video-container");
+    const video = player.querySelector("video");
     document.getElementById("enter-fullscreen").addEventListener("click", () => {
       player.requestFullscreen();
+    });
+    /* The player resizes its video element around a fullscreen switch, so the
+       fixture does too — otherwise the scaled rect means nothing. */
+    document.addEventListener("fullscreenchange", () => {
+      const box = player.getBoundingClientRect();
+      video.style.width = Math.round(box.width) + "px";
+      video.style.height = Math.round(box.height) + "px";
     });
     /* Samples every frame: the animation is a few hundred ms, so polling from
        the test runner would miss it. */
@@ -59,6 +75,7 @@ const WATCH_FIXTURE = `<!DOCTYPE html>
           animating: player.classList.contains("ytm-fs-animating"),
           scalingInner: inner.classList.contains("ytm-fs-scaling"),
           transform: playerTransform === "none" ? getComputedStyle(inner).transform : playerTransform,
+          videoWidth: Math.round(video.getBoundingClientRect().width),
           fullscreen: Boolean(document.fullscreenElement),
         });
         if (performance.now() - start < ms) requestAnimationFrame(tick);
@@ -77,11 +94,15 @@ function scaleOf(transform) {
 function describe(samples) {
   const animating = samples.filter((sample) => sample.animating);
   const scales = animating.map((sample) => scaleOf(sample.transform)).filter((value) => value !== null);
+  const widths = animating.map((sample) => sample.videoWidth);
   return {
     animatingFrames: animating.length,
     distinctTransforms: new Set(animating.map((sample) => sample.transform)).size,
     firstScale: scales[0] ?? null,
     lastScale: scales.at(-1) ?? null,
+    /* What the viewer actually sees move, wherever the transform is applied. */
+    firstVideoWidth: widths[0] ?? null,
+    lastVideoWidth: widths.at(-1) ?? null,
     settled: samples.at(-1),
   };
 }
@@ -159,6 +180,13 @@ async function run() {
     assert.ok(
       enter.firstScale > 0 && enter.firstScale < 0.95,
       `Entering should start scaled down, got ${JSON.stringify(enter)}`
+    );
+    // The video is what the viewer watches grow, and on the real player it
+    // lives inside a zero-height wrapper, so measure it rather than the box the
+    // transform happens to sit on.
+    assert.ok(
+      enter.firstVideoWidth < enter.lastVideoWidth * 0.9,
+      `The video should grow into the screen, got ${JSON.stringify(enter)}`
     );
     assert.ok(enter.settled.fullscreen, "The player should end up in native fullscreen");
     assert.equal(enter.settled.animating, false, "The animating class should be cleaned up");

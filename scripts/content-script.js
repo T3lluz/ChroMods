@@ -2365,14 +2365,21 @@
          box to scale there is nothing to animate — and hiding the player chrome
          for a transition that cannot run would only swallow clicks. */
       const target = getFullscreenScaleTarget(player);
-      const toBox = target ? copyBox(target.getBoundingClientRect()) : null;
-      if (!target || !isUsableBox(toBox) || !isUsableBox(playerBox)) {
+      if (!target || !isUsableBox(playerBox)) {
         if (retries >= 8) return;
         requestAnimationFrame(() => {
           if (this.enabled && this.inPlayerFullscreen) this.playEnter(retries + 1);
         });
         return;
       }
+
+      /* YouTube's .html5-video-container is a zero-height wrapper pinned to the
+         player's top-left corner. A transform on it still scales the video
+         inside, and its origin is the player's origin, so the player's box is
+         the reference. An inner box with a size of its own — a letterboxed
+         video, say — is measured on its own terms. */
+      const targetBox = copyBox(target.getBoundingClientRect());
+      const toBox = isUsableBox(targetBox) ? targetBox : playerBox;
 
       const fromBox = isUsableBox(this.fromRect) ? this.fromRect : this.fallbackFromBox(toBox);
       if (boxesAreClose(fromBox, toBox)) return;
