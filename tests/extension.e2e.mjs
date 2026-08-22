@@ -208,8 +208,13 @@ async function run() {
     await popupPage.locator("#mod-search").blur();
     await popupPage.waitForFunction(() => !document.getElementById("shell")?.classList.contains("is-search-focused"));
 
-    const countText = await popupPage.locator("#feature-count").textContent();
-    assert.match(countText ?? "", /6\/15/);
+    // Counted rather than hardcoded: the total is however many YouTube cards
+    // the popup rendered, so adding a mod does not silently stale this out.
+    const youtubeCards = await popupPage.locator('#site-panel-youtube .feature-card').count();
+    const countText = (await popupPage.locator("#feature-count").textContent()) ?? "";
+    const [, enabledCount, totalCount] = /(\d+)\/(\d+)/.exec(countText) ?? [];
+    assert.equal(Number(totalCount), youtubeCards, `Count ${countText} disagrees with ${youtubeCards} cards`);
+    assert.ok(Number(enabledCount) > 0 && Number(enabledCount) < Number(totalCount), `Unexpected count ${countText}`);
 
     const theaterCard = popupPage.locator('.feature-card[data-feature="theater-mode"]');
     const theaterSubs = theaterCard.locator(".subsettings .subsetting-row");
@@ -234,7 +239,11 @@ async function run() {
       return input && !input.disabled;
     });
     await popupPage.locator('.feature-card[data-feature="compact-sidebar"] label.switch').click();
-    assert.match(await popupPage.locator("#feature-count").textContent() ?? "", /5\/15/);
+    assert.match(
+      (await popupPage.locator("#feature-count").textContent()) ?? "",
+      new RegExp(`${Number(enabledCount) - 1}/${youtubeCards}`),
+      "Turning a mod off should drop the enabled count by one"
+    );
 
     await theaterCard.locator('label[aria-label="Hover comments"]').click();
     await popupPage.waitForTimeout(250);
