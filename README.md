@@ -53,7 +53,7 @@ The popup detects the active tab and shows that site's mods first. Search the he
 
 | Mod | What it does | Default |
 |-----|--------------|---------|
-| **Sticky queue** | Dock Up next on the right so the queue stays visible while you browse playlists. | On |
+| **Sticky queue** | Dock Up next on the right so the queue stays visible while you browse playlists. Drag its edge to resize, or collapse it out of the way. | On |
 
 ### <img src="docs/sites/github.svg" width="22" height="22" alt="" /> GitHub
 

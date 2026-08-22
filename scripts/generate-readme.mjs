@@ -172,6 +172,7 @@ const features = evalArray(extractConstArray(popupSrc, "FEATURE_META"), {
   FEED_SUBSETTINGS: "[]",
   THEATER_SUBSETTINGS: "[]",
   MOVABLE_LIVE_CHAT_SUBSETTINGS: "[]",
+  YTMUSIC_QUEUE_SUBSETTINGS: "[]",
 }).map((feature) => ({ ...feature, site: feature.site ?? "youtube" }));
 
 const sites = evalArray(extractConstArray(sitesSrc, "SITE_META"), {

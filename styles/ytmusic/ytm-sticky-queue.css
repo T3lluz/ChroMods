@@ -5,29 +5,43 @@
    `visibility: hidden` the moment you leave it. So the queue exists and stays
    populated while you browse playlists; it is simply out of sight.
 
-   This pins that panel back as a right-hand column between the nav bar and the
-   player bar, hides the album-art half of the player page, and reserves the
-   column so browse pages lay out beside it instead of underneath. The layout
-   exposes `player-visible` while something is queued and `player-page-open`
-   only while the full player is up, so those two attributes are the state to
-   key off — the player-ui-state enum also reports MINIPLAYER for a dismissed
-   player page. */
+   The rail is pinned back between the nav bar and the player bar, the
+   album-art half of the player page is hidden, and the column is reserved so
+   browse pages lay out beside it instead of underneath.
 
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"]) {
+   State lives on <html>, applied by StickyQueue in scripts/content-script.js:
+   the rail width is a drag handle away from changing, it collapses on demand
+   and when a narrow window has no room for it, and keying off classes rather
+   than the layout's own attributes means the rail never appears at a stale
+   width before the stored one has loaded.
+
+   `ytm-queue-animated` arrives a paint after the rail docks, so the queue snaps
+   into place on load and only animates once it is somewhere the user put it. */
+
+html.ytm-queue-docked {
   --chromods-ytm-queue-width: 360px;
+  --chromods-ytm-queue-rail: var(--chromods-ytm-queue-width);
+  --chromods-ytm-queue-edge: 10px;
+  --chromods-ytm-queue-top: var(--ytmusic-nav-bar-height, 64px);
+  --chromods-ytm-queue-bottom: var(--ytmusic-player-bar-height, 72px);
 }
 
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page {
+/* Collapsed keeps the rail mounted — the queue stays live, it just slides out
+   of the way and stops reserving its column. */
+html.ytm-queue-docked.ytm-queue-collapsed {
+  --chromods-ytm-queue-rail: 0px;
+}
+
+html.ytm-queue-docked ytmusic-app-layout #player-page {
   visibility: visible !important;
   transform: none !important;
   position: fixed !important;
-  top: var(--ytmusic-nav-bar-height, 64px) !important;
-  bottom: var(--ytmusic-player-bar-height, 72px) !important;
+  top: var(--chromods-ytm-queue-top) !important;
+  bottom: var(--chromods-ytm-queue-bottom) !important;
   right: 0 !important;
   left: auto !important;
   width: var(--chromods-ytm-queue-width) !important;
-  max-width: 40vw !important;
+  max-width: none !important;
   height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -35,9 +49,13 @@ ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state=
   box-shadow: -14px 0 28px rgb(0 0 0 / 35%) !important;
 }
 
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page
-  .content {
+html.ytm-queue-docked.ytm-queue-collapsed ytmusic-app-layout #player-page {
+  transform: translateX(100%) !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
+
+html.ytm-queue-docked ytmusic-app-layout #player-page .content {
   height: 100% !important;
   min-height: 0 !important;
   padding: 0 !important;
@@ -45,15 +63,11 @@ ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state=
 }
 
 /* The album art, video, and lyrics column has no room in a 360px rail. */
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page
-  #main-panel {
+html.ytm-queue-docked ytmusic-app-layout #player-page #main-panel {
   display: none !important;
 }
 
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page
-  #side-panel {
+html.ytm-queue-docked ytmusic-app-layout #player-page #side-panel {
   visibility: visible !important;
   position: static !important;
   width: 100% !important;
@@ -67,31 +81,162 @@ ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state=
   overflow: hidden !important;
 }
 
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page
-  #side-panel
-  #tab-renderer {
+html.ytm-queue-docked ytmusic-app-layout #player-page #side-panel #tab-renderer {
   height: 100% !important;
   max-height: none !important;
   overflow-y: auto !important;
 }
 
 /* Upstream pads the list for the player bar; the rail already stops above it. */
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #player-page
-  div.ytmusic-player-queue#contents {
+html.ytm-queue-docked ytmusic-app-layout #player-page div.ytmusic-player-queue#contents {
   margin-bottom: 0 !important;
 }
 
 /* Reserve the rail so browse pages, search, and playlists shrink instead of
    sliding under the queue. */
-ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"])
-  #content {
-  padding-right: var(--chromods-ytm-queue-width) !important;
+html.ytm-queue-docked ytmusic-app-layout #content {
+  padding-right: var(--chromods-ytm-queue-rail) !important;
 }
 
-@media (max-width: 900px) {
-  ytmusic-app-layout[player-visible]:not([player-page-open]):not([player-ui-state="FULLSCREEN"]) {
-    --chromods-ytm-queue-width: 300px;
+html.ytm-queue-animated ytmusic-app-layout #player-page {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+html.ytm-queue-animated ytmusic-app-layout #content {
+  transition: padding-right 220ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Dragging should track the pointer, not lag a transition behind it. Same
+   specificity as the rules above, so this has to stay below them. */
+html.ytm-queue-resizing ytmusic-app-layout #player-page,
+html.ytm-queue-resizing ytmusic-app-layout #content {
+  transition: none !important;
+}
+
+/* Resize handle: sits on the rail's edge, invisible until it is wanted. */
+.ytm-queue-handle {
+  position: fixed;
+  right: var(--chromods-ytm-queue-rail, 0px);
+  top: var(--chromods-ytm-queue-top, 64px);
+  bottom: var(--chromods-ytm-queue-bottom, 72px);
+  z-index: 3;
+  width: var(--chromods-ytm-queue-edge, 10px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+html.ytm-queue-animated .ytm-queue-handle {
+  transition: right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.ytm-queue-resizing .ytm-queue-handle {
+  transition: none;
+}
+
+.ytm-queue-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 48px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 22%);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 140ms ease, background-color 140ms ease;
+}
+
+.ytm-queue-handle:hover::after,
+.ytm-queue-handle:focus-visible::after,
+.ytm-queue-handle.is-resizing::after {
+  opacity: 1;
+  background: rgb(255 255 255 / 48%);
+}
+
+.ytm-queue-handle:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 65%);
+  outline-offset: -2px;
+}
+
+html.ytm-queue-collapsed .ytm-queue-handle {
+  display: none;
+}
+
+/* Collapse toggle: the one control that stays reachable once the rail is away. */
+.ytm-queue-toggle {
+  position: fixed;
+  right: var(--chromods-ytm-queue-rail, 0px);
+  top: calc(var(--chromods-ytm-queue-top, 64px) + 12px);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px 0 0 6px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.55;
+  transition:
+    opacity 140ms ease,
+    background-color 140ms ease;
+}
+
+html.ytm-queue-animated .ytm-queue-toggle {
+  transition:
+    right 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 140ms ease,
+    background-color 140ms ease;
+}
+
+html.ytm-queue-resizing .ytm-queue-toggle {
+  transition: none;
+}
+
+.ytm-queue-toggle:hover,
+.ytm-queue-toggle:focus-visible {
+  opacity: 1;
+  background: rgb(0 0 0 / 78%);
+}
+
+.ytm-queue-toggle:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 65%);
+  outline-offset: 2px;
+}
+
+.ytm-queue-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html.ytm-queue-animated .ytm-queue-toggle svg {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Chevron points the way the rail will move. */
+html.ytm-queue-collapsed .ytm-queue-toggle svg {
+  transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ytm-queue-animated ytmusic-app-layout #player-page,
+  html.ytm-queue-animated ytmusic-app-layout #content,
+  .ytm-queue-handle,
+  .ytm-queue-toggle,
+  .ytm-queue-toggle svg {
+    transition: none !important;
   }
 }

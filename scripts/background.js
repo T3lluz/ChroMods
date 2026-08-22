@@ -92,6 +92,9 @@ const DEFAULT_SETTINGS = {
       chatOnly: true,
       background: "solid",
     },
+    ytmusicQueue: {
+      autoCompact: true,
+    },
   },
   sites: {
     youtube: { enabled: true },
