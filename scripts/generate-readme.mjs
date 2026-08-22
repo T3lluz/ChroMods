@@ -6,6 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const SITE_COPY = {
   youtube: { hosts: "youtube.com" },
+  ytmusic: { hosts: "music.youtube.com" },
   github: { hosts: "github.com" },
   google: { hosts: "google.com and country search TLDs" },
   gmail: { hosts: "mail.google.com" },
@@ -145,6 +146,8 @@ The install command above remains as a fallback if you prefer a terminal.
 npm install                 # playwright for e2e
 npm test                    # manifest, CSS compatibility, install, and wiring
 npm run test:e2e            # popup UI, theater geometry, and YouTube injection
+npm run test:fullscreen     # the fullscreen scale transition, offline fixture
+npm run test:ytmusic        # the YouTube Music queue rail, offline fixture
 npm run readme              # regenerate this README from live feature metadata
 npm run package             # build dist/chromods-<version>.zip for a release
 npm run release -- patch    # bump manifest.json + README, ready to tag

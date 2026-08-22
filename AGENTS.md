@@ -1,6 +1,6 @@
 # Agent notes
 
-This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
+This Chrome MV3 extension (**ChroMods**) ports [sameerasw](https://github.com/sameerasw)'s website theming to Chromium. It currently covers YouTube, YouTube Music, GitHub, Google Search, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT, and can grow to other sites. When the user asks to import or refresh a theming mod, **fetch the latest files from the upstream repos** — do not rely on memory of their CSS.
 
 ## Upstream sources
 
@@ -63,7 +63,9 @@ In **zeninternet**, YouTube-specific JS (not CSS) lives in `content-script.js` �
 
 ## Already ported (do not duplicate)
 
-Theater, immersive search, feed layout, compact/clean/hide side guide, hide filter chips, player blur, thumbnail hover, hide distractions, disable ambient mode, better captions, overlay live chat, movable live chat, YouTube TV.
+Theater, immersive search, feed layout, compact/clean/hide side guide, hide filter chips, player blur, fullscreen transition, thumbnail hover, hide distractions, disable ambient mode, better captions, overlay live chat, movable live chat, YouTube TV.
+
+YouTube Music: sticky queue (docks the player page's `#side-panel` as a right-hand rail while `ytmusic-app-layout` has `player-visible` but not `player-page-open`). `music.youtube.com` is its own site id (`ytmusic`), and `matchSiteFromHostname` resolves it by longest matching hostname — do not rely on `SITE_META` order.
 
 GitHub: immersive search, hover sidebars, no tab text, repo sidebar hover, hide footer, hide toolbar separator, glass effect, softer borders, remove button borders, timeline badges, chip spacing.
 
@@ -81,7 +83,16 @@ Twitch: hide footer, movable live chat. Skip `twitch-transparency`.
 
 ChatGPT: sidebar glass, header actions, composer, message bubbles, code panels, flyouts, popovers, library surfaces, decorative splash, fallback, reduced motion, hide hint. Skip `cgpt-transparency`.
 
-Upstream features **not** ported yet (candidates): `yt-early New To You chip`, `yt-Keep player shadow`, `yt-Addon : Viewstats`, `yt-Addon : timed comments`, YouTube Music (`music.youtube.com.css`), Studio (`studio.youtube.com.css`). Transparency variants stay excluded.
+Upstream features **not** ported yet (candidates): `yt-early New To You chip`, `yt-Keep player shadow`, `yt-Addon : Viewstats`, `yt-Addon : timed comments`, the rest of `music.youtube.com.css` (hover sidebar, centered player, player bar styling, mini player), Studio (`studio.youtube.com.css`). Transparency variants stay excluded.
+
+## Browser-only behaviour
+
+Some mods cannot be verified by reading the CSS, because Chromium's own cascade decides the outcome:
+
+- A UA `!important` declaration outranks inline styles, author `!important`, and Web Animations. This is why the fullscreen transition scales an inner box on the way in: `transform` on the fullscreen element itself is dropped (`tests/fullscreen.e2e.mjs` guards it).
+- The YouTube Music queue rail has to beat an inline `visibility: hidden` (`tests/ytmusic.e2e.mjs` guards it).
+
+Both tests serve a local fixture for the real hostname through Playwright routing, so they run offline with no account. They need `npx playwright install chromium`, and extensions only load in headed Chromium (`xvfb-run` on a headless box).
 
 ## GitHub issue auto-port
 

@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, "..");
 const stylesDir = path.join(root, "styles");
 const SITE_STYLE_DIRS = [
   "youtube",
+  "ytmusic",
   "github",
   "google",
   "gmail",
@@ -241,6 +242,83 @@ test("fullscreen transition scales with FLIP classes and hides player chrome", (
   assert.doesNotMatch(css, /transition:\s*all/);
   assert.doesNotMatch(css, /\bscale:/);
   assert.doesNotMatch(css, /@-moz-document/);
+});
+
+/* Chromium's UA stylesheet sets `transform: none` on the fullscreen element and
+   a UA !important declaration outranks author styles, inline styles, and Web
+   Animations. Scaling the player on the way in is silently dropped, so the FLIP
+   has to run on an inner box. */
+test("entering fullscreen scales a descendant, not the fullscreen element", () => {
+  const css = read(style("youtube", "fullscreen-transition.css"));
+  assert.match(css, /\.html5-video-player\.ytm-fs-animating \.ytm-fs-scaling/);
+
+  const js = read("scripts/content-script.js");
+  assert.match(js, /FULLSCREEN_SCALE_TARGETS/);
+  assert.match(js, /\.html5-video-container/);
+  assert.match(js, /getFullscreenScaleTarget/);
+  assert.match(js, /ytm-fs-scaling/);
+
+  const playEnter = js.slice(js.indexOf("playEnter("), js.indexOf("playExit("));
+  assert.match(playEnter, /getFullscreenScaleTarget\(player\)/);
+  assert.match(
+    playEnter,
+    /this\.animate\(player,\s*target,/,
+    "the enter animation must run on the inner target"
+  );
+
+  const exitStart = js.indexOf("playExit(");
+  const playExit = js.slice(exitStart, js.indexOf("\n    sync() {", exitStart));
+  assert.match(
+    playExit,
+    /this\.animate\(player,\s*player,/,
+    "the exit animation can use the player, which is no longer fullscreen"
+  );
+});
+
+/* YouTube Music keeps the queue inside the player page, parked below the
+   viewport and hidden with an inline style, so docking it means overriding both
+   and reserving the column it lands in. */
+test("the sticky queue docks the player page's side panel and reserves its column", () => {
+  const css = read(style("ytmusic", "ytm-sticky-queue.css"));
+  const state = /ytmusic-app-layout\[player-visible\]:not\(\[player-page-open\]\)/;
+  assert.match(css, state);
+  assert.match(css, /#player-page/);
+  assert.match(css, /#side-panel/);
+  assert.match(css, /visibility:\s*visible\s*!important/);
+  assert.match(css, /transform:\s*none\s*!important/);
+  assert.match(css, /--ytmusic-nav-bar-height/);
+  assert.match(css, /--ytmusic-player-bar-height/);
+  assert.match(css, /padding-right:\s*var\(--chromods-ytm-queue-width\)\s*!important/);
+  // The album-art column has no room in the rail.
+  assert.match(css, /#main-panel\s*\{[^}]*display:\s*none/);
+  // Every rule has to bow out while the full player is open.
+  for (const block of css.split("}").filter((chunk) => chunk.includes("{"))) {
+    const [selector] = block.split("{");
+    if (!selector.includes("ytmusic-app-layout")) continue;
+    assert.match(selector, /:not\(\[player-page-open\]\)/, `unguarded selector: ${selector.trim()}`);
+  }
+});
+
+test("the sticky queue is wired up as a YouTube Music mod", () => {
+  const content = read("scripts/content-script.js");
+  assert.match(content, /"ytm-sticky-queue":\s*\["styles\/ytmusic\/ytm-sticky-queue\.css"\]/);
+  assert.match(content, /"ytm-sticky-queue":\s*"ytmusic"/);
+  assert.match(content, /id\.startsWith\("ytm-"\)/);
+  assert.match(content, /ytmusic:\s*\{\s*enabled:\s*true\s*\}/);
+  assert.match(read("scripts/background.js"), /ytmusic:\s*\{\s*enabled:\s*true\s*\}/);
+
+  const popup = read("scripts/popup.js");
+  assert.match(popup, /id:\s*"ytm-sticky-queue"/);
+  assert.match(popup, /site:\s*"ytmusic"/);
+  assert.match(popup, /Sticky queue/);
+
+  // music.youtube.com already matches the manifest's *.youtube.com patterns.
+  const manifest = JSON.parse(read("manifest.json"));
+  const theming = manifest.content_scripts.find((entry) =>
+    (entry.js || []).includes("scripts/content-script.js")
+  );
+  assert.ok(theming.matches.includes("*://*.youtube.com/*"));
+  assert.ok(manifest.web_accessible_resources[0].matches.includes("*://*.youtube.com/*"));
 });
 
 test("immersive search uses transform scale without compounding the scale property", () => {
@@ -798,11 +876,14 @@ test("popup defines theater and feed subsettings", () => {
   assert.doesNotMatch(js, /commentsBackground|theater-glass|Glass \+ blur/);
 });
 
-test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT URLs", () => {
+test("hostname matching maps YouTube, YouTube Music, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT URLs", () => {
   const api = new Function(`${read("scripts/sites.js")}; return { matchSiteFromUrl };`)();
   assert.equal(api.matchSiteFromUrl("https://www.youtube.com/watch?v=x")?.id, "youtube");
-  assert.equal(api.matchSiteFromUrl("https://music.youtube.com/")?.id, "youtube");
   assert.equal(api.matchSiteFromUrl("https://youtu.be/x")?.id, "youtube");
+  // Both sites claim this host; the longer hostname is the more specific one.
+  assert.equal(api.matchSiteFromUrl("https://music.youtube.com/")?.id, "ytmusic");
+  assert.equal(api.matchSiteFromUrl("https://music.youtube.com/playlist?list=x")?.id, "ytmusic");
+  assert.equal(api.matchSiteFromUrl("https://studio.youtube.com/")?.id, "youtube");
   assert.equal(api.matchSiteFromUrl("https://github.com/sameerasw/my-internet")?.id, "github");
   assert.equal(api.matchSiteFromUrl("https://gist.github.com/")?.id, "github");
   assert.equal(api.matchSiteFromUrl("https://www.google.com/search?q=x")?.id, "google");
@@ -824,9 +905,11 @@ test("hostname matching maps YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini,
   assert.equal(api.matchSiteFromUrl("https://example.com/"), null);
 });
 
-test("site registry detects YouTube, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT hosts", () => {
+test("site registry detects YouTube, YouTube Music, GitHub, Google, DuckDuckGo, Gmail, Gemini, X, Twitch, and ChatGPT hosts", () => {
   const js = read("scripts/sites.js");
   assert.match(js, /id:\s*"youtube"/);
+  assert.match(js, /id:\s*"ytmusic"/);
+  assert.match(js, /music\.youtube\.com/);
   assert.match(js, /id:\s*"github"/);
   assert.match(js, /id:\s*"google"/);
   assert.match(js, /id:\s*"gmail"/);
@@ -863,6 +946,7 @@ test("popup categories have custom icons and animated expansion", () => {
   assert.match(js, /ui-keyboard/);
   assert.match(js, /shortcut-dark/);
   assert.match(js, /site-youtube/);
+  assert.match(js, /site-ytmusic/);
   assert.match(js, /site-github/);
   assert.match(js, /site-google/);
   assert.match(js, /site-duckduckgo/);
